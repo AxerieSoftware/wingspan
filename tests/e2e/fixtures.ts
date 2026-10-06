@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { type BrowserContext, test as base, chromium, type Locator, type Page, type Route } from '@playwright/test';
+import { type BrowserContext, test as base, chromium, expect, type Locator, type Page, type Route } from '@playwright/test';
 import type { IntrospectionQuery } from 'graphql';
 import { GraphqlMock } from './graphqlMock';
 import { Household } from './household';
@@ -49,6 +49,8 @@ const SESSION_USER = {
 /** How the mocked API responds to Wingspan's requests. Monarch's own requests are always answered immediately. */
 export interface ApiBehavior {
 	delayMs: number;
+	/** Wingspan's requests wait for this before they're answered, so a test can check loading states without racing a timer. */
+	held?: Promise<void>;
 	failure: 'network' | number | null;
 }
 
@@ -122,7 +124,7 @@ export const test = base.extend<E2eFixtures>({
 	}
 });
 
-export { expect } from '@playwright/test';
+export { expect };
 
 /** Writes Wingspan's chrome.storage.local from a blank page; Wingspan reads storage only when a page loads. */
 export async function seedExtensionStorage(page: Page, items: Record<string, unknown>) {
@@ -193,6 +195,12 @@ export async function addRecurring(page: Page, type: 'Bill' | 'Card payment') {
 	return dialog;
 }
 
+/** Closes the notice a first open shows about the hidden account, which sits over the bottom of a tall dialog for 15 seconds. */
+export async function dismissFirstRunNotice(page: Page) {
+	await page.getByRole('button', { name: 'Dismiss' }).click();
+	await expect(page.getByText('Wingspan now saves to your Monarch account')).toHaveCount(0);
+}
+
 export async function chooseMerchant(page: Page, dialog: Locator, name: string) {
 	await dialog.locator('button[aria-label^="Merchant: "]').click();
 	await page.getByPlaceholder('Search merchants').fill(name);
@@ -252,6 +260,7 @@ async function answer(route: Route, graphqlMock: GraphqlMock, api: ApiBehavior, 
 	if (isWingspan) apiLog.pending += 1;
 	try {
 		if (isWingspan && api.delayMs) await new Promise(resolve => setTimeout(resolve, api.delayMs));
+		if (isWingspan) await api.held;
 		if (isWingspan && api.failure === 'network') return await route.abort('failed');
 		if (isWingspan && typeof api.failure === 'number') return await route.fulfill({ status: api.failure, body: '' });
 		const result = await graphqlMock.respond(body.query, body.operationName, body.variables ?? {});

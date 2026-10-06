@@ -145,7 +145,7 @@ for (const theme of THEMES) {
 		test('where Wingspan saves', async ({ page, open }) => {
 			await openAsReturning(page, open, '/settings/display');
 			await useTheme(page, theme);
-			await page.getByRole('link', { name: 'General' }).last().click();
+			await page.locator('[data-wingspan-card]').getByRole('link', { name: 'General' }).click();
 			const group = page.getByRole('group', { name: 'Where Wingspan saves' });
 			await expect(group).toBeVisible();
 			await siteShot(page, 'where-wingspan-saves', theme, group, { pad: 24 });
