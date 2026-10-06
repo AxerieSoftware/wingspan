@@ -49,6 +49,8 @@ const SESSION_USER = {
 /** How the mocked API responds to Wingspan's requests. Monarch's own requests are always answered immediately. */
 export interface ApiBehavior {
 	delayMs: number;
+	/** Wingspan's requests wait for this before they're answered, so a test can check loading states without racing a timer. */
+	held?: Promise<void>;
 	failure: 'network' | number | null;
 }
 
@@ -252,6 +254,7 @@ async function answer(route: Route, graphqlMock: GraphqlMock, api: ApiBehavior, 
 	if (isWingspan) apiLog.pending += 1;
 	try {
 		if (isWingspan && api.delayMs) await new Promise(resolve => setTimeout(resolve, api.delayMs));
+		if (isWingspan) await api.held;
 		if (isWingspan && api.failure === 'network') return await route.abort('failed');
 		if (isWingspan && typeof api.failure === 'number') return await route.fulfill({ status: api.failure, body: '' });
 		const result = await graphqlMock.respond(body.query, body.operationName, body.variables ?? {});

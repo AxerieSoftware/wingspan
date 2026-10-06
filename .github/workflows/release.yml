@@ -62,12 +62,13 @@ jobs:
         with:
           name: zips
 
-      # --notes goes above the generated notes.
-      - name: Create GitHub release
+      # A draft, so nothing is public until the notes are written and it's published by hand. --notes goes above the generated notes.
+      - name: Create draft GitHub release
         run: >-
           gh release create "$GITHUB_REF_NAME" *.zip
           --repo "$GITHUB_REPOSITORY"
           --title "$GITHUB_REF_NAME"
+          --draft
           --generate-notes
           --notes "Unpacked builds for Chrome, Edge, Firefox and Safari (experimental). How to load each: https://github.com/$GITHUB_REPOSITORY/blob/$GITHUB_REF_NAME/README.md#install"
         env:

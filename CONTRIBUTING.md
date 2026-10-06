@@ -95,18 +95,21 @@ status 200 for a rejected request, so look for `"errors"` in the response.
 
 ## Release
 
-1. Bump `version` in `package.json`. We practice [semantic versioning](https://semver.org/).
+1. Pick the version. We practice [semantic versioning](https://semver.org/).
 2. If what Wingspan saves changes shape so an older Wingspan would misread it,
    bump `CURRENT_SCHEMA_VERSION` in `src/data/models/wingspanData.ts`. Older
    versions then won't overwrite the newer data. Each browser
    is updated by hand, so a household can run both versions on one account for
    a while.
-3. Tag `vX.Y.Z` to match and push the tag. `release.yml` checks the tag against
-   `package.json`, builds zips for Chrome, Edge, Firefox and Safari, and attaches
-   all four to a GitHub release for loading unpacked. During the beta nothing
-   goes to the browser stores.
-4. Edit the published release's notes: changes go straight to `main`, so the
-   notes GitHub generates have no pull requests to list.
+3. Run `npm version patch` (or `minor` or `major`), then
+   `git push --follow-tags`. That bumps `package.json`, commits it, tags
+   `vX.Y.Z` and pushes both. The tag starts `release.yml`, which runs CI, builds
+   zips for Chrome, Edge, Firefox and Safari, and attaches all four to a draft
+   GitHub release. During the beta nothing goes to the browser stores.
+4. Open the draft under Releases, write the notes and click **Publish
+   release**. Nothing is public until then. GitHub fills in the merged pull
+   requests, grouped by label (see `.github/release.yml`); add a short summary
+   of what changed for users above them.
 
 ## Layout
 
