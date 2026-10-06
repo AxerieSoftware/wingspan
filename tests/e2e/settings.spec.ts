@@ -2,7 +2,7 @@ import { expect, type OpenOptions, test } from './fixtures';
 
 const openSettings = async (page: import('@playwright/test').Page, open: (options?: OpenOptions) => Promise<void>, options: OpenOptions = {}) => {
 	await open({ path: '/settings/display', waitForRows: false, ...options });
-	await page.getByRole('link', { name: 'General' }).last().click();
+	await page.locator('[data-wingspan-card]').getByRole('link', { name: 'General' }).click();
 	await expect(page).toHaveURL(/\/settings\/wingspan/);
 };
 
