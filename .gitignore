@@ -1,0 +1,9 @@
+node_modules/
+.output/
+.wxt/
+tests/test-results/
+playwright-report/
+.DS_Store
+tests/.monarch-snapshot/
+site/dist/
+site/.astro/

@@ -1,0 +1,29 @@
+title: ""
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea. Upvotes decide what moves up the [roadmap](https://wingspan.axerie.com/roadmap/), so search first and upvote an existing request if there is one.
+
+        Wingspan only adds features Monarch doesn't have. It won't duplicate Monarch's features, including ones on paid plans. Ideas that are on Monarch's roadmap can still be considered, since plans can change.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The problem, in your own words. What do you do today instead?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
+      description: Where in Monarch would it show up, and what would it look like?
+    validations:
+      required: true
+  - type: input
+    id: monarch
+    attributes:
+      label: Monarch roadmap card
+      description: Name of the matching card on [Monarch's roadmap](https://app.monarch.com/roadmap), if there is one. It needs a Monarch login.
+      placeholder: Projected Account Balances

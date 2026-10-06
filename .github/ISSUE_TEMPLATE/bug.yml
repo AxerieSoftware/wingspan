@@ -1,0 +1,29 @@
+name: Bug report
+description: Something Wingspan adds is wrong, missing or broken.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Please leave out account names, balances and anything else from your household's data by blurring or redacting it. Screenshots are helpful, but please don't paste response bodies or error messages, which can include your data.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what you saw instead. Screenshots help; blur any amounts.
+    validations:
+      required: true
+  - type: input
+    id: page
+    attributes:
+      label: Monarch page
+      placeholder: Recurring, Cash Flow, Settings…
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and Wingspan version
+      placeholder: Edge 154.0.4258.48, Wingspan 0.1.0
+  - type: textarea
+    id: network
+    attributes:
+      label: Rejected requests
+      description: In DevTools → Network, filter by `client=wingspan`. Name any request that failed, by the `wingspan_…` operation in its payload, and its status. Monarch returns status 200 with an `errors` list in the response for some rejected requests; say which operation, but please don't paste response bodies or error messages, which can include your data.

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Feature request
+    url: https://github.com/axerieSoftware/wingspan/discussions/new?category=ideas
+    about: Suggest a feature, or upvote one, in Discussions.
+  - name: Question
+    url: https://github.com/axerieSoftware/wingspan/discussions
+    about: Ask in Discussions.

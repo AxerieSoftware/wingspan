@@ -1,0 +1,71 @@
+---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+import data from "../data/monarch.json";
+
+const monthLabel = (month: string) => new Date(`${month}-01T12:00:00`).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+const asOf = new Date(`${data.asOf}T12:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+const headings = [
+	{ depth: 2, slug: "what-monarch-does", text: "What Monarch does" },
+	{ depth: 2, slug: "plans", text: "Plans" },
+	{ depth: 2, slug: "releases", text: "Release history" },
+	{ depth: 2, slug: "official-links", text: "Official links" },
+];
+---
+
+<StarlightPage frontmatter={{ title: "About Monarch", description: "What Monarch Money does, its plans, and how often it ships." }} headings={headings}>
+	<p>
+		<a href="https://www.monarch.com">Monarch Money</a> is a personal finance app for tracking accounts, budgeting and planning, on the web, iOS and Android. Wingspan adds to its web app. This page is an unofficial summary, checked {asOf}. Monarch ships often, so check its own pages before relying on a detail.
+	</p>
+
+	<h2 id="what-monarch-does">What Monarch does</h2>
+	<div class="not-content grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+		{
+			data.areas.map((area) => (
+				<div class="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+					<div class="font-semibold text-gray-900 dark:text-white">{area.area}</div>
+					<ul class="mt-2 space-y-1 text-sm text-gray-600 dark:text-gray-300">
+						{area.items.map((item) => <li>{item}</li>)}
+					</ul>
+				</div>
+			))
+		}
+	</div>
+
+	<h2 id="plans">Plans</h2>
+	<table>
+		<thead>
+			<tr><th></th>{data.plans.tiers.map((tier) => <th>{tier}</th>)}</tr>
+		</thead>
+		<tbody>
+			{
+				data.plans.rows.map((row) => (
+					<tr>
+						<th scope="row" class="font-normal">{row.label}</th>
+						{row.values.map((value) => <td>{value === true ? "Yes" : value === false ? "No" : value}</td>)}
+					</tr>
+				))
+			}
+		</tbody>
+	</table>
+	<p>Wingspan works on Core and doesn't unlock anything from Plus.</p>
+
+	<h2 id="releases">Release history</h2>
+	<p>Notable releases by month. Monarch posts smaller changes on its <a href="https://www.monarch.com/whats-new">What's new</a> page.</p>
+	<ol class="not-content relative m-0! ml-2! list-none! border-l border-gray-200 p-0! dark:border-gray-700">
+		{
+			[...data.releases].reverse().map((release) => (
+				<li class="relative pb-4 pl-5">
+					<span class="absolute top-1.5 -left-[5px] size-2.5 rounded-full bg-accent-600 ring-2 ring-white dark:bg-accent-400 dark:ring-gray-900" />
+					<div class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{monthLabel(release.month)}</div>
+					<div class="text-sm text-gray-800 dark:text-gray-100">{release.items.join(" · ")}</div>
+				</li>
+			))
+		}
+	</ol>
+
+	<h2 id="official-links">Official links</h2>
+	<ul>{data.links.map((link) => <li><a href={link.href}>{link.label}</a></li>)}</ul>
+	<p>
+		Wingspan tracks Monarch's official roadmap card by card on the <a href="/roadmap/">roadmap</a>, and deprecates and removes its own version of a feature when Monarch releases one.
+	</p>
+</StarlightPage>

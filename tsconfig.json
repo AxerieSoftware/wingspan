@@ -1,0 +1,10 @@
+{
+	"extends": "./.wxt/tsconfig.json",
+	"compilerOptions": {
+		"jsx": "react-jsx",
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"strictNullChecks": true
+	},
+	"exclude": ["node_modules", ".output", "site"]
+}

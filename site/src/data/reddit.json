@@ -1,0 +1,70 @@
+{
+	"asOf": "2026-10-06",
+	"archive": {
+		"posts": 15819,
+		"comments": 133597,
+		"from": "2020-02",
+		"askShare": "About 1 in 6 posts asks for something",
+		"peak": "Posts peaked in 2024 (5,318) after Mint shut down."
+	},
+	"method": "Topics come from keyword matching, so a post can land in several, and roughly 60 to 80% of matched requests are real asks. Treat the numbers as relative demand.",
+	"topRequests": [
+		{ "request": "Investment transactions and dividends", "mentions": 284, "upvotes": 1435, "status": "Beta since Feb 2024", "fit": "No, data problem" },
+		{ "request": "Projected account balances", "mentions": 268, "upvotes": 1048, "status": "Not shipped. Plus Forecasting is long range only.", "fit": "Yes, short range", "wingspan": "/features/projected-balances/", "url": "https://redd.it/1qe3dlg" },
+		{ "request": "Paycheck gross and deductions", "mentions": 166, "upvotes": 531, "status": "On Jan 2026 roadmap", "fit": "No" },
+		{ "request": "Year over year and month over month tables", "mentions": 133, "upvotes": 728, "status": "Partial", "fit": "Yes, Trends" },
+		{ "request": "Annual or YTD budget view", "mentions": 120, "upvotes": 764, "status": "Not shipped", "fit": "Yes", "url": "https://redd.it/1lva05x" },
+		{ "request": "AI access through MCP", "mentions": 120, "upvotes": 919, "status": "Paused since Jun 2026, no timeline", "fit": "No, provider dispute" },
+		{ "request": "Scheduled future transactions", "mentions": 118, "upvotes": 561, "status": "Announced", "fit": "Skip, announced. Manual bills cover future bills today." },
+		{ "request": "Remember filters and default views", "mentions": 116, "upvotes": 677, "status": "Partial. Remembering the net worth range is in progress.", "fit": "Yes" },
+		{ "request": "Exclude filters, and/or logic", "mentions": 102, "upvotes": 453, "status": "Exclude coming soon, no and/or", "fit": "Skip, planned" },
+		{ "request": "Who owes whom with a partner", "mentions": 98, "upvotes": 626, "status": "Bill Split beta retired Jun 2026", "fit": "Maybe" },
+		{ "request": "Refund and reimbursement matching", "mentions": 91, "upvotes": 289, "status": "Not shipped, no plan", "fit": "Yes", "url": "https://redd.it/1mb58se" },
+		{ "request": "Multi-currency", "mentions": 83, "upvotes": 300, "status": "Planned, no timeline", "fit": "Partial" },
+		{ "request": "Custom date ranges, net worth chart", "mentions": 81, "upvotes": 1047, "status": "In the works", "fit": "Skip, in the works", "url": "https://redd.it/1vfhz6b" },
+		{ "request": "Compact layout", "mentions": 80, "upvotes": 789, "status": "Partial", "fit": "Yes" },
+		{ "request": "Sub-categories", "mentions": 73, "upvotes": 299, "status": "Not shipped", "fit": "No" },
+		{ "request": "Running balance", "mentions": 72, "upvotes": 256, "status": "Not shipped", "fit": "Yes", "url": "https://redd.it/1h2b0yt" },
+		{ "request": "Zero-based budgeting", "mentions": 69, "upvotes": 196, "status": "Declined", "fit": "Maybe, as an overlay" },
+		{ "request": "Several recurring items per merchant", "mentions": 67, "upvotes": 608, "status": "In Recurring 2.0 Early Access", "fit": "Done by Monarch" },
+		{ "request": "Undo", "mentions": 54, "upvotes": 240, "status": "Not shipped", "fit": "Yes, for budgets" },
+		{ "request": "Linked transfers", "mentions": 44, "upvotes": 174, "status": "Not shipped", "fit": "Maybe" },
+		{ "request": "Spread an expense across months", "mentions": 42, "upvotes": 110, "status": "Not shipped", "fit": "Maybe" },
+		{ "request": "Pay-period budgeting", "mentions": 35, "upvotes": 157, "status": "Promised in 2024, not shipped", "fit": "Yes" },
+		{ "request": "Cents in budget", "mentions": 32, "upvotes": 101, "status": "Declined in 2023", "fit": "Yes, display only" }
+	],
+	"shippedAfterDemand": [
+		"Bill Sync (Oct 2024)",
+		"Amazon sync (May 2025)",
+		"YTD net worth (Feb 2025)",
+		"This month against average (Jul 2025)",
+		"Shared Views (Oct 2025)",
+		"Goals 3.0 (Jun 2026)",
+		"Mobile reports (Jun 2026)",
+		"Forecasting, business tracking and cost basis in Plus (Apr 2026)",
+		"Switch data provider and keep history (Sep 2026)",
+		"Sort accounts by balance (Sep 2026)",
+		"Account notes (Sep 2026)"
+	],
+	"leaving": {
+		"total": 961,
+		"note": "People mostly went to Simplifi, YNAB, Quicken and Copilot. April 2026, when Plus launched at $299 and dropped to $199 three days later, is the worst month in the archive.",
+		"reasons": [
+			{ "reason": "Sync and connections", "items": 329, "upvoteWeight": 1485 },
+			{ "reason": "Bugs", "items": 88, "upvoteWeight": 1001 },
+			{ "reason": "Price, value, Plus tier", "items": 167, "upvoteWeight": 963 },
+			{ "reason": "Privacy and tracking", "items": 15, "upvoteWeight": 757 },
+			{ "reason": "Missing features", "items": 81, "upvoteWeight": 363 },
+			{ "reason": "Support", "items": 77, "upvoteWeight": 351 }
+		]
+	},
+	"recurring": [
+		"The top complaint is that recurring works by merchant, so one merchant can't hold several items. Recurring 2.0 fixes that.",
+		"Recurring 2.0 opened in Early Access in late September. Testers say it misses most annual bills, has no calendar or card statements yet, and doesn't feed future balances. Staff say creating an item from a single transaction is in progress.",
+		"Next come false detections and nagging, about 110 threads, and requests to turn recurring off.",
+		"Twice a month only allows the 1st and 15th, or the 15th and last day. People want any two days.",
+		"Unpaid items drop off the calendar instead of staying overdue.",
+		"Bill Sync lags weeks behind, sends false overdue alerts and isn't tied to transactions.",
+		"People keep asking to set card due dates themselves and to see when a full statement payment will leave checking."
+	]
+}

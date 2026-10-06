@@ -1,0 +1,19 @@
+{
+	"name": "wingspan-site",
+	"description": "wingspan.axerie.com: docs, roadmap and feature requests for Wingspan.",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "astro dev",
+		"build": "astro build",
+		"preview": "astro preview",
+		"check": "astro check"
+	},
+	"dependencies": {
+		"@astrojs/starlight": "^0.42.5",
+		"@astrojs/starlight-tailwind": "^5.0.0",
+		"@tailwindcss/vite": "^4.3.3",
+		"astro": "^7.3.5",
+		"tailwindcss": "^4.3.3"
+	}
+}

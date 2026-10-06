@@ -1,0 +1,112 @@
+---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+import data from "../data/roadmap.json";
+import reddit from "../data/reddit.json";
+
+type CardKey = keyof typeof data.cards;
+const mentions = new Map(reddit.topRequests.map((request) => [request.request, request.mentions]));
+const checkedOn = new Date(`${data.checkedOn}T12:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+const headings = [
+	{ depth: 2, slug: "how-wingspan-follows-monarch", text: "How Wingspan follows Monarch" },
+	...data.sections.map((section) => ({ depth: 2, slug: section.id, text: section.title })),
+	{ depth: 2, slug: "wont-build", text: "Won't build" },
+];
+---
+
+<StarlightPage frontmatter={{ title: "Roadmap", description: "What Wingspan has built and plans, against Monarch's official roadmap." }} headings={headings}>
+	<p>
+		Wingspan adds what Monarch doesn't have yet, inside Monarch's own pages. This is what's built and what's planned, against Monarch's <a href={data.roadmapUrl}>official roadmap</a> (it needs a Monarch login), last checked {checkedOn}. Want something moved up? <a href="https://github.com/axerieSoftware/wingspan/discussions/categories/ideas">Vote on feature requests on GitHub</a>, or suggest a new one.
+	</p>
+
+	<h2 id="how-wingspan-follows-monarch">How Wingspan follows Monarch</h2>
+	<ul>{data.principles.map((principle) => <li>{principle}</li>)}</ul>
+
+	{
+		data.sections.map((section) => (
+			<>
+				<h2 id={section.id}>{section.title}</h2>
+				<table class="roadmap-table">
+					<thead>
+						<tr>
+							<th>Feature</th>
+							<th>On Monarch's roadmap</th>
+						</tr>
+					</thead>
+					<tbody>
+						{section.items.map((item) => (
+							<tr>
+								<td>
+									<strong>{item.name}</strong>
+									<div class="text-sm">{item.description}</div>
+									<div class="text-xs text-gray-500 dark:text-gray-400">
+										{item.where}
+										{"asked" in item && (
+											<>
+												{" · "}
+												<a href="/reddit/#top-requests">{mentions.get(item.asked)} mentions on r/MonarchMoney</a>
+											</>
+										)}
+									</div>
+								</td>
+								<td class="text-sm">
+									{item.cards.map((match) => {
+										const card = data.cards[match.card as CardKey];
+										return (
+											<div class="mb-2 last:mb-0">
+												<span class="block">{card.title}</span>
+												<span class="block text-gray-500 dark:text-gray-400">
+													{card.status} · {match.match} match
+												</span>
+												{"note" in match && <span class="block">{match.note}</span>}
+											</div>
+										);
+									})}
+									{"monarch" in item && (
+										<>
+											<span class="block">{item.monarch}</span>
+											<span class="block text-gray-500 dark:text-gray-400">
+												{item.boardStatus} · {item.match}
+											</span>
+										</>
+									)}
+									{!item.cards.length && !("monarch" in item) && <span class="text-gray-500 dark:text-gray-400">Not on Monarch's roadmap</span>}
+								</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</>
+		))
+	}
+
+	<h2 id="wont-build">Won't build</h2>
+	<p>Monarch already has these, so Wingspan leaves them to Monarch:</p>
+	<ul>
+		{
+			data.wontBuild.map((item) => {
+				const card = "card" in item ? data.cards[item.card as CardKey] : undefined;
+				return <li>{item.text}{card && <> ({card.status.replace(/^Released/, "released")})</>}</li>;
+			})
+		}
+	</ul>
+</StarlightPage>
+
+<style>
+	/* Too narrow for two columns, so Monarch's side goes under each feature. */
+	@media (max-width: 40rem) {
+		.roadmap-table thead {
+			display: none;
+		}
+		.roadmap-table tr,
+		.roadmap-table td {
+			display: block;
+		}
+		.roadmap-table td:is(:first-child, :not(:first-child)) {
+			padding-inline: 0;
+		}
+		.roadmap-table td:first-child {
+			border-bottom: none;
+			padding-bottom: 0.25rem;
+		}
+	}
+</style>

@@ -1,0 +1,47 @@
+{
+	"asOf": "2026-09-29",
+	"plans": {
+		"tiers": ["Core", "Plus"],
+		"rows": [
+			{ "label": "Price", "values": ["$99.99/yr or $14.99/mo, 7-day trial", "$199.99/yr, annual only (launched at $299 in Apr 2026)"] },
+			{ "label": "Net worth, budgets, rules, reports", "values": [true, true] },
+			{ "label": "Goals, AI Assistant, weekly recap", "values": [true, true] },
+			{ "label": "Receipts, equity comp, Zillow, Coinbase, Apple Card", "values": [true, true] },
+			{ "label": "Partner seat, read-only pro access", "values": [true, true] },
+			{ "label": "Forecasting and retirement projections", "values": [false, true] },
+			{ "label": "Business tracking with P&L, Schedule C export", "values": [false, true] },
+			{ "label": "Tax lots, unrealized gains, Morningstar, portfolio treemap", "values": [false, true] },
+			{ "label": "Couple's will through Trust & Will", "values": [false, true] }
+		]
+	},
+	"areas": [
+		{ "area": "Track", "items": ["Accounts and net worth", "Transactions and rules", "Credit score"] },
+		{ "area": "Plan", "items": ["Budget", "Goals", "Forecasting (Plus)"] },
+		{ "area": "Understand", "items": ["Cash flow", "Reports", "AI Assistant", "Advice"] },
+		{ "area": "Bills", "items": ["Recurring", "Recurring 2.0 (Early Access)", "Bill sync"] },
+		{ "area": "Invest", "items": ["Holdings", "Allocation", "Equity comp"] },
+		{ "area": "Household", "items": ["Partner seat", "Shared Views", "Pro access"] }
+	],
+	"releases": [
+		{ "month": "2024-10", "items": ["Bill Sync"] },
+		{ "month": "2025-02", "items": ["YTD net worth"] },
+		{ "month": "2025-05", "items": ["Amazon Retail Sync"] },
+		{ "month": "2025-07", "items": ["This month against average"] },
+		{ "month": "2025-10", "items": ["Moves to monarch.com", "Shared Views", "Hidden transactions"] },
+		{ "month": "2025-11", "items": ["Account details: utilization, interest rate, minimum payment"] },
+		{ "month": "2025-12", "items": ["AI Assistant", "Goals beta", "Equity comp", "Receipts", "Debt Paydown Simulator"] },
+		{ "month": "2026-01", "items": ["SOC 2 Type II"] },
+		{ "month": "2026-04", "items": ["Plus tier", "Forecasting", "Investment improvements"] },
+		{ "month": "2026-06", "items": ["Mobile reports", "Goals 3.0", "Official MCP connector paused"] },
+		{ "month": "2026-07", "items": ["Transaction activity log", "Email receipts"] },
+		{ "month": "2026-08", "items": ["Treemaps", "Early retirement forecasting"] },
+		{ "month": "2026-09", "items": ["Recurring 2.0 in Early Access", "Switch data provider and keep history", "Sort accounts by balance", "Account notes"] }
+	],
+	"links": [
+		{ "label": "Official roadmap", "href": "https://app.monarch.com/roadmap" },
+		{ "label": "What's new", "href": "https://www.monarch.com/whats-new" },
+		{ "label": "Features", "href": "https://www.monarch.com/features/tracking" },
+		{ "label": "Pricing", "href": "https://www.monarch.com/pricing" },
+		{ "label": "Help center", "href": "https://help.monarch.com/hc/en-us" }
+	]
+}

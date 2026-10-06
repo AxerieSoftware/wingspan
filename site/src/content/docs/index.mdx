@@ -1,0 +1,35 @@
+---
+title: Wingspan for Monarch Money
+description: A browser extension that adds what Monarch Money doesn't have yet, inside Monarch's own pages.
+template: splash
+hero:
+  tagline: Adds what Monarch Money doesn't do yet, right inside Monarch. See when every bill is due, which card payments checking can cover, and how much is safe to spend today.
+  image:
+    html: |
+      <img class="hero-shot" src="/screenshots/projected-balances-dark-1200.webp" srcset="/screenshots/projected-balances-dark-1200.webp 1200w, /screenshots/projected-balances-dark-2048.webp 2048w" sizes="(min-width: 50rem) 58vw, 100vw" width="2048" height="1152" alt="Projected balances on Monarch&#39;s Cash Flow page, with checking day by day, free cash and what the cards owe." fetchpriority="high" />
+  actions:
+    - text: Quick start
+      link: /quick-start/
+      icon: right-arrow
+    - text: See the roadmap
+      link: /roadmap/
+      variant: minimal
+---
+
+import { CardGrid, LinkCard } from "@astrojs/starlight/components";
+import FeatureMap from "../../components/FeatureMap.astro";
+
+## What it adds
+
+<FeatureMap />
+
+## How it fits with Monarch
+
+- **Built into Monarch.** Wingspan's additions sit on the Monarch pages you already use and look like Monarch, with a small Wingspan mark so you can tell them apart.
+- **Only what Monarch doesn't do yet.** When Monarch releases the same feature, Wingspan's version is deprecated and removed.
+- **Your data stays with you.** Wingspan saves to your own Monarch account. It has no server, no analytics and no tracking.
+
+<CardGrid>
+	<LinkCard title="Request a feature" description="Suggest one, or vote on what's next, on GitHub." href="https://github.com/axerieSoftware/wingspan/discussions/categories/ideas" />
+	<LinkCard title="All features" description="What each one does for your money, and where it shows up." href="/features/" />
+</CardGrid>

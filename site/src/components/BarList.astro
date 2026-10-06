@@ -1,0 +1,29 @@
+---
+/** A ranked, single-series horizontal bar list. Labels and values are text, so it reads without color. */
+interface Props {
+	rows: { label: string; value: number; href?: string; detail?: string }[];
+	unit: string;
+}
+
+const { rows, unit } = Astro.props;
+const max = Math.max(...rows.map((row) => row.value));
+const format = new Intl.NumberFormat("en-US");
+---
+
+<ol class="not-content m-0! list-none! p-0!">
+	{
+		rows.map((row) => (
+			<li class="group grid grid-cols-[minmax(0,14rem)_1fr] items-center gap-x-3 py-1 sm:grid-cols-[minmax(0,18rem)_1fr]" title={`${row.label}: ${format.format(row.value)} ${unit}${row.detail ? ` · ${row.detail}` : ""}`}>
+				<span class="truncate text-sm text-gray-700 dark:text-gray-200">
+					{row.href ? <a href={row.href}>{row.label}</a> : row.label}
+				</span>
+				<span class="flex items-center gap-2">
+					<span class="flex-1">
+						<span class="block h-3 min-w-0.5 rounded-r bg-accent-600 group-hover:bg-accent-700 dark:bg-accent-400 dark:group-hover:bg-accent-300" style={`width: ${(row.value / max) * 100}%`} />
+					</span>
+					<span class="w-12 text-right text-xs tabular-nums text-gray-500 dark:text-gray-400">{format.format(row.value)}</span>
+				</span>
+			</li>
+		))
+	}
+</ol>

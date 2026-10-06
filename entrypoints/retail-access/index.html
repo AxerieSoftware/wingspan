@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Retail Sync Permission - Wingspan</title>
+		<style>
+			:root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+			body { margin: 0; display: grid; place-items: center; min-height: 100vh; background: Canvas; color: CanvasText; }
+			main { max-width: 32rem; padding: 2rem; line-height: 1.5; }
+			h1 { font-size: 1.25rem; margin: 0 0 0.75rem; }
+			button { font: inherit; font-weight: 600; padding: 0.5rem 1rem; border-radius: 0.5rem; border: 0; background: #ff692d; color: white; cursor: pointer; }
+			p.note { color: GrayText; font-size: 0.875rem; }
+		</style>
+	</head>
+	<body>
+		<main>
+			<h1 id="title">Let Wingspan read your purchases</h1>
+			<p id="explanation">Wingspan needs permission to access your purchase history from this retailer.</p>
+			<button id="allow" type="button">Allow</button>
+			<p class="note" id="status" role="status"></p>
+		</main>
+		<script type="module" src="./main.ts"></script>
+	</body>
+</html>

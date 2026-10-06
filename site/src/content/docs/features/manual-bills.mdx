@@ -1,0 +1,20 @@
+---
+title: Manual bills
+description: Bills without a regular schedule, kept as unpaid until the payment clears.
+---
+
+import Screenshot from "../../../components/Screenshot.astro";
+
+Some bills don't follow a pattern Monarch can spot, like rent paid by check that the landlord cashes whenever they get to it. Monarch only sees each payment once it clears, so a late check can look like two bills one month and none the next.
+
+A manual bill has the due date you set and stays unpaid until its payment clears, however late that is. Until then it counts as money that's going to leave checking, so [free cash](/features/projected-balances/#free-cash-today) never treats it as yours to spend.
+
+<Screenshot name="manual-bills" alt="A manual bill's details: its due day, amount, the payee it matches, and this month's payment still owed." />
+
+## Using it
+
+1. On **Recurring**, choose **Add recurring → Add manually**, then **Bill**.
+2. Enter the name, amount and due date.
+3. When the payment clears, Wingspan finds it and marks the bill paid.
+
+Manual bills sit in Monarch's **Expenses** table with your other bills, in date order.

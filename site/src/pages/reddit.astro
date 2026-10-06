@@ -1,0 +1,79 @@
+---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+import BarList from "../components/BarList.astro";
+import data from "../data/reddit.json";
+import roadmap from "../data/roadmap.json";
+
+const format = new Intl.NumberFormat("en-US");
+/** A request on Wingspan's roadmap shows where it stands there instead of its own fit. */
+const planned = new Map(roadmap.sections.flatMap((section) => section.items.flatMap((item) => ("asked" in item ? [[item.asked, `${section.title}: ${item.name}`] as const] : []))));
+const byMentions = [...data.topRequests].sort((a, b) => b.mentions - a.mentions);
+const reasons = [...data.leaving.reasons].sort((a, b) => b.items - a.items);
+const asOf = new Date(`${data.asOf}T12:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+const headings = [
+	{ depth: 2, slug: "top-requests", text: "Top unshipped requests" },
+	{ depth: 2, slug: "recurring", text: "Recurring" },
+	{ depth: 2, slug: "why-people-leave", text: "Why people leave" },
+	{ depth: 2, slug: "shipped", text: "Shipped after long demand" },
+];
+---
+
+<StarlightPage frontmatter={{ title: "What r/MonarchMoney asks for", description: "Feature requests and complaints from the Monarch Money subreddit, counted." }} headings={headings}>
+	<div class="not-content grid grid-cols-2 gap-3 sm:grid-cols-4">
+		{
+			[
+				{ label: "Posts", value: format.format(data.archive.posts) },
+				{ label: "Comments", value: format.format(data.archive.comments) },
+				{ label: "Since", value: new Date(`${data.archive.from}-01T12:00:00`).getFullYear() },
+				{ label: "Leaving posts", value: format.format(data.leaving.total) },
+			].map((stat) => (
+				<div class="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+					<div class="text-xs text-gray-500 dark:text-gray-400">{stat.label}</div>
+					<div class="text-2xl font-semibold tabular-nums text-gray-900 dark:text-white">{stat.value}</div>
+				</div>
+			))
+		}
+	</div>
+
+	<p>
+		From an archive of r/MonarchMoney through {asOf}. {data.archive.askShare}. {data.archive.peak}
+	</p>
+	<p class="text-sm text-gray-500 dark:text-gray-400">{data.method}</p>
+
+	<h2 id="top-requests">Top unshipped requests</h2>
+	<p>Mentions per request. Hover a bar for its status at Monarch.</p>
+	<BarList rows={byMentions.map((row) => ({ label: row.request, value: row.mentions, href: row.url, detail: row.status }))} unit="mentions" />
+
+	<details class="mt-4">
+		<summary>As a table, with upvotes and whether an extension can help</summary>
+		<table>
+			<thead>
+				<tr><th>Request</th><th>Mentions</th><th>Upvotes</th><th>At Monarch</th><th>Wingspan</th></tr>
+			</thead>
+			<tbody>
+				{
+					byMentions.map((row) => (
+						<tr>
+							<td>{row.wingspan ? <a href={row.wingspan}>{row.request}</a> : row.request}</td>
+							<td class="tabular-nums">{format.format(row.mentions)}</td>
+							<td class="tabular-nums">{format.format(row.upvotes)}</td>
+							<td>{row.status}</td>
+							<td>{planned.get(row.request) ?? row.fit}</td>
+						</tr>
+					))
+				}
+			</tbody>
+		</table>
+	</details>
+
+	<h2 id="recurring">Recurring, where Wingspan lives</h2>
+	<ul>{data.recurring.map((line) => <li>{line}</li>)}</ul>
+
+	<h2 id="why-people-leave">Why people leave</h2>
+	<p>Posts about leaving or about to leave, by reason.</p>
+	<BarList rows={reasons.map((row) => ({ label: row.reason, value: row.items, detail: `upvote weight ${format.format(row.upvoteWeight)}` }))} unit="posts" />
+	<p>{data.leaving.note}</p>
+
+	<h2 id="shipped">Shipped after long demand</h2>
+	<ul>{data.shippedAfterDemand.map((line) => <li>{line}</li>)}</ul>
+</StarlightPage>

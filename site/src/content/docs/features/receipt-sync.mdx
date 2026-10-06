@@ -1,0 +1,27 @@
+---
+title: Retail receipt sync
+description: Store purchases split into what you bought, in Monarch.
+---
+
+import Screenshot from "../../../components/Screenshot.astro";
+
+A trip to the store usually shows up in Monarch as one lump sum. Monarch already splits Amazon and Target orders into what you bought. Retail receipt sync does the same for more stores, currently Walmart and Costco, by sending each purchase's receipt to Monarch, which matches it to the transaction and splits it.
+
+<Screenshot name="receipt-sync" alt="The Sync retailer menu on Monarch's Transactions page, offering Walmart and Costco." />
+
+## Using it
+
+1. On **Transactions → Receipts**, click **Sync retailer** and choose a store.
+2. The first time, Wingspan asks for permission to read that store's site.
+3. A tab opens at the store's purchase history. Sign in there if you need to.
+4. When it's done, Monarch's tab says how many receipts were uploaded. They show under **Receipts** once Monarch has read them.
+
+## Good to know
+
+- Each purchase goes to Monarch once, whichever browser in the household syncs it, and one Monarch already has a receipt for isn't sent again.
+- An order the store hasn't finished yet is uploaded on a later sync, once it has a final total.
+- If the sync stops, because you're signed out or the store asks if you're a robot, finish that in the store's tab and sync again. Receipts that were already sent won't be sent again.
+
+:::note
+Monarch plans to sync more stores itself. When Monarch supports a store Wingspan already syncs, Wingspan's sync for that store is deprecated and removed.
+:::

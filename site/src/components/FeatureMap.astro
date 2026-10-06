@@ -1,0 +1,136 @@
+---
+/** What Wingspan adds, grouped by the money job each feature does, with where in Monarch it shows up. */
+const groups = [
+	{
+		job: "Bills and cards",
+		features: [
+			{ name: "Due dates", href: "/features/due-dates/", where: "On Recurring", text: "A due date on every bill and subscription, sorted by date." },
+			{
+				name: "Manual bills",
+				href: "/features/manual-bills/",
+				where: "On Recurring",
+				text: "Bills without a regular schedule, like a check that gets cashed late, stay unpaid until the payment clears.",
+			},
+			{ name: "Card payments", href: "/features/card-payments/", where: "On Recurring", text: "Each card's statement, when it's due, and whether checking can cover it, minimum included." },
+		],
+	},
+	{
+		job: "Cash flow",
+		features: [
+			{ name: "Projected balances", href: "/features/projected-balances/", where: "On Cash Flow", text: "Checking day by day ahead, so you see a low point before you hit it." },
+			{
+				name: "Free cash",
+				href: "/features/projected-balances/#free-cash-today",
+				where: "On Recurring and Cash Flow",
+				text: "How much you can safely spend or move out of checking today, not counting money set aside for goals.",
+			},
+		],
+	},
+	{
+		job: "Receipts",
+		features: [
+			{ name: "Retail receipt sync", href: "/features/receipt-sync/", where: "On Transactions", text: "Store purchases split into individual items, like Monarch already does for Amazon and Target." },
+		],
+	},
+	{
+		job: "Household and business",
+		features: [{ name: "Business filter", href: "/features/business-filter/", where: "On Recurring, with Monarch Plus", text: "Separate business bills from household bills, like Monarch already does on Cash Flow." }],
+	},
+];
+---
+
+<div class="feature-map not-content">
+	{
+		groups.map(({ job, features }) => (
+			<section class="group">
+				<h3>{job}</h3>
+				<dl>
+					{features.map((feature) => (
+						<div>
+							<dt>
+								<a href={feature.href}>{feature.name}</a>
+							</dt>
+							<dd>{feature.text}</dd>
+							<dd class="where">{feature.where}</dd>
+						</div>
+					))}
+				</dl>
+			</section>
+		))
+	}
+</div>
+
+<style>
+	.feature-map {
+		margin-block: 1.5rem 0.5rem;
+		border-top: 1px solid var(--sl-color-gray-5);
+	}
+
+	.group {
+		display: grid;
+		gap: 0.75rem 2rem;
+		padding-block: 1.5rem;
+		border-bottom: 1px solid var(--sl-color-gray-5);
+	}
+
+	h3 {
+		margin: 0;
+		font-size: var(--sl-text-sm);
+		font-weight: 600;
+		color: var(--sl-color-gray-2);
+	}
+
+	dl {
+		display: grid;
+		gap: 1.25rem 2.5rem;
+		margin: 0;
+	}
+
+	dt {
+		font-size: var(--sl-text-lg);
+		font-weight: 600;
+		line-height: var(--sl-line-height-headings);
+	}
+
+	dt a {
+		color: var(--sl-color-white);
+		text-decoration: none;
+	}
+
+	dt a:hover {
+		color: var(--sl-color-text-accent);
+	}
+
+	dt a:focus-visible {
+		outline: 2px solid var(--sl-color-text-accent);
+		outline-offset: 3px;
+		border-radius: 2px;
+	}
+
+	dd {
+		margin: 0.35rem 0 0;
+		max-width: 46ch;
+		color: var(--sl-color-gray-2);
+		line-height: var(--sl-line-height);
+	}
+
+	.where {
+		margin-top: 0.35rem;
+		font-size: var(--sl-text-xs);
+		color: var(--sl-color-gray-2);
+	}
+
+	@media (min-width: 50rem) {
+		.group {
+			grid-template-columns: 9rem 1fr;
+		}
+
+		h3 {
+			padding-top: 0.2rem;
+		}
+
+		dl {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+</style>
