@@ -1,4 +1,4 @@
-import { addRecurring, chooseMerchant, expect, itemRow, section, seedSampleItems, test } from './fixtures';
+import { addRecurring, chooseMerchant, dismissFirstRunNotice, expect, itemRow, section, seedSampleItems, test } from './fixtures';
 
 const STATUS_SELECT = '[data-external-id="add-recurring-group-status-select"]';
 const MONARCH_MERCHANT = '[data-external-id="add-recurring-group-merchant-field"]';
@@ -43,6 +43,7 @@ test("Wingspan's fields use Monarch's layout: the picker's filters on one line, 
 
 test("a bill is added from Monarch's Add recurring dialog, with details inferred from its payments", async ({ page, open }) => {
 	await open();
+	await dismissFirstRunNotice(page);
 	const dialog = await addRecurring(page, 'Bill');
 	await expect(dialog.getByRole('button', { name: 'Add recurring', exact: true }).last()).toBeDisabled();
 
@@ -79,6 +80,7 @@ test("a row opens its details next to the list, and closing them shows Monarch's
 
 test("the row's ⋯ menu can edit and remove the item", async ({ page, open }) => {
 	await open();
+	await dismissFirstRunNotice(page);
 	const row = itemRow(page, 'Piano Lessons');
 	await row.getByRole('button', { name: 'More options' }).click();
 	await page.getByRole('menuitem', { name: 'Edit' }).click();
@@ -121,6 +123,7 @@ test("cancelling a removal returns focus to the row's ⋯ button", async ({ page
 
 test('cancelling a removal from the editor keeps the editor open', async ({ page, open }) => {
 	await open();
+	await dismissFirstRunNotice(page);
 	const row = itemRow(page, 'Piano Lessons');
 	await row.getByRole('button', { name: 'More options' }).click();
 	await page.getByRole('menuitem', { name: 'Edit' }).click();

@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { type BrowserContext, test as base, chromium, type Locator, type Page, type Route } from '@playwright/test';
+import { type BrowserContext, test as base, chromium, expect, type Locator, type Page, type Route } from '@playwright/test';
 import type { IntrospectionQuery } from 'graphql';
 import { GraphqlMock } from './graphqlMock';
 import { Household } from './household';
@@ -124,7 +124,7 @@ export const test = base.extend<E2eFixtures>({
 	}
 });
 
-export { expect } from '@playwright/test';
+export { expect };
 
 /** Writes Wingspan's chrome.storage.local from a blank page; Wingspan reads storage only when a page loads. */
 export async function seedExtensionStorage(page: Page, items: Record<string, unknown>) {
@@ -193,6 +193,12 @@ export async function addRecurring(page: Page, type: 'Bill' | 'Card payment') {
 	await dialog.getByRole('combobox', { name: 'Type' }).click();
 	await page.getByRole('option', { name: type }).click();
 	return dialog;
+}
+
+/** Closes the notice a first open shows about the hidden account, which sits over the bottom of a tall dialog for 15 seconds. */
+export async function dismissFirstRunNotice(page: Page) {
+	await page.getByRole('button', { name: 'Dismiss' }).click();
+	await expect(page.getByText('Wingspan now saves to your Monarch account')).toHaveCount(0);
 }
 
 export async function chooseMerchant(page: Page, dialog: Locator, name: string) {
