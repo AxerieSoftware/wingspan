@@ -36,9 +36,8 @@ const FAILED_LINE: RecurringV2SummaryLine = { ...LOADING_LINE, texts: ["Couldn't
 const BUSINESSES_SETTINGS_SLUG = 'businesses';
 
 /**
- * Keeps Monarch in one workspace, Household or a business, chosen from a switcher in Monarch's sidebar. Pages with
- * Monarch's own business filter open filtered to it. Recurring has none, so Wingspan hides Monarch's rows for other
- * entities and replaces the month summary totals with the workspace's.
+ * Keeps Monarch in one workspace, Household or a business, chosen from a switcher in Monarch's sidebar. Recurring has
+ * no business filter of its own, so there Wingspan hides other entities' rows and replaces the month summary totals.
  */
 export class WorkspaceFeature implements WingspanFeature {
 	private readonly subscriptions = new DisposableStack();
@@ -119,9 +118,7 @@ export class WorkspaceFeature implements WingspanFeature {
 			return;
 		}
 		const summary: QueryResult<RecurringSummary> = accounts ? this.summary(month, scope, accounts, within) : { status: 'loading' };
-		this.recurringPage.showOwnSummary(
-			summary.status === 'ready' ? this.summaryText(summary.data) : summary.status === 'failed' ? { expense: FAILED_LINE, income: FAILED_LINE } : { expense: LOADING_LINE, income: LOADING_LINE }
-		);
+		this.recurringPage.showOwnSummary(this.summaryLines(summary));
 	}
 
 	/** Restores Monarch's rows, counts and month summary, and removes the switcher since it can't work now. */
@@ -198,6 +195,17 @@ export class WorkspaceFeature implements WingspanFeature {
 		return () => island.unmount();
 	}
 
+	private summaryLines(summary: QueryResult<RecurringSummary>): RecurringV2Summary {
+		switch (summary.status) {
+			case 'ready':
+				return this.summaryText(summary.data);
+			case 'failed':
+				return { expense: FAILED_LINE, income: FAILED_LINE };
+			case 'loading':
+				return { expense: LOADING_LINE, income: LOADING_LINE };
+		}
+	}
+
 	private summaryText(summary: RecurringSummary): RecurringV2Summary {
 		const amount = (value: number) => this.formatter.wholeMoney(Math.abs(value));
 		const line = (summaryLine: RecurringSummaryLine, texts: string[]): RecurringV2SummaryLine => ({
@@ -217,7 +225,9 @@ export class WorkspaceFeature implements WingspanFeature {
 	private groupAccounts(view: RecurringView, month: string): RecurrenceGroupAccount[] | null {
 		const lastMonth = view === 'all' ? this.calendar.addMonths(month, ALL_VIEW_MONTHS - 1) : month;
 		const groups = this.queries.read([GROUP_ACCOUNTS_QUERY, month, lastMonth], () => this.recurringClient.getRecurrenceGroupAccounts(`${month}-01`, this.calendar.lastOfMonth(lastMonth)));
-		return groups.status === 'ready' ? groups.data : groups.status === 'failed' ? [] : null;
+		if (groups.status === 'ready') return groups.data;
+		if (groups.status === 'failed') return [];
+		return null;
 	}
 
 	/**

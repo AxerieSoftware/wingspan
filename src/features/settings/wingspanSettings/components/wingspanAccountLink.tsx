@@ -1,5 +1,5 @@
-/** accountId is the hidden wingspan account Wingspan saves to. */
 export interface WingspanAccountLinkProps {
+	/** The hidden wingspan account Wingspan saves to. */
 	accountId: string;
 	className: string;
 }

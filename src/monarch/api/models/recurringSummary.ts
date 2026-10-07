@@ -16,10 +16,10 @@ export const EMPTY_SUMMARY: RecurringSummary = { expense: { completed: 0, remain
 
 /** `from` minus `less` for each line, rounded to the cent. */
 export function subtractSummary(from: RecurringSummary, less: RecurringSummary): RecurringSummary {
-	const line = (a: RecurringSummaryLine, b: RecurringSummaryLine): RecurringSummaryLine => ({
-		completed: roundToCents(a.completed - b.completed),
-		remaining: roundToCents(a.remaining - b.remaining),
-		total: roundToCents(a.total - b.total)
+	const subtractLine = (fromLine: RecurringSummaryLine, lessLine: RecurringSummaryLine): RecurringSummaryLine => ({
+		completed: roundToCents(fromLine.completed - lessLine.completed),
+		remaining: roundToCents(fromLine.remaining - lessLine.remaining),
+		total: roundToCents(fromLine.total - lessLine.total)
 	});
-	return { expense: line(from.expense, less.expense), income: line(from.income, less.income) };
+	return { expense: subtractLine(from.expense, less.expense), income: subtractLine(from.income, less.income) };
 }

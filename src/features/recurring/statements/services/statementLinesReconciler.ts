@@ -18,9 +18,8 @@ export interface StatementLinesInput {
 }
 
 /**
- * Updates a Monarch card's lines to agree with its projection. Matching payments to due dates can't tell a partial
- * payment from a full one, or that a statement closed at $0. The projection calculates what's left on each statement
- * from the card's balance, so a line is marked paid only when the projection shows nothing left on it.
+ * Updates a Monarch card's lines to agree with its projection, since matching payments can't tell a partial payment
+ * from a full one. A line is marked paid only when the projection shows nothing left on it.
  */
 export class StatementLinesReconciler {
 	public constructor(
@@ -35,14 +34,14 @@ export class StatementLinesReconciler {
 		// A newer statement that's already due includes the older ones, so they're covered by it instead of counted as extra owed.
 		const latestDueByItemId = new Map<string, string>();
 		for (const line of lines) {
-			if (!this.isLinked(line.item) || line.dueDate > today) continue;
+			if (!this.kinds.isLinked(line.item) || line.dueDate > today) continue;
 			if (line.dueDate > (latestDueByItemId.get(line.item.id) ?? '')) latestDueByItemId.set(line.item.id, line.dueDate);
 		}
 
 		return lines
 			.filter(line => line.paid || line.dueDate >= (latestDueByItemId.get(line.item.id) ?? ''))
 			.map(line => {
-				const accountId = this.kinds.of(line.item).linkedAccountId(line.item);
+				const accountId = this.kinds.linkedAccountId(line.item);
 				const plans = plansByItemId.get(line.item.id);
 				if (accountId === undefined || !plans) return line;
 				const leftToPay = this.planFor(line.dueDate, plans);
@@ -55,12 +54,9 @@ export class StatementLinesReconciler {
 			});
 	}
 
-	/**
-	 * Same as above for a card's payment history in the detail panel: a past statement the projection shows nothing
-	 * left on isn't owed, whether or not it was paid.
-	 */
+	/** For a card's payment history: a past statement the projection shows nothing left on isn't owed, paid or not. */
 	public reconcileHistory(item: RecurringItem, points: HistoryPoint[], plans: PlannedCardPayment[] | undefined): HistoryPoint[] {
-		if (!this.isLinked(item) || !plans) return points;
+		if (!this.kinds.isLinked(item) || !plans) return points;
 		const today = this.calendar.today();
 		const leftToday = this.planFor(today, plans);
 		if (leftToday && leftToday.owed > CENT_TOLERANCE) return points;
@@ -85,9 +81,5 @@ export class StatementLinesReconciler {
 		const overdue = line.dueDate < this.calendar.today();
 		const occurrences = line.occurrences.map(occurrence => (occurrence.dueDate === line.dueDate ? { ...occurrence, paid: false, overdue, amount: balance } : occurrence));
 		return { ...line, paid: false, overdue, occurrences, amount: balance };
-	}
-
-	private isLinked(item: RecurringItem): boolean {
-		return this.kinds.of(item).linkedAccountId(item) !== undefined;
 	}
 }

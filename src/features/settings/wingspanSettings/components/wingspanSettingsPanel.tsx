@@ -8,12 +8,12 @@ import type { BusinessEntityView } from '../../../businessEntities/services/busi
 import type { HiddenSidebarItems } from '../../../sidebar/hiddenItems/services/hiddenSidebarItems';
 import { WingspanAccountLink } from './wingspanAccountLink';
 
-/** reportProblemUrl opens a new GitHub issue with the versions filled in. */
 export interface WingspanSettingsPanelProps {
 	dataService: WingspanDataService;
 	businessView: BusinessEntityView;
 	hiddenSidebarItems: HiddenSidebarItems;
 	version: string;
+	/** Opens a new GitHub issue with the versions filled in. */
 	reportProblemUrl: string;
 }
 
@@ -21,7 +21,7 @@ export interface WingspanSettingsPanelProps {
 export function WingspanSettingsPanel({ dataService, businessView, hiddenSidebarItems, version, reportProblemUrl }: WingspanSettingsPanelProps) {
 	const storageStatus = useSignalValue(dataService.status);
 	const businesses = useSignalValue(businessView.businesses);
-	const workspacesEnabled = useSignalValue(businessView.isEnabled);
+	const areWorkspacesEnabled = useSignalValue(businessView.isEnabled);
 	const sidebarItems = useSignalValue(hiddenSidebarItems.items);
 	const hiddenIds = useSignalValue(hiddenSidebarItems.hidden);
 
@@ -29,7 +29,7 @@ export function WingspanSettingsPanel({ dataService, businessView, hiddenSidebar
 		<div className="flex flex-col gap-xl">
 			{businesses?.length ? (
 				<Fieldset legend="Business workspaces">
-					<SwitchRow label="Keep the household and businesses separate" checked={workspacesEnabled} onChange={isEnabled => businessView.setEnabled(isEnabled)} />
+					<SwitchRow label="Keep the household and businesses separate" checked={areWorkspacesEnabled} onChange={isEnabled => businessView.setEnabled(isEnabled)} />
 					<p className="m-0 text-sm text-content-secondary">
 						Adds a switcher to the top of the sidebar. Supported pages then show the household or one business, never both, and the rest say so in their header. Saved for this browser.
 					</p>

@@ -18,7 +18,7 @@ export class EntityScope {
 		return new EntityScope([HOUSEHOLD_ENTITY_ID, ...businesses.map(business => business.id)], true);
 	}
 
-	/** Built from Monarch's filter. Selecting nothing or selecting every entity means everything. Businesses that no longer exist are dropped. */
+	/** Built from Monarch's filter, where selecting nothing or every entity means everything. Businesses that no longer exist are dropped. */
 	public static fromFilter(filterSet: readonly string[], businesses: readonly Pick<BusinessEntity, 'id'>[]): EntityScope {
 		const everything = EntityScope.everything(businesses);
 		const chosenIds = everything.entityIds.filter(entityId => filterSet.includes(entityId));

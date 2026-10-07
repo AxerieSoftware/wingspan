@@ -1,7 +1,7 @@
 import * as v from 'valibot';
-import { logError } from '../../common/log';
 import { MonarchApiError } from './monarchApiError';
 import type { MonarchClient } from './monarchClient';
+import { ensureMutationSucceeded, MutationPayloadSchema, type MutationRejection } from './mutationPayload';
 
 /** Monarch's own receipt upload takes at most this many files at once. */
 export const RECEIPTS_PER_UPLOAD = 10;
@@ -52,9 +52,9 @@ export interface ExistingReceipt {
 	date: string;
 }
 
-const ErrorsSchema = v.nullish(v.object({ message: v.nullish(v.string()) }));
-const CreateReceiptSyncsSchema = v.object({ createBulkRetailSync: v.nullish(v.object({ retailSyncs: v.nullish(v.array(v.object({ id: v.string() }))), errors: ErrorsSchema })) });
-const StartReceiptSyncSchema = v.object({ startRetailSync: v.nullish(v.object({ retailSync: v.nullish(v.object({ id: v.string() })), errors: ErrorsSchema })) });
+const CreateReceiptSyncsSchema = v.object({ createBulkRetailSync: MutationPayloadSchema({ retailSyncs: v.nullish(v.array(v.object({ id: v.string() }))) }) });
+const StartReceiptSyncSchema = v.object({ startRetailSync: MutationPayloadSchema({ retailSync: v.nullish(v.object({ id: v.string() })) }) });
+const UPLOAD_REJECTED: MutationRejection = { logMessage: 'Monarch rejected a receipt upload.', userMessage: "The receipt couldn't be uploaded to Monarch." };
 
 export interface ReceiptFile {
 	name: string;
@@ -73,50 +73,43 @@ export class MonarchReceiptsClient {
 	public async upload(receipts: ReceiptFile[], onStarted: () => void): Promise<void> {
 		if (receipts.length > RECEIPTS_PER_UPLOAD) throw new Error(`Can't upload more than ${RECEIPTS_PER_UPLOAD} receipts at once.`);
 		const { createBulkRetailSync } = await this.client.request('wingspan_CreateReceiptSyncs', CREATE_RECEIPT_SYNCS_MUTATION, CreateReceiptSyncsSchema, { input: { count: receipts.length } });
-		this.ensureSucceeded(createBulkRetailSync?.errors);
+		ensureMutationSucceeded(createBulkRetailSync, UPLOAD_REJECTED);
 		const syncIds = createBulkRetailSync?.retailSyncs?.map(sync => sync.id) ?? [];
 		if (syncIds.length !== receipts.length) throw new MonarchApiError("Monarch didn't start an upload for every receipt.", false);
 
 		for (const [index, receipt] of receipts.entries()) {
 			const syncId = syncIds[index] as string;
-			await this.client.postForm(`/retail-sync/${syncId}/files`, this.formFor(receipt));
+			await this.client.postForm(`/retail-sync/${syncId}/files`, this.toFormData(receipt));
 			const { startRetailSync } = await this.client.request('wingspan_StartReceiptSync', START_RECEIPT_SYNC_MUTATION, StartReceiptSyncSchema, { syncId });
-			this.ensureSucceeded(startRetailSync?.errors);
+			ensureMutationSucceeded(startRetailSync, UPLOAD_REJECTED);
 			onStarted();
 		}
 	}
 
 	/** Every receipt and order Monarch has dated `startDate` to `endDate` ("YYYY-MM-DD"), from any source. */
-	public async existingReceipts(startDate: string, endDate: string): Promise<ExistingReceipt[]> {
+	public async getExistingReceipts(startDate: string, endDate: string): Promise<ExistingReceipt[]> {
 		const receipts: ExistingReceipt[] = [];
-		let after: string | null = null;
+		let afterCursor: string | null = null;
 		for (let page = 0; page < MAX_EXISTING_PAGES; page++) {
 			const { retailOrdersConnection }: v.InferOutput<typeof ExistingReceiptsSchema> = await this.client.request('wingspan_GetExistingReceipts', EXISTING_RECEIPTS_QUERY, ExistingReceiptsSchema, {
 				filters: { startDate, endDate },
 				first: EXISTING_PAGE_SIZE,
-				after
+				after: afterCursor
 			});
 			for (const { node } of retailOrdersConnection?.edges ?? []) {
 				if (node.merchantName && typeof node.grandTotal === 'number' && node.date) receipts.push({ merchant: node.merchantName, total: node.grandTotal, date: node.date.slice(0, 10) });
 			}
 			if (!retailOrdersConnection?.pageInfo.hasNextPage || !retailOrdersConnection.pageInfo.endCursor) return receipts;
-			after = retailOrdersConnection.pageInfo.endCursor;
+			afterCursor = retailOrdersConnection.pageInfo.endCursor;
 		}
 		return receipts;
 	}
 
-	private formFor(receipt: ReceiptFile): FormData {
+	private toFormData(receipt: ReceiptFile): FormData {
 		const form = new FormData();
 		form.append('payloads_count', '1');
 		form.append('metadata_0', JSON.stringify({ orderId: crypto.randomUUID(), vendor: 'user_import', payloadType: 'order', contentType: receipt.contentType }));
 		form.append('payload_0', new Blob([receipt.bytes], { type: receipt.contentType }), receipt.name);
 		return form;
-	}
-
-	private ensureSucceeded(errors: { message?: string | null } | null | undefined): void {
-		if (!errors) return;
-		// Monarch's error message isn't logged, since it can include what was sent.
-		logError(new Error('Monarch rejected a receipt upload.'));
-		throw new MonarchApiError("The receipt couldn't be uploaded to Monarch.", false);
 	}
 }

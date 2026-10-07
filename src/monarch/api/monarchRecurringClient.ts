@@ -92,6 +92,7 @@ const RecurrenceGroupAccountsSchema = v.object({
 const SummaryLineSchema = v.nullish(v.object({ completed: v.nullish(v.number(), 0), remaining: v.nullish(v.number(), 0), total: v.nullish(v.number(), 0) }), { completed: 0, remaining: 0, total: 0 });
 const RecurringSummarySchema = v.object({ aggregatedRecurrenceGroups: v.object({ expense: SummaryLineSchema, income: SummaryLineSchema }) });
 
+/** Reads the household's recurring items and their totals. */
 export class MonarchRecurringClient {
 	public constructor(private readonly client: MonarchClient) {}
 

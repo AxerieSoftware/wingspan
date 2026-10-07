@@ -42,9 +42,8 @@ export class ScheduledFlowBuilder {
 	}
 
 	/**
-	 * Monarch's recurring items, using the household's own due day when one is set for an item due once a month.
-	 * An unpaid expense whose date has passed is moved to today: this month's unless Monarch marks it ended, and earlier
-	 * months' only while Monarch marks them overdue. Past-due income is assumed not to be coming.
+	 * Monarch's recurring items, on the household's own due day for one due once that month. A past-due expense moves to
+	 * today if it's this month's and not ended, or an earlier month's still overdue; past-due income isn't coming.
 	 */
 	private monarchFlows(recurringFlows: RecurringFlow[], accounts: ProjectedAccounts, dueDayByRecurrenceId: Readonly<Record<string, number>>, endDate: string): ScheduledFlow[] {
 		const today = this.calendar.today();

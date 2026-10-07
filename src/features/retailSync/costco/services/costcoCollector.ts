@@ -1,5 +1,6 @@
 import type { ListedOrder, PrepareResult, RetailCollector } from '../../shared/services/retailCollector';
 import { RetailSyncOverlay, type SyncOverlay } from '../../shared/services/retailSyncOverlay';
+import { isPurchase } from '../models/costcoReceipt';
 
 interface CapturedRequest {
 	url: string;
@@ -17,8 +18,9 @@ interface ListedReceipt {
 const PAGE_WAIT_MS = 15_000;
 const CAPTURE_WAIT_MS = 8000;
 const POLL_MS = 200;
+const TAB_SWITCH_WAIT_MS = 500;
 /** The query Costco's app sends for receipts, trimmed to the fields a receipt needs. */
-const OPERATION = 'receiptsWithCounts';
+const RECEIPTS_OPERATION = 'receiptsWithCounts';
 const RECEIPTS_QUERY = `query receiptsWithCounts($startDate: String!, $endDate: String!, $documentType: String!, $documentSubType: String!) {
 	receiptsWithCounts(startDate: $startDate, endDate: $endDate, documentType: $documentType, documentSubType: $documentSubType) {
 		receipts {
@@ -45,7 +47,7 @@ export class CostcoCollector implements RetailCollector {
 		this.watchRequests();
 	}
 
-	/** Every purchase since `since` that isn't in `knownOrderIds`, newest first. Returns are skipped. */
+	/** Returns are skipped. */
 	public async prepare(since: string, knownOrderIds: string[]): Promise<PrepareResult> {
 		const page = await this.waitForOrdersPage();
 		if (page === 'signedOut') return { status: 'failed', reason: 'retailerSignedOut' };
@@ -64,9 +66,8 @@ export class CostcoCollector implements RetailCollector {
 		const newestFirst = [...listed].sort((a, b) => String(b.transactionDateTime).localeCompare(String(a.transactionDateTime)));
 		for (const receipt of newestFirst) {
 			const barcode = receipt.transactionBarcode;
-			const isPurchase = (receipt.total ?? 0) > 0 && (receipt.transactionType ?? 'Sales') === 'Sales';
 			const isSince = String(receipt.transactionDateTime ?? '').slice(0, 10) >= since;
-			if (!barcode || known.has(barcode) || !isPurchase || !isSince || this.receipts.has(barcode)) continue;
+			if (!barcode || known.has(barcode) || !isPurchase(receipt) || !isSince || this.receipts.has(barcode)) continue;
 			this.receipts.set(barcode, receipt);
 			orders.push({ id: barcode, isInStore: true });
 		}
@@ -88,7 +89,6 @@ export class CostcoCollector implements RetailCollector {
 		return results;
 	}
 
-	/** Removes the overlay so the user can deal with whatever stopped the sync. */
 	public hideOverlay(): void {
 		this.overlay.hide();
 	}
@@ -103,23 +103,22 @@ export class CostcoCollector implements RetailCollector {
 		for (let waited = 0; waited < PAGE_WAIT_MS; waited += POLL_MS) {
 			const { hostname, pathname } = this.window.location;
 			if (hostname.startsWith('signin.') || /logon|signin|login/i.test(pathname)) return 'signedOut';
-			if (this.warehouseTab()) return 'ready';
+			if (this.findTab('Warehouse')) return 'ready';
 			await this.pause(POLL_MS);
 		}
 		return 'missing';
 	}
 
-	private warehouseTab(): HTMLElement | undefined {
-		return [...this.window.document.querySelectorAll<HTMLElement>('button, a, [role=tab]')].find(element => element.textContent?.trim() === 'Warehouse');
+	private findTab(name: string): HTMLElement | undefined {
+		return [...this.window.document.querySelectorAll<HTMLElement>('button, a, [role=tab]')].find(element => element.textContent?.trim() === name);
 	}
 
 	/** Opening the Warehouse tab makes the app request receipts. If it's already open, switch to Online and back. */
 	private async ensureTemplate(): Promise<boolean> {
 		if (this.template) return true;
-		const tab = (name: string) => [...this.window.document.querySelectorAll<HTMLElement>('button, a, [role=tab]')].find(element => element.textContent?.trim() === name);
-		tab('Online')?.click();
-		await this.pause(500);
-		this.warehouseTab()?.click();
+		this.findTab('Online')?.click();
+		await this.pause(TAB_SWITCH_WAIT_MS);
+		this.findTab('Warehouse')?.click();
 		for (let waited = 0; waited < CAPTURE_WAIT_MS && !this.template; waited += POLL_MS) await this.pause(POLL_MS);
 		return !!this.template;
 	}
@@ -129,18 +128,18 @@ export class CostcoCollector implements RetailCollector {
 		const template = this.template;
 		if (!template) return Promise.resolve(null);
 		return new Promise(resolve => {
-			const xhr = new this.window.XMLHttpRequest();
-			xhr.open('POST', template.url);
-			for (const [name, value] of Object.entries(template.headers)) if (!name.startsWith('x-kpsdk')) xhr.setRequestHeader(name, value);
-			xhr.onload = () => {
+			const httpRequest = new this.window.XMLHttpRequest();
+			httpRequest.open('POST', template.url);
+			for (const [name, value] of Object.entries(template.headers)) if (!name.startsWith('x-kpsdk')) httpRequest.setRequestHeader(name, value);
+			httpRequest.onload = () => {
 				try {
-					resolve(xhr.status === 200 ? JSON.parse(xhr.responseText) : null);
+					resolve(httpRequest.status === 200 ? JSON.parse(httpRequest.responseText) : null);
 				} catch {
 					resolve(null);
 				}
 			};
-			xhr.onerror = () => resolve(null);
-			xhr.send(JSON.stringify(body));
+			httpRequest.onerror = () => resolve(null);
+			httpRequest.send(JSON.stringify(body));
 		});
 	}
 
@@ -161,7 +160,7 @@ export class CostcoCollector implements RetailCollector {
 		};
 		prototype.send = function (this: XMLHttpRequest, body?: Document | XMLHttpRequestBodyInit | null) {
 			const request = requests.get(this);
-			if (request && !collector.template && typeof body === 'string' && body.includes(OPERATION) && request.headers['costco-x-authorization']) collector.template = request;
+			if (request && !collector.template && typeof body === 'string' && body.includes(RECEIPTS_OPERATION) && request.headers['costco-x-authorization']) collector.template = request;
 			return send.call(this, body);
 		};
 	}
@@ -172,7 +171,7 @@ export class CostcoCollector implements RetailCollector {
 		return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 	}
 
-	private pause(ms: number): Promise<void> {
-		return new Promise(resolve => setTimeout(resolve, ms));
+	private pause(milliseconds: number): Promise<void> {
+		return new Promise(resolve => setTimeout(resolve, milliseconds));
 	}
 }

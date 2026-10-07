@@ -12,6 +12,7 @@ interface PurchaseHistoryPage {
 }
 
 const CAPTURE_WAIT_MS = 8000;
+const POLL_MS = 200;
 const REQUEST_GAP_MS = 800;
 const MAX_PAGES = 20;
 /** Headers Walmart's app sends with every order request. The rest aren't needed. */
@@ -35,10 +36,7 @@ export class WalmartCollector implements RetailCollector {
 		this.watchRequests();
 	}
 
-	/**
-	 * The orders on or after `since` that aren't in `knownOrderIds`, newest first. Orders still being picked or delivered
-	 * don't have a final total yet, so they're skipped and picked up by a later sync.
-	 */
+	/** Orders still being picked or delivered have no final total yet, so they're skipped until a later sync. */
 	public async prepare(since: string, knownOrderIds: string[]): Promise<PrepareResult> {
 		const document = this.window.document;
 		if (/\/account\/login|\/signin/.test(this.window.location.pathname)) return { status: 'failed', reason: 'retailerSignedOut' };
@@ -71,10 +69,7 @@ export class WalmartCollector implements RetailCollector {
 		return { status: 'ok', orders };
 	}
 
-	/**
-	 * Each order as returned by Walmart's `getOrder`, minus the user's name, email and address. `alreadyRead` and `total`
-	 * are counts across the whole sync, for the overlay.
-	 */
+	/** Each order as Walmart's `getOrder` returns it, minus the user's name, email and address. */
 	public async fetchOrders(orders: ListedOrder[], alreadyRead = 0, total = orders.length): Promise<{ order: unknown; isInStore: boolean }[] | null> {
 		const results: { order: unknown; isInStore: boolean }[] = [];
 		for (const listed of orders) {
@@ -89,13 +84,12 @@ export class WalmartCollector implements RetailCollector {
 				this.overlay.hide();
 				return null;
 			}
-			results.push({ order: this.forReceipt(order), isInStore: listed.isInStore });
+			results.push({ order: this.toReceiptOrder(order), isInStore: listed.isInStore });
 			await this.pause();
 		}
 		return results;
 	}
 
-	/** Removes the overlay so the user can deal with whatever stopped the sync. */
 	public hideOverlay(): void {
 		this.overlay.hide();
 	}
@@ -105,7 +99,7 @@ export class WalmartCollector implements RetailCollector {
 		return { status: 'failed', reason };
 	}
 
-	private forReceipt(order: Record<string, unknown>): Record<string, unknown> {
+	private toReceiptOrder(order: Record<string, unknown>): Record<string, unknown> {
 		const { id, displayId, orderDate, groups_2101, priceDetails, paymentMethods } = order;
 		const groups = Array.isArray(groups_2101) ? groups_2101.map((group: { items?: unknown }) => ({ items: group.items })) : [];
 		const payments = Array.isArray(paymentMethods)
@@ -142,7 +136,7 @@ export class WalmartCollector implements RetailCollector {
 		if (this.captured.has(operation)) return true;
 		const startUrl = this.window.location.href;
 		if (!trigger()) return false;
-		for (let waited = 0; waited < CAPTURE_WAIT_MS && !this.captured.has(operation); waited += 200) await new Promise(resolve => setTimeout(resolve, 200));
+		for (let waited = 0; waited < CAPTURE_WAIT_MS && !this.captured.has(operation); waited += POLL_MS) await new Promise(resolve => setTimeout(resolve, POLL_MS));
 		if (this.window.location.href !== startUrl) this.window.history.back();
 		return this.captured.has(operation);
 	}
@@ -154,7 +148,7 @@ export class WalmartCollector implements RetailCollector {
 		return true;
 	}
 
-	private async call(operation: string, change: (variables: Record<string, unknown>) => void): Promise<unknown> {
+	private async call(operation: string, editVariables: (variables: Record<string, unknown>) => void): Promise<unknown> {
 		const template = this.captured.get(operation);
 		if (!template) return null;
 		const url = new URL(template.url);
@@ -164,7 +158,7 @@ export class WalmartCollector implements RetailCollector {
 		} catch {
 			return null;
 		}
-		change(variables);
+		editVariables(variables);
 		url.searchParams.set('variables', JSON.stringify(variables));
 		const response = await this.window.fetch(url.href, { credentials: 'include', headers: this.headers(operation) });
 		if (!response.ok) return null;
@@ -175,7 +169,9 @@ export class WalmartCollector implements RetailCollector {
 		let appVersion = '';
 		try {
 			appVersion = JSON.parse(this.window.document.getElementById('release-metadata')?.textContent ?? '{}').appVersion ?? '';
-		} catch {}
+		} catch {
+			// Without Walmart's release metadata the version header goes out empty, which its API still accepts.
+		}
 		return {
 			accept: 'application/json',
 			'content-type': 'application/json',
@@ -195,7 +191,9 @@ export class WalmartCollector implements RetailCollector {
 				const url = new URL(input instanceof Request ? input.url : String(input), this.window.location.href);
 				const operation = /\/graphql\/([A-Za-z0-9]+)\/[0-9a-f]{40,}/.exec(url.pathname)?.[1];
 				if (operation && !captured.has(operation)) captured.set(operation, { url });
-			} catch {}
+			} catch {
+				// A request that isn't a parseable URL isn't one of Walmart's GraphQL calls; the page's fetch still handles it.
+			}
 			return pageFetch(input, init);
 		};
 	}

@@ -15,7 +15,7 @@ const PLAIN_CHARACTERS: Record<string, string> = { '‘': "'", '’': "'", '“'
 
 interface TextLine {
 	text: string;
-	bold?: boolean;
+	isBold?: boolean;
 }
 
 /** A plain text receipt laid out like a printed store receipt, for Monarch to parse. */
@@ -29,15 +29,15 @@ export class ReceiptPdf {
 
 	/** The receipt as PDF bytes, with as many pages as needed. */
 	public render(receipt: StoreReceipt): Uint8Array<ArrayBuffer> {
-		return this.document(this.lines(receipt));
+		return this.toPdf(this.toTextLines(receipt));
 	}
 
-	private lines(receipt: StoreReceipt): TextLine[] {
+	private toTextLines(receipt: StoreReceipt): TextLine[] {
 		const money = (amount: number) => this.formatter.money(amount);
-		const row = (label: string, amount: number, bold = false): TextLine => ({ text: this.columns(label, money(amount)), bold });
+		const row = (label: string, amount: number, isBold = false): TextLine => ({ text: this.alignColumns(label, money(amount)), isBold });
 		const rule = { text: '-'.repeat(COLUMNS) };
 		return [
-			{ text: receipt.store, bold: true },
+			{ text: receipt.store, isBold: true },
 			{ text: `${receipt.referenceLabel} #${receipt.displayId}` },
 			{ text: `Date: ${receipt.date}` },
 			{ text: receipt.isInStore ? 'In-store purchase' : 'Online order' },
@@ -65,16 +65,16 @@ export class ReceiptPdf {
 			if (last !== undefined && `${last} ${word}`.length <= width) wrapped[wrapped.length - 1] = `${last} ${word}`;
 			else wrapped.push(word.slice(0, width));
 		}
-		return wrapped.map((part, index) => ({ text: index === 0 ? this.columns(prefix + part, amount) : ' '.repeat(prefix.length) + part }));
+		return wrapped.map((part, index) => ({ text: index === 0 ? this.alignColumns(prefix + part, amount) : ' '.repeat(prefix.length) + part }));
 	}
 
-	private columns(label: string, amount: string): string {
+	private alignColumns(label: string, amount: string): string {
 		const room = COLUMNS - amount.length - 1;
 		return `${label.slice(0, room).padEnd(room)} ${amount}`;
 	}
 
 	/** A PDF 1.4 file using the standard Courier fonts, split into pages. */
-	private document(lines: TextLine[]): Uint8Array<ArrayBuffer> {
+	private toPdf(lines: TextLine[]): Uint8Array<ArrayBuffer> {
 		const pages: TextLine[][] = [];
 		for (let start = 0; start < lines.length; start += LINES_PER_PAGE) pages.push(lines.slice(start, start + LINES_PER_PAGE));
 		if (!pages.length) pages.push([]);
@@ -91,7 +91,7 @@ export class ReceiptPdf {
 			const contentId = (pageIds[index] as number) + 1;
 			objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PAGE_WIDTH} ${PAGE_HEIGHT}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${contentId} 0 R >>`);
 			const stream = pageLines
-				.map((line, row) => `BT /${line.bold ? 'F2' : 'F1'} ${FONT_SIZE} Tf ${MARGIN} ${PAGE_HEIGHT - MARGIN - row * LINE_HEIGHT} Td (${this.pdfText(line.text)}) Tj ET`)
+				.map((line, row) => `BT /${line.isBold ? 'F2' : 'F1'} ${FONT_SIZE} Tf ${MARGIN} ${PAGE_HEIGHT - MARGIN - row * LINE_HEIGHT} Td (${this.escapePdfText(line.text)}) Tj ET`)
 				.join('\n');
 			objects.push(`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
 		}
@@ -110,7 +110,7 @@ export class ReceiptPdf {
 	}
 
 	/** Latin-1 only, with PDF's special characters escaped; anything else becomes "?". */
-	private pdfText(text: string): string {
+	private escapePdfText(text: string): string {
 		return [...text]
 			.map(character => PLAIN_CHARACTERS[character] ?? character)
 			.join('')

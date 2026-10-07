@@ -3,6 +3,17 @@ import { join } from 'node:path';
 import { tsPlugin } from '@sveltejs/acorn-typescript';
 import { Parser } from 'acorn';
 
+type AstNode = { type: string; [key: string]: unknown };
+
+const CSS_CLASS_SELECTOR = /\.((?:\\.|[\w-])+)/g;
+const MARKER_CLASSES = /^(group|peer)(\/[\w-]+)?$/;
+const CLASS_TOKEN = /^-?[a-z@[(*!][^\s"'`]*[-:\]][^\s"'`]*$/;
+// biome-ignore format: reads better as one line
+const SINGLE_WORD_UTILITIES = new Set(["flex", "grid", "block", "inline", "hidden", "contents", "relative", "absolute", "fixed", "sticky", "truncate", "grow", "shrink", "border", "rounded", "underline", "italic", "uppercase", "invisible", "visible"]);
+const TS_PARSER = Parser.extend(tsPlugin());
+const TSX_PARSER = Parser.extend(tsPlugin({ jsx: true }));
+const TYPE_KEYS = new Set(['typeAnnotation', 'typeParameters', 'typeArguments', 'returnType']);
+
 async function main(): Promise<void> {
 	const monarchClassNames = await getMonarchClassNames();
 	const missing = getSourceClassNames().difference(monarchClassNames);
@@ -16,7 +27,6 @@ async function main(): Promise<void> {
 	}
 }
 
-const CSS_CLASS_SELECTOR = /\.((?:\\.|[\w-])+)/g;
 async function getMonarchClassNames(): Promise<Set<string>> {
 	const indexHtml = await (await fetch('https://app.monarch.com/')).text();
 	const stylesheetUrls = [...indexHtml.matchAll(/https:\/\/static\.monarch\.com\/static\/css\/[\w.]+\.css/g)].map(match => match[0]);
@@ -31,11 +41,6 @@ async function getMonarchClassNames(): Promise<Set<string>> {
 
 	return classNames;
 }
-
-const MARKER_CLASSES = /^(group|peer)(\/[\w-]+)?$/;
-const CLASS_TOKEN = /^-?[a-z@[(*!][^\s"'`]*[-:\]][^\s"'`]*$/;
-// biome-ignore format: reads better as one line
-const SINGLE_WORD_UTILITIES = new Set(["flex", "grid", "block", "inline", "hidden", "contents", "relative", "absolute", "fixed", "sticky", "truncate", "grow", "shrink", "border", "rounded", "underline", "italic", "uppercase", "invisible", "visible"]);
 
 function getSourceClassNames(): Set<string> {
 	const classNames = new Set<string>();
@@ -52,10 +57,6 @@ function getSourceClassNames(): Set<string> {
 
 	return classNames;
 }
-
-type AstNode = { type: string; [key: string]: unknown };
-const TS_PARSER = Parser.extend(tsPlugin());
-const TSX_PARSER = Parser.extend(tsPlugin({ jsx: true }));
 
 function getClassStrings(path: string): string[] {
 	const parser = path.endsWith('.tsx') ? TSX_PARSER : TS_PARSER;
@@ -90,8 +91,6 @@ function getStrings(node: unknown): string[] {
 	});
 	return strings;
 }
-
-const TYPE_KEYS = new Set(['typeAnnotation', 'typeParameters', 'typeArguments', 'returnType']);
 
 function visit(node: unknown, onNode: (node: AstNode) => boolean | undefined): void {
 	if (Array.isArray(node)) {

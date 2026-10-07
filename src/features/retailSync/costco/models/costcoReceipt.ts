@@ -31,7 +31,7 @@ export type CostcoReceipt = v.InferOutput<typeof CostcoReceiptSchema>;
 const isInstantSaving = (description: string) => description.startsWith('/');
 
 /** A purchase, not a return. Returns refund money instead of charging it. */
-export const isPurchase = (receipt: Pick<CostcoReceipt, 'total' | 'transactionType'>): boolean => receipt.total > 0 && (receipt.transactionType ?? 'Sales') === 'Sales';
+export const isPurchase = (receipt: { total?: number | null; transactionType?: string | null }): boolean => (receipt.total ?? 0) > 0 && (receipt.transactionType ?? 'Sales') === 'Sales';
 
 /** The receipt for a warehouse or gas station purchase. Null for a return, which Wingspan doesn't send. */
 export function receiptFromCostco(receipt: CostcoReceipt): StoreReceipt | null {

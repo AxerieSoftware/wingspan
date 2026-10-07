@@ -32,17 +32,17 @@ test("the header shows checking's net change over the chart's range", async ({ p
 test("the chart shows each day's balance on hover, beside the pointer rather than under it", async ({ page, open }) => {
 	await open({ path: '/cash-flow', waitForRows: false });
 	const chart = card(page).getByRole('img', { name: /^Checking from / });
-	const box = await chart.boundingBox();
-	if (!box) throw new Error('No chart');
+	const chartBox = await chart.boundingBox();
+	if (!chartBox) throw new Error('No chart');
 
 	for (const across of [0.3, 0.95]) {
-		const pointer = { x: box.x + box.width * across, y: box.y + box.height / 2 };
+		const pointer = { x: chartBox.x + chartBox.width * across, y: chartBox.y + chartBox.height / 2 };
 		await page.mouse.move(pointer.x, pointer.y);
 		const tooltip = card(page).locator('[data-theme="dark"]');
 		await expect(tooltip).toContainText(/\w{3} \d{1,2}, \d{4}\s*-?\$[\d,]+\.\d\d/);
-		const tip = await tooltip.boundingBox();
-		if (!tip) throw new Error('No tooltip');
-		expect(pointer.x < tip.x || pointer.x > tip.x + tip.width).toBe(true);
+		const tooltipBox = await tooltip.boundingBox();
+		if (!tooltipBox) throw new Error('No tooltip');
+		expect(pointer.x < tooltipBox.x || pointer.x > tooltipBox.x + tooltipBox.width).toBe(true);
 	}
 });
 

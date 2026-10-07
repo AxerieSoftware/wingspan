@@ -4,7 +4,7 @@ import type { SidebarItem } from '../../../../monarch/pages/sidebar/sidebarPage'
 /** In Monarch's local storage, not the extension's, so the early script can hide items before Monarch's app starts. */
 const STORAGE_KEY = 'wingspanHiddenSidebarItems';
 
-/** Unlike the workspace, it's one choice for every household that signs in to the browser. */
+/** The sidebar items hidden in this browser: unlike the workspace, one choice for every household that signs in. */
 export class HiddenSidebarItems {
 	private readonly hiddenIds: Signal<readonly string[]>;
 	private readonly sidebarItems = signal<readonly SidebarItem[]>([]);

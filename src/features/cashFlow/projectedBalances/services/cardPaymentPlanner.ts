@@ -31,12 +31,9 @@ interface DueDate {
 }
 
 /**
- * Plans what checking can pay each card on each due date while staying at or above the cushion through the payment's
- * cycle: until the card is due again and the next income after that, and through any earlier planned cycle that's
- * still running. Minimums due within the cycle, including the card's next one, are set aside first, so paying extra on
- * an earlier card never costs another card its minimum. What's left goes to the cards in due date order, each up to
- * what it owes. Later due dates are planned from what's left, so a tight month further out lowers those payments, not
- * this one.
+ * Plans what checking pays each card on each due date while keeping the cushion through the payment's cycle, until the
+ * card is due again and the next payday after. Minimums due in the cycle are set aside first, so paying extra on one
+ * card never costs another its minimum.
  */
 export class CardPaymentPlanner {
 	public constructor(private readonly projector: BalanceProjector) {}
@@ -93,9 +90,9 @@ export class CardPaymentPlanner {
 			if (!isInCycle(day.date)) continue;
 			setAside += laterMinimums.filter(later => later.date === day.date).reduce((total, later) => total + later.amount, 0);
 			// On the due date the payment goes out after the day's deposits, so only the end-of-day balance limits it.
-			const low = day.date === due.date ? day.checking : day.lowestChecking;
-			room = Math.min(room, low - cushion);
-			roomAfterMinimums = Math.min(roomAfterMinimums, low - cushion - setAside);
+			const limitingBalance = day.date === due.date ? day.checking : day.lowestChecking;
+			room = Math.min(room, limitingBalance - cushion);
+			roomAfterMinimums = Math.min(roomAfterMinimums, limitingBalance - cushion - setAside);
 		}
 
 		const affordable = Math.max(Math.min(due.minimum ?? 0, room), roomAfterMinimums);

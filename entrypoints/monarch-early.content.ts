@@ -15,7 +15,7 @@ export default defineContentScript({
 		new SidebarPage(document).hideItems(HiddenSidebarItems.read(window.localStorage));
 
 		const householdId = new MonarchSession(window).householdId();
-		const saved = householdId ? new WorkspaceChoice(window.localStorage).read(householdId) : null;
-		if (saved?.isEnabled && saved.entityId) WorkspaceNavigation.applyBeforeMonarchStarts(window, saved.entityId);
+		const savedWorkspace = householdId ? new WorkspaceChoice(window.localStorage).read(householdId) : null;
+		if (savedWorkspace?.isEnabled && savedWorkspace.entityId) WorkspaceNavigation.applyBeforeMonarchStarts(window, savedWorkspace.entityId);
 	}
 });

@@ -56,8 +56,8 @@ export class MonarchClient {
 		}
 		if (response.errors?.length) {
 			// Don't log the messages: an error about a rejected variable can include its value, which is household data.
-			const where = response.errors.map(graphQlError => [graphQlError.path?.join('.') ?? 'request', graphQlError.extensions?.code].filter(Boolean).join(' '));
-			logError(new Error(`${operationName} was refused at ${where.join('; ')}`));
+			const errorLocations = response.errors.map(graphQlError => [graphQlError.path?.join('.') ?? 'request', graphQlError.extensions?.code].filter(Boolean).join(' '));
+			logError(new Error(`${operationName} was refused at ${errorLocations.join('; ')}`));
 			throw new MonarchApiError('Monarch returned an error.', false);
 		}
 		if (!response.data) throw new MonarchApiError('Monarch returned no data.', false);

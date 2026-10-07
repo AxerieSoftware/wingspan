@@ -25,10 +25,8 @@ interface RecurrenceRule {
 }
 
 /**
- * Due dates from recurrences saved as iCalendar rules, for the part of RFC 5545 Wingspan writes: weekly, monthly on one
- * or two days, every so many months, and yearly. Unlike the standard, a day the month doesn't have is clamped to
- * its last day, so the 31st means the last day of every month and Feb 29 becomes Feb 28 in non-leap years. Dates are
- * generated both before and after the start, so a schedule has a history.
+ * Due dates from recurrences saved as iCalendar rules, for the part of RFC 5545 Wingspan writes. Unlike the standard, a
+ * day the month doesn't have is clamped to its last day, and dates before the start are generated too, for history.
  */
 export class RecurrenceCalculator {
 	private readonly rulesByRecurrence = new Map<Recurrence, RecurrenceRule>();
@@ -223,7 +221,9 @@ export class RecurrenceCalculator {
 				.map(Number)
 				.filter(Number.isFinite);
 
-		const unit: ScheduleUnit = parts.get('FREQ') === 'WEEKLY' ? 'week' : parts.get('FREQ') === 'YEARLY' ? 'year' : 'month';
+		let unit: ScheduleUnit = 'month';
+		if (parts.get('FREQ') === 'WEEKLY') unit = 'week';
+		else if (parts.get('FREQ') === 'YEARLY') unit = 'year';
 		const every = Math.max(1, Math.floor(numbersOf('INTERVAL')[0] ?? 1));
 		const count = numbersOf('COUNT')[0] ?? null;
 		// Invalid days like 0 are skipped instead of breaking every date.

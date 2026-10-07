@@ -257,14 +257,16 @@ export class RecurringV2Page {
 	public neighborRowElFor(itemId: string): HTMLElement | undefined {
 		const rowEl = this.wingspanRowElFor(itemId);
 		const siblingEls = [...(rowEl?.parentElement?.children ?? [])].filter((childEl): childEl is HTMLElement => childEl instanceof HTMLElement);
-		const orderOf = (el: HTMLElement) => Number(el.style.getPropertyValue('order')) || 0;
-		const shownOrder = siblingEls.map((el, index) => ({ el, index })).toSorted((a, b) => orderOf(a.el) - orderOf(b.el) || a.index - b.index);
-		const position = shownOrder.findIndex(({ el }) => el === rowEl);
-		const isFocusableRow = (candidate: HTMLElement) =>
-			!candidate.getAttribute(RecurringV2Row.ownRowAttribute)?.startsWith(`${itemId}@`) && candidate.matches('[tabindex], a[href], button') && candidate.getClientRects().length > 0;
-		const after = shownOrder.slice(position + 1).find(({ el }) => isFocusableRow(el));
-		const before = shownOrder.slice(0, Math.max(0, position)).findLast(({ el }) => isFocusableRow(el));
-		return position < 0 ? undefined : (after ?? before)?.el;
+		const orderOf = (siblingEl: HTMLElement) => Number(siblingEl.style.getPropertyValue('order')) || 0;
+		const shownOrder = siblingEls.map((siblingEl, index) => ({ siblingEl, index })).toSorted((first, second) => orderOf(first.siblingEl) - orderOf(second.siblingEl) || first.index - second.index);
+		const position = shownOrder.findIndex(({ siblingEl }) => siblingEl === rowEl);
+		if (position < 0) return undefined;
+
+		const isFocusableRow = (candidateEl: HTMLElement) =>
+			!candidateEl.getAttribute(RecurringV2Row.ownRowAttribute)?.startsWith(`${itemId}@`) && candidateEl.matches('[tabindex], a[href], button') && candidateEl.getClientRects().length > 0;
+		const after = shownOrder.slice(position + 1).find(({ siblingEl }) => isFocusableRow(siblingEl));
+		const before = shownOrder.slice(0, position).findLast(({ siblingEl }) => isFocusableRow(siblingEl));
+		return (after ?? before)?.siblingEl;
 	}
 
 	/** Removes Wingspan's rows, the sections it added and its Statements content. */

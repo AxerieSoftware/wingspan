@@ -14,13 +14,10 @@ const UNPAID_CARRY_MONTHS = 6;
 /** A bill the user adds by hand. It's marked paid when a transaction contains its match text. */
 export class ManualBillKind implements RecurringItemKind {
 	public readonly kind = MANUAL_BILL_KIND;
-	/** Label for the Type field in Add recurring and the Type row in the item's details. */
 	public readonly label = 'Bill';
 	public readonly typeColumnLabel = 'Bill';
-	/** The section its rows go in when Recurring is grouped by type. */
 	public readonly typeSectionName = EXPENSES_SECTION_NAME;
 	public readonly paymentWindow = 'afterDueDate';
-	/** How many months an unpaid bill is carried over before it's dropped. */
 	public readonly unpaidCarryMonths = UNPAID_CARRY_MONTHS;
 	public readonly showsInStatements = false;
 

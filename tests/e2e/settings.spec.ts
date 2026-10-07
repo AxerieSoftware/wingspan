@@ -1,7 +1,8 @@
+import type { Page } from '@playwright/test';
 import { expect, type OpenOptions, test } from './fixtures';
 
-const openSettings = async (page: import('@playwright/test').Page, open: (options?: OpenOptions) => Promise<void>, options: OpenOptions = {}) => {
-	await open({ path: '/settings/display', waitForRows: false, ...options });
+const openSettings = async (page: Page, open: (options?: OpenOptions) => Promise<void>) => {
+	await open({ path: '/settings/display', waitForRows: false });
 	await page.locator('[data-wingspan-card]').getByRole('link', { name: 'General' }).click();
 	await expect(page).toHaveURL(/\/settings\/wingspan/);
 };
@@ -56,7 +57,7 @@ test("unchecking a sidebar item hides it from Monarch's sidebar, from the start 
 	await page.reload();
 	await sidebar.getByRole('link', { name: 'Reports' }).waitFor();
 	// Read as soon as the sidebar renders: the early script hid it before Monarch's app started, so it never shows.
-	expect(await sidebar.locator('a[href="/plan"]').evaluate(linkEl => getComputedStyle(linkEl).display)).toBe('none');
+	expect(await sidebar.locator('a[href="/plan"]').evaluate(link => getComputedStyle(link).display)).toBe('none');
 	await expect(settings.getByRole('checkbox', { name: 'Budget' })).not.toBeChecked();
 
 	await settings.getByRole('checkbox', { name: 'Budget' }).click();

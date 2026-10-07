@@ -13,13 +13,13 @@ export class EntityCashSettings {
 	public constructor(private readonly resolver: CashSettingsResolver) {}
 
 	/** The part's saved settings; a business that hasn't saved any gets empty settings. */
-	public saved(data: WingspanData, entityId: string): SavedCashSettings {
+	public savedFor(data: WingspanData, entityId: string): SavedCashSettings {
 		return entityId === HOUSEHOLD_ENTITY_ID ? data.cashSettings : (data.businessCashSettings[entityId] ?? emptySavedCashSettings());
 	}
 
 	/** Merges the changes into the part's existing settings, so fields from a newer Wingspan aren't lost. */
 	public withSaved(data: WingspanData, entityId: string, changes: SavedCashSettings): WingspanData {
-		const settings = { ...this.saved(data, entityId), ...changes };
+		const settings = { ...this.savedFor(data, entityId), ...changes };
 		return entityId === HOUSEHOLD_ENTITY_ID ? { ...data, cashSettings: settings } : { ...data, businessCashSettings: { ...data.businessCashSettings, [entityId]: settings } };
 	}
 
@@ -29,7 +29,7 @@ export class EntityCashSettings {
 	}
 
 	public forEntity(accounts: readonly Account[], data: WingspanData, entityId: string): CashSettings {
-		return this.resolver.cashSettings(this.accountsOf(accounts, entityId), this.saved(data, entityId));
+		return this.resolver.cashSettings(this.accountsOf(accounts, entityId), this.savedFor(data, entityId));
 	}
 
 	/**

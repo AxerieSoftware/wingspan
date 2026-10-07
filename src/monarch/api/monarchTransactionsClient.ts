@@ -39,6 +39,7 @@ type MonarchTransaction = v.InferOutput<typeof MonarchTransactionSchema>;
 
 const GetTransactionsSchema = v.object({ allTransactions: v.object({ totalCount: v.number(), results: lenientArray('transactions', MonarchTransactionSchema) }) });
 
+/** Reads the household's transactions. */
 export class MonarchTransactionsClient {
 	public constructor(private readonly client: MonarchClient) {}
 

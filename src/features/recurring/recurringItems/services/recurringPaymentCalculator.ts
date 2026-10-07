@@ -111,7 +111,7 @@ export class RecurringPaymentCalculator {
 					const transaction = history.find(point => point.dueDate === dueDate)?.transaction ?? null;
 					if (!transaction && this.isBeforeStart(item, dueDate)) return [];
 					// A Monarch card's later statement includes this one, same as in the ledger: once it's paid, this one is settled.
-					const isSettledByLater = this.kinds.of(item).linkedAccountId(item) !== undefined && history.some(point => point.paid && point.dueDate > dueDate);
+					const isSettledByLater = this.kinds.isLinked(item) && history.some(point => point.paid && point.dueDate > dueDate);
 					if (!transaction && isSettledByLater) return [this.occurrence(item, dueDate, null, 0, false, true)];
 					return [this.occurrence(item, dueDate, transaction, this.kinds.of(item).occurrenceAmount(item, transaction, owedByAccountId), false)];
 				})
@@ -129,11 +129,7 @@ export class RecurringPaymentCalculator {
 		return this.recurrence.dueDates(item.recurrence, fromDate, toDate);
 	}
 
-	/**
-	 * Each payment settles at most one occurrence. First each occurrence is matched to a payment in its own cycle, so an
-	 * early payment counts for the due date it was meant for. Then unpaid bills are matched to later payments, oldest due
-	 * date first, so a late payment goes to the oldest debt.
-	 */
+	/** Each payment settles at most one occurrence. */
 	private allocate(recurringData: RecurringData, candidatesByItemId: Map<string, Transaction[]>, owedByAccountId: BalancesByAccountId, transactions: Transaction[]): Occurrence[] {
 		const currentMonth = this.calendar.currentMonth();
 		const monthStart = `${currentMonth}-01`;
@@ -168,7 +164,7 @@ export class RecurringPaymentCalculator {
 		// A Monarch card's later statement includes the earlier ones, so paying it also settles the ones before it.
 		const latestPaidByLinkedItem = new Map<string, string>();
 		for (const [index, { item, dueDate }] of dueDates.entries()) {
-			if (matches[index] && this.kinds.of(item).linkedAccountId(item) !== undefined && dueDate > (latestPaidByLinkedItem.get(item.id) ?? '')) latestPaidByLinkedItem.set(item.id, dueDate);
+			if (matches[index] && this.kinds.isLinked(item) && dueDate > (latestPaidByLinkedItem.get(item.id) ?? '')) latestPaidByLinkedItem.set(item.id, dueDate);
 		}
 		const isSettledByLater = (item: RecurringItem, dueDate: string) => dueDate < (latestPaidByLinkedItem.get(item.id) ?? '');
 
@@ -188,7 +184,7 @@ export class RecurringPaymentCalculator {
 	/** Extends past the end of the month only as far as an early payment could already have been made. For a Monarch card, that's back to when its statement closed. */
 	private allocatedThrough(item: RecurringItem): string {
 		const monthEnd = this.calendar.lastOfMonth(this.calendar.currentMonth());
-		const earlyDays = this.kinds.of(item).linkedAccountId(item) !== undefined ? PAID_STATEMENT_CLOSE_DAYS_BEFORE_DUE : EARLY_PAYMENT_DAYS;
+		const earlyDays = this.kinds.isLinked(item) ? PAID_STATEMENT_CLOSE_DAYS_BEFORE_DUE : EARLY_PAYMENT_DAYS;
 		const earlyPaidThrough = this.calendar.addDays(this.calendar.today(), earlyDays);
 		return earlyPaidThrough > monthEnd ? earlyPaidThrough : monthEnd;
 	}
@@ -203,7 +199,7 @@ export class RecurringPaymentCalculator {
 	 * close, calculated back from today's balance through everything posted since, was $0.
 	 */
 	private closedOwingNothing(item: RecurringItem, dueDate: string, owedByAccountId: BalancesByAccountId, transactions: Transaction[]): boolean {
-		const accountId = this.kinds.of(item).linkedAccountId(item);
+		const accountId = this.kinds.linkedAccountId(item);
 		const owedToday = accountId === undefined ? undefined : owedByAccountId[accountId];
 		if (owedToday === undefined || dueDate > this.calendar.today()) return false;
 		const closeDate = this.calendar.addDays(dueDate, -STATEMENT_CLOSE_DAYS_BEFORE_DUE);
@@ -216,7 +212,7 @@ export class RecurringPaymentCalculator {
 
 	/** A card linked to an account Monarch shows as owing nothing. If the account has no balance, it isn't assumed to owe nothing. */
 	private owesNothing(item: RecurringItem, owedByAccountId: BalancesByAccountId): boolean {
-		const accountId = this.kinds.of(item).linkedAccountId(item);
+		const accountId = this.kinds.linkedAccountId(item);
 		const owed = accountId === undefined ? undefined : owedByAccountId[accountId];
 		return owed !== undefined && owed < CENT_TOLERANCE;
 	}
@@ -227,7 +223,7 @@ export class RecurringPaymentCalculator {
 	 */
 	private candidatesByItemId(items: RecurringItem[], transactions: Transaction[]): Map<string, Transaction[]> {
 		const candidatesByItemId = new Map(items.map(item => [item.id, this.matchingTransactions(item, transactions)]));
-		const linkedItems = items.filter(item => this.kinds.of(item).linkedAccountId(item) !== undefined);
+		const linkedItems = items.filter(item => this.kinds.isLinked(item));
 		const otherSideIds = this.transferOtherSides(
 			linkedItems.flatMap(item => candidatesByItemId.get(item.id) ?? []),
 			transactions
@@ -340,7 +336,7 @@ export class RecurringPaymentCalculator {
 		const gapDays = previousDueDate ? this.calendar.daysBetween(previousDueDate, dueDate) : Number.POSITIVE_INFINITY;
 		// A Monarch card's payment is for the statement that closed before it, which can be four weeks before the due date.
 		// The window opens after the latest typical close date, and a late payment for the previous statement is settled with this one.
-		const earlyDays = this.kinds.of(item).linkedAccountId(item) !== undefined ? Math.min(PAID_STATEMENT_CLOSE_DAYS_BEFORE_DUE - 1, gapDays - 1) : Math.min(EARLY_PAYMENT_DAYS, Math.floor(gapDays / 2));
+		const earlyDays = this.kinds.isLinked(item) ? Math.min(PAID_STATEMENT_CLOSE_DAYS_BEFORE_DUE - 1, gapDays - 1) : Math.min(EARLY_PAYMENT_DAYS, Math.floor(gapDays / 2));
 		return this.calendar.addDays(dueDate, -earlyDays);
 	}
 

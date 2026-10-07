@@ -7,7 +7,7 @@ const STALE_SELECTOR = STALE_PARTS.map(attribute => `[${attribute}]`).join(',');
 
 /** What the page shows after Wingspan is updated or disabled while it's open: Wingspan's UI grayed out and a toast to reload. */
 export class StalePage {
-	private styleEl: HTMLStyleElement | null = null;
+	private styleElement: HTMLStyleElement | null = null;
 
 	public constructor(
 		private readonly document: Document,
@@ -16,20 +16,22 @@ export class StalePage {
 
 	/** Grays out and disables Wingspan's UI, closes its open popups and offers a reload. Calling it again does nothing. */
 	public show(): void {
-		if (this.styleEl) return;
+		if (this.styleElement) return;
 
-		this.styleEl = this.document.createElement('style');
-		this.styleEl.setAttribute(WingspanAttribute.stale, '');
-		this.styleEl.textContent = `${STALE_SELECTOR} { opacity: 0.45 !important; filter: grayscale(1) !important; pointer-events: none !important; user-select: none !important; }`;
-		this.document.head.append(this.styleEl);
-		for (const staleEl of this.document.querySelectorAll<HTMLElement>(STALE_SELECTOR)) staleEl.inert = true;
+		this.styleElement = this.document.createElement('style');
+		this.styleElement.setAttribute(WingspanAttribute.stale, '');
+		this.styleElement.textContent = `${STALE_SELECTOR} { opacity: 0.45 !important; filter: grayscale(1) !important; pointer-events: none !important; user-select: none !important; }`;
+		this.document.head.append(this.styleElement);
+		for (const staleElement of this.document.querySelectorAll<HTMLElement>(STALE_SELECTOR)) staleElement.inert = true;
 		Layer.closeAll();
 		this.toastService.showLast(STALE_MESSAGE, { label: 'Reload', onClick: () => this.document.location.reload() });
 	}
 
 	public hide(): void {
-		if (this.styleEl) for (const staleEl of this.document.querySelectorAll<HTMLElement>(STALE_SELECTOR)) staleEl.inert = false;
-		this.styleEl?.remove();
-		this.styleEl = null;
+		if (!this.styleElement) return;
+
+		for (const staleElement of this.document.querySelectorAll<HTMLElement>(STALE_SELECTOR)) staleElement.inert = false;
+		this.styleElement.remove();
+		this.styleElement = null;
 	}
 }

@@ -58,7 +58,13 @@ export function WorkspaceSwitcher({ businesses: businessesSignal, workspace: wor
 								{options.map(({ entityId, name, business }) => {
 									const isCurrent = entityId === workspace;
 									return (
-										<BaseMenu.Item key={entityId} className={classNames(menuSlots.item(), 'gap-xs')} onClick={() => isCurrent || onChoose(entityId)}>
+										<BaseMenu.Item
+											key={entityId}
+											className={classNames(menuSlots.item(), 'gap-xs')}
+											onClick={() => {
+												if (!isCurrent) onChoose(entityId);
+											}}
+										>
 											<BusinessEntityLogo business={business} />
 											<span className={classNames(menuSlots.itemLabel(), isCurrent ? 'font-medium' : undefined)}>{name}</span>
 											{isCurrent ? <CheckIcon /> : null}

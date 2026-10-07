@@ -54,10 +54,12 @@ export interface ApiBehavior {
 	failure: 'network' | number | null;
 }
 
+/** What the mocked API received during a test. */
 export class ApiLog {
 	public readonly operations: string[] = [];
 	/** Files uploaded to Monarch's REST endpoints, by path and file name. */
 	public readonly uploads: { path: string; fileName: string; isPdf: boolean }[] = [];
+	/** Wingspan's requests still in flight. */
 	public pending = 0;
 }
 
@@ -114,9 +116,7 @@ export const test = base.extend<E2eFixtures>({
 	},
 	open: async ({ page, household, apiLog }, use) => {
 		await use(async ({ path = '/recurring-v2/monthly', withSampleItems = true, waitForRows = true } = {}) => {
-			const items: Record<string, unknown> = {};
-			if (withSampleItems) items[storageKey('wingspan')] = { version: 1, etag: 'sample', value: household.sampleItems() };
-			if (Object.keys(items).length) await seedExtensionStorage(page, items);
+			if (withSampleItems) await seedSampleItems(page, household);
 			await page.goto(`${APP}${path}`);
 			if (waitForRows) await page.locator('[data-wingspan-row]').first().waitFor({ timeout: 30_000 });
 			await settled(apiLog);
@@ -136,24 +136,25 @@ export async function seedExtensionStorage(page: Page, items: Record<string, unk
 	await inContentScript(page, `chrome.storage.local.clear().then(() => chrome.storage.local.set(${JSON.stringify(items)}))`);
 }
 
+/** Seeds Wingspan's storage with the household's sample items. */
 export async function seedSampleItems(page: Page, household: Household) {
 	await seedExtensionStorage(page, { [storageKey('wingspan')]: { version: 1, etag: 'sample', value: household.sampleItems() } });
 }
 
 /** Runs an expression in Wingspan's content-script world, which the page can't reach. */
 export async function inContentScript(page: Page, expression: string): Promise<unknown> {
-	const cdp = await page.context().newCDPSession(page);
+	const devToolsSession = await page.context().newCDPSession(page);
 	const contextIds: number[] = [];
-	cdp.on('Runtime.executionContextCreated', ({ context }) => {
+	devToolsSession.on('Runtime.executionContextCreated', ({ context }) => {
 		if (context.name === EXTENSION_NAME) contextIds.push(context.id);
 	});
-	await cdp.send('Runtime.enable');
+	await devToolsSession.send('Runtime.enable');
 	for (let attempt = 0; attempt < 50 && !contextIds.length; attempt++) await new Promise(resolve => setTimeout(resolve, 100));
 	const contextId = contextIds.at(-1);
 	if (contextId === undefined) throw new Error("Wingspan's content script isn't running on this page");
 
-	const { result, exceptionDetails } = await cdp.send('Runtime.evaluate', { expression, contextId, awaitPromise: true, returnByValue: true });
-	await cdp.detach();
+	const { result, exceptionDetails } = await devToolsSession.send('Runtime.evaluate', { expression, contextId, awaitPromise: true, returnByValue: true });
+	await devToolsSession.detach();
 	if (exceptionDetails) throw new Error(exceptionDetails.exception?.description ?? exceptionDetails.text);
 	return result.value;
 }
@@ -293,9 +294,9 @@ async function snapshotFile(href: string): Promise<string | null> {
 
 /** Parallel workers fill the snapshot at once, so a file must never be seen half-written. */
 function writeAtomically(file: string, data: string | Buffer) {
-	const temp = `${file}.${process.pid}.tmp`;
-	fs.writeFileSync(temp, data);
-	fs.renameSync(temp, file);
+	const temporaryFile = `${file}.${process.pid}.tmp`;
+	fs.writeFileSync(temporaryFile, data);
+	fs.renameSync(temporaryFile, file);
 }
 
 /** Monarch's main bundle ships its GraphQL schema as introspection JSON. */

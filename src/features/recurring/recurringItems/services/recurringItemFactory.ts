@@ -8,6 +8,7 @@ import type { RecurrenceCalculator } from './recurrenceCalculator';
 
 const DEFAULT_MONTH_DAY = 1;
 
+/** Creates drafts for the editor and turns them back into saved items. */
 export class RecurringItemFactory {
 	public constructor(
 		private readonly calendar: Calendar,
@@ -36,9 +37,8 @@ export class RecurringItemFactory {
 	}
 
 	/**
-	 * `editedItem` is the item before this edit. Moving only the due day or next due date doesn't clear what was due up
-	 * to today; those stay owed on the new day. Changing the frequency, amount or match rule resets the item, since old
-	 * due dates can't be checked against the new settings.
+	 * `editedItem` is the item before this edit. Moving only the due date keeps what was due up to today owed; changing
+	 * the frequency, amount or match rule resets the item, since old due dates can't be checked against the new settings.
 	 */
 	public itemFrom(draft: RecurringItemDraft, editedItem?: RecurringItem): RecurringItem {
 		const { owedSpans: _, ...item } = draft.item;

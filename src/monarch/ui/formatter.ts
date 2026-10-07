@@ -74,7 +74,10 @@ export class Formatter {
 	/** When data was read: the time if today, otherwise the date. */
 	public asOf(timestamp: number): string {
 		const date = new Date(timestamp);
-		const isoDate = [date.getFullYear(), date.getMonth() + 1, date.getDate()].map((part, index) => String(part).padStart(index ? 2 : 4, '0')).join('-');
+		const year = String(date.getFullYear()).padStart(4, '0');
+		const month = String(date.getMonth() + 1).padStart(2, '0');
+		const day = String(date.getDate()).padStart(2, '0');
+		const isoDate = `${year}-${month}-${day}`;
 		return isoDate === this.calendar.today() ? this.timeFormat.format(date) : this.nearDate(isoDate);
 	}
 

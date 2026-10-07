@@ -1,6 +1,7 @@
+import type { Page } from '@playwright/test';
 import { expect, itemRow, test } from './fixtures';
 
-const summary = (page: import('@playwright/test').Page) => page.locator('[data-external-id="recurring-summary-sidebar"]');
+const summary = (page: Page) => page.locator('[data-external-id="recurring-summary-sidebar"]');
 
 test("the summary's Statements line shows how much of this month's statements is paid and how much is left, like Expenses", async ({ page, open }) => {
 	await open();
@@ -38,13 +39,13 @@ test('cash accounts, cards and the minimum balance are set in a modal', async ({
 	await open();
 	await page.getByRole('button', { name: 'Edit cash and cards', exact: true }).click();
 	const dialog = page.getByRole('dialog', { name: 'Cash and cards' });
-	const role = (name: string) => dialog.getByRole('combobox', { name: `${name} counts as` });
-	await expect(role('Everyday Checking')).toHaveText('Checking');
-	await expect(role('High-Yield Savings')).toHaveText('Reserve');
+	const countsAs = (name: string) => dialog.getByRole('combobox', { name: `${name} counts as` });
+	await expect(countsAs('Everyday Checking')).toHaveText('Checking');
+	await expect(countsAs('High-Yield Savings')).toHaveText('Reserve');
 	await expect(dialog.getByRole('switch', { name: 'Rewards Card (...1234)' })).toHaveAttribute('aria-checked', 'true');
 
 	await dialog.getByRole('textbox', { name: 'Always keep' }).fill('2500');
-	await role('High-Yield Savings').click();
+	await countsAs('High-Yield Savings').click();
 	await page.getByRole('option', { name: 'Not counted' }).click();
 	await dialog.getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(dialog).toBeHidden();
@@ -99,10 +100,12 @@ test("a card without a credit limit, APR or minimum payment in Monarch is flagge
 	await expect(cards.getByRole('button', { name: /^No / })).toHaveCount(1);
 });
 
-test('only shows for the current month', async ({ page, open }) => {
+test('the free cash editor shows only for the current month', async ({ page, open }) => {
 	await open();
+	const editButton = summary(page).getByRole('button', { name: 'Edit cash and cards', exact: true });
+	await expect(editButton).toBeVisible();
 	await page.getByRole('button', { name: 'Next month' }).click();
-	await expect(page.getByRole('button', { name: 'Edit checking accounts and amount kept' })).toHaveCount(0);
+	await expect(editButton).toHaveCount(0);
 });
 
 test('keyboard focus stays in the cash and cards dialog', async ({ page, open }) => {
@@ -113,7 +116,7 @@ test('keyboard focus stays in the cash and cards dialog', async ({ page, open })
 	for (let press = 0; press < 40; press++) {
 		await page.keyboard.press('Tab');
 		// Base UI's focus guards sit just outside the popup and send focus back in.
-		expect(await dialog.evaluate(dialogEl => dialogEl.contains(document.activeElement) || document.activeElement?.hasAttribute('data-base-ui-focus-guard'))).toBe(true);
+		expect(await dialog.evaluate(dialogElement => dialogElement.contains(document.activeElement) || document.activeElement?.hasAttribute('data-base-ui-focus-guard'))).toBe(true);
 	}
 });
 

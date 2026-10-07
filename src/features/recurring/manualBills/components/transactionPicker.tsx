@@ -101,6 +101,64 @@ export function TransactionPicker({ transactions, status, accounts, pickedIds, m
 		onChange(nextPickedIds);
 	};
 
+	let emptyMessage = 'No transactions from this merchant in the data Wingspan has loaded.';
+	if (!merchantName) emptyMessage = 'Choose a merchant to see its transactions.';
+	else if (hasFilters) emptyMessage = 'No transactions match these filters.';
+
+	let listContent: ReactNode;
+	if (status === 'loading') {
+		listContent = (
+			<div className="flex h-full items-center justify-center">
+				<Spinner size="lg" />
+			</div>
+		);
+	} else if (status === 'failed') {
+		listContent = (
+			<div className="flex h-full items-center justify-center px-xl text-center">
+				<span data-mds="text" className="text-sm font-book text-content-secondary">
+					Couldn't load transactions from Monarch. Close this and try again in a moment.
+				</span>
+			</div>
+		);
+	} else if (shownTransactions.length) {
+		listContent = (
+			<ul className="m-0 h-full list-none overflow-y-auto overscroll-contain p-0">
+				{[...transactionsByMonth].map(([month, monthTransactions]) => (
+					<Fragment key={month}>
+						<li className="sticky top-0 z-1 m-0 list-none bg-background-primary-hover px-md py-2xs">
+							<span data-mds="text" className="text-xs font-medium text-content-secondary">
+								{formatter.longMonthYear(`${month}-01`)}
+							</span>
+						</li>
+						{monthTransactions.map(transaction => (
+							<li key={transaction.id} className="m-0 list-none">
+								<TransactionRow
+									transaction={transaction}
+									account={accountsById.get(transaction.accountId ?? '')}
+									isPicked={pickedIds.has(transaction.id)}
+									services={services}
+									onToggle={isPicked => togglePicked(transaction.id, isPicked)}
+								/>
+							</li>
+						))}
+					</Fragment>
+				))}
+				{filteredTransactions.length > shownTransactions.length ? (
+					<li className="list-none px-default py-sm text-xs text-content-secondary">{`The latest ${shownTransactions.length} of ${filteredTransactions.length}. Filter by amount, account or category to find older ones.`}</li>
+				) : null}
+				{matchCard ? <li className="h-28 shrink-0 list-none" aria-hidden="true" /> : null}
+			</ul>
+		);
+	} else {
+		listContent = (
+			<div className={`flex h-full items-center justify-center px-xl text-center ${merchantName ? '' : 'bg-background-secondary'}`}>
+				<span data-mds="text" className="text-sm font-book text-content-secondary">
+					{emptyMessage}
+				</span>
+			</div>
+		);
+	}
+
 	return (
 		<div className="flex flex-col gap-md">
 			<div className="relative flex flex-col overflow-hidden rounded-md border border-border-primary h-[min(430px,calc(100dvh-18rem))]">
@@ -141,54 +199,7 @@ export function TransactionPicker({ transactions, status, accounts, pickedIds, m
 					/>
 				</div>
 				<div className="relative isolate min-h-0 flex-1">
-					{status === 'loading' ? (
-						<div className="flex h-full items-center justify-center">
-							<Spinner size="lg" />
-						</div>
-					) : status === 'failed' ? (
-						<div className="flex h-full items-center justify-center px-xl text-center">
-							<span data-mds="text" className="text-sm font-book text-content-secondary">
-								Couldn't load transactions from Monarch. Close this and try again in a moment.
-							</span>
-						</div>
-					) : shownTransactions.length ? (
-						<ul className="m-0 h-full list-none overflow-y-auto overscroll-contain p-0">
-							{[...transactionsByMonth].map(([month, monthTransactions]) => (
-								<Fragment key={month}>
-									<li className="sticky top-0 z-1 m-0 list-none bg-background-primary-hover px-md py-2xs">
-										<span data-mds="text" className="text-xs font-medium text-content-secondary">
-											{formatter.longMonthYear(`${month}-01`)}
-										</span>
-									</li>
-									{monthTransactions.map(transaction => (
-										<li key={transaction.id} className="m-0 list-none">
-											<TransactionRow
-												transaction={transaction}
-												account={accountsById.get(transaction.accountId ?? '')}
-												isPicked={pickedIds.has(transaction.id)}
-												services={services}
-												onToggle={isPicked => togglePicked(transaction.id, isPicked)}
-											/>
-										</li>
-									))}
-								</Fragment>
-							))}
-							{filteredTransactions.length > shownTransactions.length ? (
-								<li className="list-none px-default py-sm text-xs text-content-secondary">{`The latest ${shownTransactions.length} of ${filteredTransactions.length}. Filter by amount, account or category to find older ones.`}</li>
-							) : null}
-							{matchCard ? <li className="h-28 shrink-0 list-none" aria-hidden="true" /> : null}
-						</ul>
-					) : (
-						<div className={`flex h-full items-center justify-center px-xl text-center ${merchantName ? '' : 'bg-background-secondary'}`}>
-							<span data-mds="text" className="text-sm font-book text-content-secondary">
-								{!merchantName
-									? 'Choose a merchant to see its transactions.'
-									: hasFilters
-										? 'No transactions match these filters.'
-										: 'No transactions from this merchant in the data Wingspan has loaded.'}
-							</span>
-						</div>
-					)}
+					{listContent}
 					{matchCard}
 				</div>
 			</div>

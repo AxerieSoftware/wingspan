@@ -4,6 +4,7 @@ import type { RecurringItemKindRegistry } from '../../recurring/recurringItems/k
 import type { RecurringItem } from '../../recurring/recurringItems/models/recurringItem';
 import { type EntityScope, entityIdOf } from '../models/entityScope';
 
+/** Membership checks for one scope, against a snapshot of Monarch's accounts. */
 export interface ScopedMembership {
 	/** Items with no account, or an account Monarch no longer has, belong to Household. */
 	includesAccount(accountId: string | undefined): boolean;
@@ -19,7 +20,7 @@ export class EntityMembership {
 
 	/** An item belongs to the account its money moves through: the card for a card payment, otherwise the account it's paid from. */
 	public itemAccountId(item: RecurringItem): string | undefined {
-		const linkedAccountId = this.kinds.supports(item) ? this.kinds.of(item).linkedAccountId(item) : undefined;
+		const linkedAccountId = this.kinds.supports(item) ? this.kinds.linkedAccountId(item) : undefined;
 		return linkedAccountId ?? item.matchRule?.accountId;
 	}
 

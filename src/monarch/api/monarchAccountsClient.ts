@@ -1,9 +1,9 @@
 import * as v from 'valibot';
-import { logError } from '../../common/log';
 import type { Account, AccountNotes, AccountSummary, CreateManualAccountInput, UpdateAccountInput } from './models/account';
 import type { BusinessEntity } from './models/businessEntity';
 import { MonarchApiError } from './monarchApiError';
 import type { MonarchClient } from './monarchClient';
+import { ensureMutationSucceeded, MutationPayloadSchema, type MutationRejection } from './mutationPayload';
 
 const GET_ACCOUNT_SUMMARIES_QUERY = `
 	query wingspan_GetAccountSummaries {
@@ -57,8 +57,7 @@ const DELETE_ACCOUNT_MUTATION = `
 	}
 `;
 
-const MutationErrorsSchema = v.nullish(v.object({ message: v.nullish(v.string()) }));
-const MutationPayloadSchema = <TEntries extends v.ObjectEntries>(entries: TEntries) => v.nullish(v.object({ ...entries, errors: MutationErrorsSchema }));
+const ACCOUNT_CHANGE_REJECTED: MutationRejection = { logMessage: "Monarch rejected a change to Wingspan's account.", userMessage: "Monarch couldn't save the change." };
 
 const AccountSummarySchema = v.object({ id: v.string(), displayName: v.string(), isHidden: v.boolean(), type: v.object({ name: v.string() }) });
 
@@ -126,7 +125,7 @@ export class MonarchAccountsClient {
 	/** Returns the new account's id. */
 	public async createManualAccount(input: CreateManualAccountInput): Promise<string> {
 		const { createManualAccount } = await this.client.request('wingspan_CreateManualAccount', CREATE_MANUAL_ACCOUNT_MUTATION, CreateManualAccountSchema, { input });
-		this.ensureSucceeded(createManualAccount);
+		ensureMutationSucceeded(createManualAccount, ACCOUNT_CHANGE_REJECTED);
 
 		const accountId = createManualAccount?.account?.id;
 		if (!accountId) throw new MonarchApiError("Monarch didn't return the new account.", false);
@@ -135,21 +134,13 @@ export class MonarchAccountsClient {
 
 	public async updateAccount(input: UpdateAccountInput): Promise<void> {
 		const { updateAccount } = await this.client.request('wingspan_UpdateAccount', UPDATE_ACCOUNT_MUTATION, UpdateAccountSchema, { input });
-		this.ensureSucceeded(updateAccount);
+		ensureMutationSucceeded(updateAccount, ACCOUNT_CHANGE_REJECTED);
 	}
 
 	/** Throws unless Monarch says the account is deleted. */
 	public async deleteAccount(accountId: string): Promise<void> {
 		const { deleteAccount } = await this.client.request('wingspan_DeleteAccount', DELETE_ACCOUNT_MUTATION, DeleteAccountSchema, { id: accountId });
-		this.ensureSucceeded(deleteAccount);
+		ensureMutationSucceeded(deleteAccount, ACCOUNT_CHANGE_REJECTED);
 		if (deleteAccount?.deleted === false) throw new MonarchApiError("Monarch didn't delete the account.", false);
-	}
-
-	/** Any error means the change failed, whether or not it has a message. */
-	private ensureSucceeded(payload: { errors?: { message?: string | null } | null } | null | undefined): void {
-		if (!payload?.errors) return;
-		// Monarch's error message isn't logged, since it can include the household data that was sent.
-		logError(new Error("Monarch rejected a change to Wingspan's account."));
-		throw new MonarchApiError("Monarch couldn't save the change.", false);
 	}
 }

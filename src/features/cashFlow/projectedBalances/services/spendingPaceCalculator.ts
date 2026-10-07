@@ -12,11 +12,8 @@ const RECURRING_AMOUNT_TOLERANCE = 0.1;
 const RECURRING_DATE_TOLERANCE_DAYS = 7;
 
 /**
- * Everyday spending per month, as the median of recent completed months, by account. With no completed month yet there's
- * no pace, so the projection leaves everyday spending out until there is one.
- * Recurring items from both Monarch and Wingspan are left out, since they're projected on their own dates, and so are
- * interest charges, since the projection calculates interest on card balances itself.
- * Refunds net against the spending.
+ * Everyday spending per month by account: the median of recent completed months, with refunds netted in. Recurring
+ * payments and interest charges are left out, since the projection adds them on its own.
  */
 export class SpendingPaceCalculator {
 	public constructor(private readonly calendar: Calendar) {}

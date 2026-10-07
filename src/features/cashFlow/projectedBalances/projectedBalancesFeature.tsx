@@ -63,7 +63,7 @@ export class ProjectedBalancesFeature implements WingspanFeature {
 		void this.monarchData.load();
 		// Load goals once per visit and month, since sync runs on every page change.
 		if (this.goalsMonth !== this.calendar.currentMonth() && Date.now() >= this.goalsRetryAt) void this.loadGoals();
-		this.page.showSection({ render: sectionEl => this.mountSection(sectionEl) });
+		this.page.showSection({ render: sectionElement => this.mountSection(sectionElement) });
 	}
 
 	public [Symbol.dispose](): void {
@@ -84,8 +84,8 @@ export class ProjectedBalancesFeature implements WingspanFeature {
 		}
 	}
 
-	private mountSection(sectionEl: HTMLElement): () => void {
-		this.sectionIsland = new Island(sectionEl);
+	private mountSection(sectionElement: HTMLElement): () => void {
+		this.sectionIsland = new Island(sectionElement);
 		this.renderSection();
 		return () => {
 			this.sectionIsland?.unmount();
@@ -104,12 +104,7 @@ export class ProjectedBalancesFeature implements WingspanFeature {
 			this.goalsRetryAt = 0;
 			if (this.goalsMonth === null) void this.loadGoals();
 		};
-		const unavailableMessage =
-			state.status !== 'unavailable'
-				? null
-				: state.missing === 'monarch'
-					? "Couldn't load from Monarch, so there's nothing to project."
-					: "Couldn't load Wingspan's saved items and settings, so there's nothing to project.";
+		const unavailableMessage = state.status === 'unavailable' ? this.unavailableMessage(state.missing) : null;
 		const projection = isReady ? state.projection : null;
 		// Monarch's goals belong to the household, so they only come out of free cash when the household's accounts are included.
 		const isHouseholdShown = !isReady || state.includesHousehold;
@@ -126,5 +121,10 @@ export class ProjectedBalancesFeature implements WingspanFeature {
 				stale={isReady && state.staleAsOf !== null ? { message: `Couldn't refresh from Monarch, so this is as of ${this.formatter.asOf(state.staleAsOf)}.`, onRetry: retry } : undefined}
 			/>
 		);
+	}
+
+	private unavailableMessage(missing: 'monarch' | 'wingspan'): string {
+		if (missing === 'monarch') return "Couldn't load from Monarch, so there's nothing to project.";
+		return "Couldn't load Wingspan's saved items and settings, so there's nothing to project.";
 	}
 }

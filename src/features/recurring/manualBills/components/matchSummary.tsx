@@ -11,6 +11,7 @@ const CHART_HEIGHT = 36;
 const STUB_HEIGHT = 2;
 const MIN_BAR_HEIGHT = 6;
 const BAR_CLASS_NAMES: Record<ChartBarKind, string> = { matched: 'bg-chart-event-border-gray', expected: 'bg-chart-fill-orange', projected: '', stub: 'bg-chart-axis' };
+const BAR_WORDS = { matched: 'paid', expected: 'next expected', projected: 'expected' } as const;
 const PROJECTED_FILL =
 	'repeating-linear-gradient(45deg, var(--color-chart-event-background-orange) 0px, var(--color-chart-event-background-orange) 2px, var(--color-chart-event-border-orange) 2px, var(--color-chart-event-border-orange) 4px)';
 
@@ -60,7 +61,11 @@ export function MatchSummary({ draft, pickedTransactions, services }: MatchSumma
 					.at(-1) ?? `${month}-01`;
 			return { month, kind: 'matched', amount, anchorDate };
 		}
-		const dueDate = month >= currentMonth ? recurrenceCalculator.dueDates(recurrence, month === currentMonth ? today : `${month}-01`, calendar.lastOfMonth(month))[0] : undefined;
+		let dueDate: string | undefined;
+		if (month >= currentMonth) {
+			const fromDate = month === currentMonth ? today : `${month}-01`;
+			dueDate = recurrenceCalculator.dueDates(recurrence, fromDate, calendar.lastOfMonth(month))[0];
+		}
 		return dueDate ? { month, kind: 'projected', amount: item.amount, anchorDate: dueDate } : { month, kind: 'stub', amount: 0, anchorDate: `${month}-01` };
 	});
 	const firstProjectedBar = bars.find(bar => bar.kind === 'projected');
@@ -85,8 +90,6 @@ export function MatchSummary({ draft, pickedTransactions, services }: MatchSumma
 		</div>
 	);
 }
-
-const BAR_WORDS = { matched: 'paid', expected: 'next expected', projected: 'expected' } as const;
 
 function DetectionChart({ bars, services }: DetectionChartProps) {
 	const { formatter } = services;

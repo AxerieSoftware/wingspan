@@ -1,10 +1,9 @@
 import * as v from 'valibot';
 import { logError } from '../../common/log';
 import type { MonarchAccountsClient } from '../../monarch/api/monarchAccountsClient';
-import { EnvelopeVersionMismatchError } from '../errors/envelopeVersionMismatchError';
 import { ETagMismatchError } from '../errors/eTagMismatchError';
 import { InvalidSavedDataError } from '../errors/invalidSavedDataError';
-import { type Envelope, EnvelopeSchema } from '../models/envelope';
+import { type Envelope, EnvelopeSchema, ensureCanOverwrite } from '../models/envelope';
 import type { Store } from './store';
 
 const ACCOUNT_NAME = 'wingspan';
@@ -50,8 +49,7 @@ export class MonarchAccountStore<TValue> implements Store<TValue> {
 			if (account.accountId !== createdId) await this.accountsClient.deleteAccount(createdId).catch(logError);
 		}
 		const savedEnvelope = account.envelope;
-		if (savedEnvelope && savedEnvelope.version > envelope.version) throw new EnvelopeVersionMismatchError(savedEnvelope.version, envelope.version);
-		if (savedEnvelope && savedEnvelope.etag !== envelope.etag) throw new ETagMismatchError(savedEnvelope.etag, envelope.etag);
+		ensureCanOverwrite(savedEnvelope, envelope);
 
 		// Keep any fields a newer version of Wingspan added to the envelope.
 		const storedEnvelope = { ...savedEnvelope, ...envelope, etag: crypto.randomUUID() };
@@ -65,7 +63,8 @@ export class MonarchAccountStore<TValue> implements Store<TValue> {
 
 	/** Looked up fresh every time, so if two browsers created an account at once, both end up using the oldest. */
 	private async findAccount(): Promise<SavedAccount<TValue> | undefined> {
-		const candidates = (await this.accountsClient.getAccountSummaries()).filter(summary => summary.displayName === ACCOUNT_NAME).sort((a, b) => this.olderFirst(a.id, b.id));
+		const summaries = await this.accountsClient.getAccountSummaries();
+		const candidates = summaries.filter(summary => summary.displayName === ACCOUNT_NAME).sort((a, b) => this.compareOldestFirst(a.id, b.id));
 		for (const summary of candidates) {
 			const accountNotes = await this.accountsClient.getAccountNotes(summary.id);
 			if (!accountNotes?.notes?.startsWith(SAFETY_HEADER)) continue;
@@ -80,7 +79,7 @@ export class MonarchAccountStore<TValue> implements Store<TValue> {
 	}
 
 	/** Monarch's ids grow over time; a longer id is a later one. */
-	private olderFirst(first: string, second: string): number {
+	private compareOldestFirst(first: string, second: string): number {
 		return first.length - second.length || first.localeCompare(second);
 	}
 

@@ -10,7 +10,8 @@ import { WINGSPAN_SETTINGS_SLUG } from './wingspanSettingsFeature';
 const NOTICE_MESSAGES: Record<StorageNoticeKind, string> = {
 	accountCreated: 'Wingspan now saves to your Monarch account, in a hidden account named wingspan.'
 };
-/** Storage toasts: one-time notices, like when the wingspan account is created, and save failures that stay up until saving works again or the toast is dismissed. */
+
+/** Storage toasts: one-time notices, and save failures that stay up until saving works again or the toast is dismissed. */
 export class StorageNoticesFeature implements WingspanFeature {
 	private readonly subscriptions = new DisposableStack();
 	private failure: { toastId: string; message: string } | null = null;

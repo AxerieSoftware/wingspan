@@ -72,27 +72,39 @@ export function ProjectedBalancesCard({ projection, split, hasCheckingAccounts, 
 					<Button onClick={stale.onRetry}>Try again</Button>
 				</div>
 			) : null}
-			{unavailable ? (
-				<div className="flex flex-wrap items-center gap-md px-default pb-lg">
-					<span className="text-sm text-content-secondary">{unavailable.message}</span>
-					<Button onClick={unavailable.onRetry}>Try again</Button>
-				</div>
-			) : !hasCheckingAccounts ? (
-				<span className="px-default pb-lg text-sm text-content-secondary">Choose the checking accounts bills and card payments come out of.</span>
-			) : !projection || !range ? (
-				<div className="flex flex-col gap-xs px-default pb-lg">
-					<SkeletonText className="text-xl" style={{ width: 240 }} />
-					<SkeletonText className="text-sm" style={{ width: '100%' }} />
-				</div>
-			) : (
-				<>
-					<StatBar projection={projection} range={range} split={split} formatter={formatter} onOpenGoals={onOpenGoals} />
-					<div className="flex flex-col p-lg pt-0">
-						<BalanceChart days={range.days} events={range.events} cushion={projection.cushion} freeCash={projection.freeCash} formatter={formatter} />
-					</div>
-				</>
-			)}
+			<CardBody projection={projection} range={range} split={split} hasCheckingAccounts={hasCheckingAccounts} formatter={formatter} onOpenGoals={onOpenGoals} unavailable={unavailable} />
 		</section>
+	);
+}
+
+type CardBodyProps = Pick<ProjectedBalancesCardProps, 'projection' | 'split' | 'hasCheckingAccounts' | 'formatter' | 'onOpenGoals' | 'unavailable'> & { range: ProjectionRange | null };
+
+function CardBody({ projection, range, split, hasCheckingAccounts, formatter, onOpenGoals, unavailable }: CardBodyProps) {
+	if (unavailable) {
+		return (
+			<div className="flex flex-wrap items-center gap-md px-default pb-lg">
+				<span className="text-sm text-content-secondary">{unavailable.message}</span>
+				<Button onClick={unavailable.onRetry}>Try again</Button>
+			</div>
+		);
+	}
+	if (!hasCheckingAccounts) return <span className="px-default pb-lg text-sm text-content-secondary">Choose the checking accounts bills and card payments come out of.</span>;
+	if (!projection || !range) {
+		return (
+			<div className="flex flex-col gap-xs px-default pb-lg">
+				<SkeletonText className="text-xl" style={{ width: 240 }} />
+				<SkeletonText className="text-sm" style={{ width: '100%' }} />
+			</div>
+		);
+	}
+
+	return (
+		<>
+			<StatBar projection={projection} range={range} split={split} formatter={formatter} onOpenGoals={onOpenGoals} />
+			<div className="flex flex-col p-lg pt-0">
+				<BalanceChart days={range.days} events={range.events} cushion={projection.cushion} freeCash={projection.freeCash} formatter={formatter} />
+			</div>
+		</>
 	);
 }
 
@@ -138,6 +150,9 @@ function StatBar({ projection, range, split, formatter, onOpenGoals }: StatBarPr
 	const cardsWithoutDueDate = range.cardsWithoutDueDate;
 	const cardsWithoutAmount = range.cardsWithoutAmount;
 	const hasEverydaySpending = [...projection.pace.monthlyByAccountId.values()].some(monthly => monthly > 0);
+	let creditLeftTone = 'text-content-secondary';
+	if (maxedOut) creditLeftTone = 'text-content-danger';
+	else if (lowestCreditLeft !== null) creditLeftTone = 'text-content-primary';
 	const unknownAmountNote = cardsWithoutAmount.length
 		? ` ${cardsWithoutAmount.map(card => card.name).join(', ')} ${cardsWithoutAmount.length === 1 ? 'has' : 'have'} no balance in Monarch and no typical payment, so ${cardsWithoutAmount.length === 1 ? "it's" : "they're"} counted as $0. Set a typical payment on its card payment in Recurring.`
 		: '';
@@ -178,7 +193,7 @@ function StatBar({ projection, range, split, formatter, onOpenGoals }: StatBarPr
 						: "No counted card has a credit limit in Monarch, so Wingspan can't tell when one would max out."
 				}
 				value={lowestCreditLeft !== null ? formatter.money(lowestCreditLeft) : 'Unknown'}
-				tone={maxedOut ? 'text-content-danger' : lowestCreditLeft !== null ? 'text-content-primary' : 'text-content-secondary'}
+				tone={creditLeftTone}
 				detail={
 					<>
 						{projection.creditLimit !== null && peakUtilization !== null ? (

@@ -61,7 +61,6 @@ interface CardState {
 	monarchMinimumDueDate: string | undefined;
 	/** Carrying a balance from a statement that wasn't paid in full, so the balance accrues interest. */
 	isRevolving: boolean;
-	dailySpending: number;
 }
 
 interface DayState {
@@ -72,11 +71,8 @@ interface DayState {
 }
 
 /**
- * Projects checking day by day from today. Everyday spending comes out of checking daily, or adds to the card it's
- * charged to. On each due date, checking pays the card the amount in the payment plan, and the rest stays on the card.
- * A card carrying a balance accrues daily interest at its APR until a statement is paid in full. Charges past a card's
- * limit move to the next counted card with room; if no card has room, they stay over the limit. They never go to
- * checking.
+ * Projects checking and the cards day by day: spending, bills, interest while a card carries a balance, and the planned
+ * payment on each due date. Charges past a card's limit move to the next counted card with room, never to checking.
  */
 export class BalanceProjector {
 	public constructor(
@@ -99,7 +95,6 @@ export class BalanceProjector {
 				monarchMinimumDueDate: this.latestClosedDueDate(schedule, input.startDate),
 				owedByDate: new Map(),
 				isRevolving: schedule.chargesInterest,
-				dailySpending: schedule.accountId ? this.daily(input.monthlySpendingByAccountId.get(schedule.accountId)) : 0,
 				forecast: {
 					itemId: schedule.itemId,
 					name: schedule.name,
@@ -114,7 +109,7 @@ export class BalanceProjector {
 		);
 		const lenders = this.lenders(cards, input.cardOrder);
 		const reserves = (input.burndown?.reserves ?? []).map(reserve => ({ ...reserve }));
-		const checkingDailySpending = this.daily(input.monthlySpendingByAccountId.get(undefined));
+		const checkingDailySpending = this.dailyFromMonthly(input.monthlySpendingByAccountId.get(undefined));
 		const days: ProjectedDay[] = [];
 		const events: ProjectionEvent[] = [];
 		let checking = input.checkingBalance;
@@ -176,9 +171,8 @@ export class BalanceProjector {
 	}
 
 	/**
-	 * Adds the day's charges and interest, then makes the planned payment if one is due. On a Monarch card's due date the
-	 * statement balance is due; charges after the statement closed go on the next statement. Paying the statement in
-	 * full stops interest. A card outside Monarch owes its typical amount each due date, plus anything left unpaid.
+	 * Adds the day's charges and interest, then makes the planned payment if one is due. A Monarch card owes its statement
+	 * balance, and paying it in full stops interest; a card outside Monarch owes its typical amount plus anything unpaid.
 	 */
 	private advanceCard(
 		card: CardState,
@@ -190,7 +184,7 @@ export class BalanceProjector {
 	): number {
 		const { accountId, limit } = card.schedule;
 		if (accountId) {
-			const charges = this.daily(monthlySpendingByAccountId.get(accountId)) - this.sumOf(day.flows.filter(flow => flow.accountId === accountId));
+			const charges = this.dailyFromMonthly(monthlySpendingByAccountId.get(accountId)) - this.sumOf(day.flows.filter(flow => flow.accountId === accountId));
 			card.owed += charges;
 			// Today's balances are as Monarch has them; interest, like spending, starts tomorrow.
 			const accruesInterest = card.isRevolving && card.schedule.apr !== null && card.owed > 0 && day.date !== startDate;
@@ -240,33 +234,30 @@ export class BalanceProjector {
 	}
 
 	/**
-	 * Most statements close 25 days before they're due. For a statement with a matched payment, later close dates are
-	 * tried first: if it was paid in full, the balance at its real close is zero apart from refunds since, so it comes
-	 * out to nothing instead of a few days of spending. Otherwise, such as with a partial payment, the usual close is
-	 * used so the remainder isn't understated.
+	 * Most statements close 25 days before they're due. A statement paid in full may have closed later, so for one with a
+	 * matched payment the latest close where it comes to zero wins; otherwise the usual close keeps a remainder from being understated.
 	 */
 	private closeDateOf(card: CardState, dueDate: string, startDate: string): string {
 		const usualClose = this.calendar.addDays(dueDate, -STATEMENT_CLOSE_DAYS_BEFORE_DUE);
 		const matchedPayment = card.schedule.matchedPaymentByDueDate?.[dueDate];
 		if (matchedPayment === undefined) return usualClose;
-		// Try each close later than the usual one, latest first. The first where the statement comes to zero is the real close.
 		for (let daysBefore = PAID_STATEMENT_CLOSE_DAYS_BEFORE_DUE; daysBefore > STATEMENT_CLOSE_DAYS_BEFORE_DUE; daysBefore--) {
 			const close = this.calendar.addDays(dueDate, -daysBefore);
 			const leftSinceClose = card.schedule.owedToday - this.postedSince(card.schedule.postedCharges, close, startDate);
 			// The balance can only go below zero from credits that didn't pay this statement: refunds, money in that only
 			// Monarch's category marks as a payment, and payments after its due date, which are for the next statement.
-			const refundedSinceClose = this.postedSince(card.schedule.postedCredits, close, startDate) + this.notPayingStatement(card, close, dueDate, matchedPayment, startDate);
+			const refundedSinceClose = this.postedSince(card.schedule.postedCredits, close, startDate) + this.paymentsNotForStatement(card, close, dueDate, matchedPayment, startDate);
 			if (leftSinceClose <= CENT_TOLERANCE && leftSinceClose >= -refundedSinceClose - CENT_TOLERANCE) return close;
 		}
 		return usualClose;
 	}
 
-	private notPayingStatement(card: CardState, closeDate: string, dueDate: string, matchedPayment: MatchedPayment, startDate: string): number {
-		const paidIn = (card.schedule.postedPayments ?? []).filter(entry => entry.date > closeDate && entry.date <= startDate);
-		const filedOnly = paidIn.filter(entry => !entry.isDescribedAsPayment).reduce((total, entry) => total + entry.amount, 0);
-		const afterDue = paidIn.filter(entry => entry.isDescribedAsPayment && entry.date > dueDate).reduce((total, entry) => total + entry.amount, 0);
+	private paymentsNotForStatement(card: CardState, closeDate: string, dueDate: string, matchedPayment: MatchedPayment, startDate: string): number {
+		const paymentsSinceClose = (card.schedule.postedPayments ?? []).filter(entry => entry.date > closeDate && entry.date <= startDate);
+		const categorizedOnly = paymentsSinceClose.filter(entry => !entry.isDescribedAsPayment).reduce((total, entry) => total + entry.amount, 0);
+		const paidAfterDue = paymentsSinceClose.filter(entry => entry.isDescribedAsPayment && entry.date > dueDate).reduce((total, entry) => total + entry.amount, 0);
 		const matchedAfterDue = matchedPayment.date > dueDate ? matchedPayment.amount : 0;
-		return filedOnly + Math.max(0, afterDue - matchedAfterDue);
+		return categorizedOnly + Math.max(0, paidAfterDue - matchedAfterDue);
 	}
 
 	/** The due date of the card's statement with the latest close date on or before today. */
@@ -358,7 +349,7 @@ export class BalanceProjector {
 		return Math.max(0, (card.schedule.limit ?? 0) - Math.max(0, card.owed));
 	}
 
-	private daily(monthly: number | undefined): number {
+	private dailyFromMonthly(monthly: number | undefined): number {
 		return ((monthly ?? 0) * MONTHS_PER_YEAR) / DAYS_PER_YEAR;
 	}
 

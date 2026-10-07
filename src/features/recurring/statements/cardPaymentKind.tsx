@@ -18,10 +18,8 @@ const RETURNED_PAYMENT_DAYS = 10;
 /** A credit card payment. It owes the card's balance in Monarch and is shown in the Statements table. */
 export class CardPaymentKind implements RecurringItemKind {
 	public readonly kind = CARD_PAYMENT_KIND;
-	/** Label for the Type field in Add recurring and the Type row in the item's details. */
 	public readonly label = 'Card payment';
 	public readonly typeColumnLabel = 'Card payment';
-	/** The section its rows go in when Recurring is grouped by type. */
 	public readonly typeSectionName = EXPENSES_SECTION_NAME;
 	public readonly paymentWindow = 'nearDueDate';
 	/** A statement due late last month that's still unpaid is carried over into this month. */
@@ -40,11 +38,7 @@ export class CardPaymentKind implements RecurringItemKind {
 		return item.kind === CARD_PAYMENT_KIND;
 	}
 
-	/**
-	 * A payment posted to the card's account: an inflow categorized as a transfer or described as a payment, so refunds
-	 * and statement credits don't count. A card that isn't in Monarch is matched by the payment's description on the
-	 * outflow from checking.
-	 */
+	/** An inflow to the card that's a transfer or described as a payment, so refunds don't count; a card not in Monarch matches by description. */
 	public paymentRule(item: RecurringItem): TransactionPredicate | null {
 		const cardAccountId = this.owns(item) ? item.accountId : undefined;
 		if (cardAccountId) return transaction => this.isPaymentToCard(transaction, cardAccountId);
@@ -59,11 +53,7 @@ export class CardPaymentKind implements RecurringItemKind {
 		return payments.filter(payment => !paymentIds.has(payment.id));
 	}
 
-	/**
-	 * Card payments the bank returned, each paired with its reversal: same amount, on the card, within a few days after,
-	 * and categorized as a transfer or described as a payment. Only matched pairs count, so a fee or balance transfer that
-	 * looks like a reversal is still treated as a charge.
-	 */
+	/** Card payments the bank returned, each paired with its reversal. Only matched pairs count, so a fee that looks like a reversal stays a charge. */
 	public returnedPayments(cardAccountId: string, transactions: Transaction[]): { paymentIds: ReadonlySet<string>; returnIds: ReadonlySet<string> } {
 		const payments = transactions.filter(transaction => this.isPaymentToCard(transaction, cardAccountId));
 		const paymentIds = new Set<string>();

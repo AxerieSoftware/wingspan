@@ -135,7 +135,7 @@ export class Household {
 		this.storedAccounts.push({ id: 'acct-wingspan', displayName: 'wingspan', isHidden: true, notes, updatedAt: '2026-09-01T00:00:00Z', deletedAt: null });
 	}
 
-	/** A business in Monarch's Settings, Businesses, with its own checking account and a recurring expense on it. Businesses are a Plus feature. */
+	/** Adds a business in Monarch's Settings, Businesses, with its own checking account and recurring items. Businesses are a Plus feature. */
 	public addBusiness({ hasPlus = true } = {}): void {
 		this.hasBusiness = true;
 		this.hasPlus = hasPlus;
@@ -182,10 +182,10 @@ export class Household {
 						.filter(category => category.group.id === group.id)
 						.map((category, order) => ({ ...category, order }))
 				})),
-			// None belong to a business; otherwise the mock would fill the field with an empty business.
 			// Monarch shows its business filter only on its Plus plan.
 			subscription: () => ({ id: 'subscription-1', entitlements: this.hasPlus ? ['premium_plus'] : [], plusTrialEndsAt: null, canceledPlusTrialAt: null }),
 			businessEntities: () => (this.hasBusiness ? [{ ...BUSINESS, icon: 'briefcase', structure: 'llc', accounts: BUSINESS_ACCOUNTS, accountsCount: 1, transactionsCount: 0 }] : []),
+			// None belong to a business; otherwise the mock would fill the field with an empty business.
 			accounts: () => [...this.baseAccounts, ...this.wingspanAccounts.map(account => this.toMonarchAccount(account))].map(account => ({ businessEntity: null, ...account })),
 			account: ({ id }) => {
 				const stored = this.storedAccounts.find(account => account.id === id);
@@ -326,12 +326,11 @@ export class Household {
 		if (!groupBy.length) return [{ groupBy: {}, summary: summaryOf(inRange) }];
 		if (!period) return [];
 
-		const startOf = (date: string) =>
-			period === 'year'
-				? `${date.slice(0, 4)}-01-01`
-				: period === 'quarter'
-					? `${date.slice(0, 5)}${String(Math.floor((Number(date.slice(5, 7)) - 1) / 3) * 3 + 1).padStart(2, '0')}-01`
-					: `${date.slice(0, 7)}-01`;
+		const startOf = (date: string) => {
+			if (period === 'year') return `${date.slice(0, 4)}-01-01`;
+			if (period === 'quarter') return `${date.slice(0, 5)}${String(Math.floor((Number(date.slice(5, 7)) - 1) / 3) * 3 + 1).padStart(2, '0')}-01`;
+			return `${date.slice(0, 7)}-01`;
+		};
 		const byPeriod = Map.groupBy(inRange, transaction => startOf(transaction.date));
 		return [...byPeriod].sort(([a], [b]) => a.localeCompare(b)).map(([periodStart, transactions]) => ({ groupBy: { [period]: periodStart }, summary: summaryOf(transactions) }));
 	}

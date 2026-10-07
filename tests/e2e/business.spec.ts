@@ -150,10 +150,10 @@ test.describe("with Monarch's Plus plan", () => {
 
 		await switchTo(page, 'Household');
 		await page.getByRole('button', { name: 'Edit cash and cards', exact: true }).click();
-		const household = page.getByRole('dialog', { name: 'Cash and cards' });
-		await expect(household.getByRole('combobox', { name: 'Settings for' })).toHaveText('Household');
-		await expect(household.getByRole('switch', { name: 'Contoso Checking' })).toHaveCount(0);
-		await expect(household.getByRole('textbox', { name: 'Always keep' })).toHaveValue('$0.00');
+		const householdDialog = page.getByRole('dialog', { name: 'Cash and cards' });
+		await expect(householdDialog.getByRole('combobox', { name: 'Settings for' })).toHaveText('Household');
+		await expect(householdDialog.getByRole('switch', { name: 'Contoso Checking' })).toHaveCount(0);
+		await expect(householdDialog.getByRole('textbox', { name: 'Always keep' })).toHaveValue('$0.00');
 	});
 });
 
