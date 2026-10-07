@@ -12,6 +12,7 @@ export const WingspanAttribute = {
 	detailRow: 'data-wingspan-detail-row',
 	due: 'data-wingspan-due',
 	workspaceSwitcher: 'data-wingspan-workspace-switcher',
+	hiddenSidebarItems: 'data-wingspan-hidden-sidebar-items',
 	headerNote: 'data-wingspan-header-note',
 	entityCount: 'data-wingspan-entity-count',
 	entityInactiveLabel: 'data-wingspan-entity-inactive-label',

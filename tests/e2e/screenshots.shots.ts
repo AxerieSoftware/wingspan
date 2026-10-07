@@ -141,6 +141,15 @@ for (const theme of THEMES) {
 			await siteShot(page, 'workspaces', theme, menu, { band: true });
 		});
 
+		test('sidebar items', async ({ page, open }) => {
+			await openAsReturning(page, open, '/settings/wingspan');
+			await useTheme(page, theme);
+			const group = page.getByRole('group', { name: 'Sidebar' });
+			await group.getByRole('checkbox', { name: 'Investments' }).click();
+			await group.getByRole('checkbox', { name: 'Invite a friend, get $30' }).click();
+			await siteShot(page, 'sidebar-items', theme, group, { pad: 24 });
+		});
+
 		test('where Wingspan saves', async ({ page, open }) => {
 			await openAsReturning(page, open, '/settings/display');
 			await useTheme(page, theme);

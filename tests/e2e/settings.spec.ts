@@ -40,3 +40,26 @@ test('About shows the version as a beta, with a link to report a problem', async
 	expect(url.pathname).toBe('/AxerieSoftware/wingspan/issues/new');
 	expect(url.searchParams.get('browser')).toMatch(/^Chrome \d+, Wingspan \d+\.\d+\.\d+$/);
 });
+
+test("unchecking a sidebar item hides it from Monarch's sidebar, from the start of the next load", async ({ page, open }) => {
+	await openSettings(page, open);
+	const sidebar = page.locator('[data-external-id="side-bar"]');
+	const settings = page.getByRole('group', { name: 'Sidebar' });
+	await expect(settings.getByRole('checkbox')).toHaveCount(await sidebar.locator('[data-external-id="nav-bar-link"], [data-external-id="sidebar-persistent-assistant"]').count());
+
+	await settings.getByRole('checkbox', { name: 'Budget' }).click();
+	await settings.getByRole('checkbox', { name: 'Help & Support' }).click();
+	await expect(sidebar.getByRole('link', { name: 'Budget' })).toBeHidden();
+	await expect(sidebar.getByText('Help & Support')).toBeHidden();
+	await expect(sidebar.getByRole('link', { name: 'Reports' })).toBeVisible();
+
+	await page.reload();
+	await sidebar.getByRole('link', { name: 'Reports' }).waitFor();
+	// Read as soon as the sidebar renders: the early script hid it before Monarch's app started, so it never shows.
+	expect(await sidebar.locator('a[href="/plan"]').evaluate(linkEl => getComputedStyle(linkEl).display)).toBe('none');
+	await expect(settings.getByRole('checkbox', { name: 'Budget' })).not.toBeChecked();
+
+	await settings.getByRole('checkbox', { name: 'Budget' }).click();
+	await expect(sidebar.getByRole('link', { name: 'Budget' })).toBeVisible();
+	await expect(sidebar.getByText('Help & Support')).toBeHidden();
+});

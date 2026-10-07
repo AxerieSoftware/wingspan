@@ -1,8 +1,10 @@
 import { WorkspaceChoice } from '@/src/features/businessEntities/services/workspaceChoice';
 import { WorkspaceNavigation } from '@/src/features/businessEntities/services/workspaceNavigation';
+import { HiddenSidebarItems } from '@/src/features/sidebar/hiddenItems/services/hiddenSidebarItems';
+import { SidebarPage } from '@/src/monarch/pages/sidebar/sidebarPage';
 import { MonarchSession } from '@/src/monarch/session/monarchSession';
 
-/** Opens Monarch's pages filtered to the chosen workspace. It runs before Monarch's app, since some pages only read their filter as they first render. */
+/** Runs before Monarch's app: some pages only read their business filter as they first render, and hidden sidebar items shouldn't flash in. */
 export default defineContentScript({
 	matches: ['https://app.monarch.com/*'],
 	runAt: 'document_start',
@@ -10,6 +12,8 @@ export default defineContentScript({
 	noScriptStartedPostMessage: true,
 
 	main() {
+		new SidebarPage(document).hideItems(HiddenSidebarItems.read(window.localStorage));
+
 		const householdId = new MonarchSession(window).householdId();
 		const saved = householdId ? new WorkspaceChoice(window.localStorage).read(householdId) : null;
 		if (saved?.isEnabled && saved.entityId) WorkspaceNavigation.applyBeforeMonarchStarts(window, saved.entityId);

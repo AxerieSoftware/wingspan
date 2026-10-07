@@ -87,6 +87,12 @@
 					"monarch": "Monarch filters by business one page at a time, and the choice resets in a new tab",
 					"boardStatus": "Not on the roadmap",
 					"match": "Partial: Monarch's per-page business filter"
+				},
+				{
+					"name": "Sidebar items",
+					"where": "Adds to Settings",
+					"description": "Hide any item in Monarch's sidebar you don't use",
+					"cards": []
 				}
 			]
 		},
@@ -203,7 +209,7 @@
 				{
 					"name": "Compact layout",
 					"where": "Everywhere in Monarch",
-					"description": "Denser rows and the option to hide sidebar items",
+					"description": "Denser rows throughout Monarch",
 					"cards": [],
 					"asked": "Compact layout"
 				},

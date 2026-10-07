@@ -8,6 +8,7 @@ import { addRecurringPages } from '@/src/features/recurring/addRecurringPages';
 import { createRecurring } from '@/src/features/recurring/createRecurring';
 import { addRetailSync } from '@/src/features/retailSync/addRetailSync';
 import { addSettings } from '@/src/features/settings/addSettings';
+import { addSidebar } from '@/src/features/sidebar/addSidebar';
 import { WingspanBuilder } from '@/src/wingspanBuilder';
 
 export default defineContentScript({
@@ -18,7 +19,8 @@ export default defineContentScript({
 		const recurring = createRecurring(builder);
 		// Features sync in the order they're added. Workspaces go first so the other features use the chosen workspace.
 		const businessFilter = addBusinessEntities(builder, recurring);
-		addSettings(builder, businessFilter);
+		const hiddenSidebarItems = addSidebar(builder);
+		addSettings(builder, businessFilter, hiddenSidebarItems);
 		addRetailSync(builder);
 		const cashSettings = addCashSettings(builder, businessFilter);
 		const projectedBalances = addProjectedBalances(builder, recurring, cashSettings, businessFilter);
