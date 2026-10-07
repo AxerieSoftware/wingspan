@@ -102,12 +102,16 @@ status 200 for a rejected request, so look for `"errors"` in the response.
    versions then won't overwrite the newer data. Each browser
    is updated by hand, so a household can run both versions on one account for
    a while.
-3. Run `npm version patch` (or `minor` or `major`), then
-   `git push --follow-tags`. That bumps `package.json`, commits it, tags
-   `vX.Y.Z` and pushes both. The tag starts `release.yml`, which runs CI, builds
-   zips for Chrome, Edge, Firefox and Safari, and attaches all four to a draft
-   GitHub release. During the beta nothing goes to the browser stores.
-4. Open the draft under Releases, write the notes and click **Publish
+3. `main` only takes squash-merged pull requests, so bump on a branch:
+   `git switch -c release/X.Y.Z`, then
+   `npm version patch --no-git-tag-version` (or `minor` or `major`). Commit
+   `package.json` and `package-lock.json`, open a pull request and merge it.
+4. Tag the merged commit: `git switch main && git pull`, then
+   `git tag vX.Y.Z && git push origin vX.Y.Z`. The tag starts `release.yml`,
+   which runs CI, builds zips for Chrome, Edge, Firefox and Safari, and attaches
+   all four to a draft GitHub release. During the beta nothing goes to the
+   browser stores.
+5. Open the draft under Releases, write the notes and click **Publish
    release**. Nothing is public until then. GitHub fills in the merged pull
    requests, grouped by label (see `.github/release.yml`); add a short summary
    of what changed for users above them.
