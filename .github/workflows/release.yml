@@ -50,6 +50,8 @@ jobs:
             .output/*-firefox.zip
             .output/*-safari.zip
           if-no-files-found: error
+          # .output is a hidden folder, which upload-artifact skips by default.
+          include-hidden-files: true
 
   github-release:
     needs: package
