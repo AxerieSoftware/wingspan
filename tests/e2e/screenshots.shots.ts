@@ -131,15 +131,14 @@ for (const theme of THEMES) {
 			await siteShot(page, 'receipt-sync', theme, menu, { band: true });
 		});
 
-		test('business filter', async ({ page, open, household }) => {
+		test('workspaces', async ({ page, open, household }) => {
 			household.addBusiness();
 			await openAsReturning(page, open);
 			await useTheme(page, theme);
-			const entitySwitch = page.locator('[data-wingspan-entity-switch]').getByRole('button');
-			await entitySwitch.click();
+			await page.locator('[data-wingspan-workspace-switcher]').getByRole('button').click();
 			const menu = page.getByRole('menu');
-			await expect(menu.getByRole('menuitemcheckbox').first()).toBeVisible();
-			await siteShot(page, 'business-filter', theme, menu, { band: true });
+			await expect(menu.getByRole('menuitem').first()).toBeVisible();
+			await siteShot(page, 'workspaces', theme, menu, { band: true });
 		});
 
 		test('where Wingspan saves', async ({ page, open }) => {

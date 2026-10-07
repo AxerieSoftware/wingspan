@@ -73,15 +73,15 @@ const BASE_ACCOUNTS = [
 	{ id: 'acct-closed', displayName: 'Closed Account', currentBalance: 5, isAsset: true, isHidden: true, type: { name: 'depository', display: 'Cash' } }
 ];
 
-const BUSINESS = { id: 'biz-studio', name: 'Pottery Studio', color: '#ffc9b1', logoUrl: null };
+const BUSINESS = { id: 'biz-contoso', name: 'Contoso Pottery', color: '#ffc9b1', logoUrl: null };
 const BUSINESS_ACCOUNTS = [
-	{ id: 'acct-studio', displayName: 'Studio Checking', currentBalance: 6400, isAsset: true, isHidden: false, type: { name: 'depository', display: 'Cash' }, businessEntity: { id: BUSINESS.id } }
+	{ id: 'acct-contoso', displayName: 'Contoso Checking', currentBalance: 6400, isAsset: true, isHidden: false, type: { name: 'depository', display: 'Cash' }, businessEntity: { id: BUSINESS.id } }
 ];
 // Business items: its own Rent with the same name as the household's, and an inactive item. Gym Dues is a household item with no Monarch account.
 const BUSINESS_RECURRING: MonarchRecurring[] = [
-	{ id: 'rg-kiln', name: 'Kiln Lease', day: 20, amount: -310, recurringType: 'expense', accountId: 'acct-studio', category: CATEGORIES.rent },
-	{ id: 'rg-studio-rent', name: 'Rent', day: 5, amount: -900, recurringType: 'expense', accountId: 'acct-studio', category: CATEGORIES.rent },
-	{ id: 'rg-glaze', name: 'Glaze Supplier', day: 9, amount: -75, recurringType: 'expense', accountId: 'acct-studio', category: CATEGORIES.subscriptions, isActive: false },
+	{ id: 'rg-kiln', name: 'Kiln Lease', day: 20, amount: -310, recurringType: 'expense', accountId: 'acct-contoso', category: CATEGORIES.rent },
+	{ id: 'rg-studio-rent', name: 'Rent', day: 5, amount: -900, recurringType: 'expense', accountId: 'acct-contoso', category: CATEGORIES.rent },
+	{ id: 'rg-glaze', name: 'Glaze Supplier', day: 9, amount: -75, recurringType: 'expense', accountId: 'acct-contoso', category: CATEGORIES.subscriptions, isActive: false },
 	{ id: 'rg-gym', name: 'Gym Dues', day: 11, amount: -30, recurringType: 'expense', accountId: null, category: CATEGORIES.subscriptions }
 ];
 

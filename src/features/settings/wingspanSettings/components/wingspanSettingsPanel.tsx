@@ -1,22 +1,35 @@
 import type { WingspanDataService } from '../../../../data/services/wingspanDataService';
 import { Fieldset } from '../../../../monarch/ui/components/fieldset';
 import { Spinner } from '../../../../monarch/ui/components/spinner';
+import { SwitchRow } from '../../../../monarch/ui/components/switch';
 import { useSignalValue } from '../../../../monarch/ui/hooks/useSignalValue';
+import type { BusinessEntityView } from '../../../businessEntities/services/businessEntityView';
 import { WingspanAccountLink } from './wingspanAccountLink';
 
 /** reportProblemUrl opens a new GitHub issue with the versions filled in. */
 export interface WingspanSettingsPanelProps {
 	dataService: WingspanDataService;
+	businessView: BusinessEntityView;
 	version: string;
 	reportProblemUrl: string;
 }
 
-/** Shows where Wingspan saves its data and the sync status, plus the version and a link to report a problem. */
-export function WingspanSettingsPanel({ dataService, version, reportProblemUrl }: WingspanSettingsPanelProps) {
+/** The body of Wingspan's page in Monarch's settings. */
+export function WingspanSettingsPanel({ dataService, businessView, version, reportProblemUrl }: WingspanSettingsPanelProps) {
 	const storageStatus = useSignalValue(dataService.status);
+	const businesses = useSignalValue(businessView.businesses);
+	const workspacesEnabled = useSignalValue(businessView.isEnabled);
 
 	return (
 		<div className="flex flex-col gap-xl">
+			{businesses?.length ? (
+				<Fieldset legend="Business workspaces">
+					<SwitchRow label="Keep the household and businesses separate" checked={workspacesEnabled} onChange={isEnabled => businessView.setEnabled(isEnabled)} />
+					<p className="m-0 text-sm text-content-secondary">
+						Adds a switcher to the top of the sidebar. Supported pages then show the household or one business, never both, and the rest say so in their header. Saved for this browser.
+					</p>
+				</Fieldset>
+			) : null}
 			<Fieldset legend="Where Wingspan saves">
 				<p className="m-0 text-sm text-content-secondary">
 					Wingspan saves to your Monarch account, in a hidden account named wingspan that's excluded from net worth. Every browser you use Wingspan in, and everyone in your household, sees the same

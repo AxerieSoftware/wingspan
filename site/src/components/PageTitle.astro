@@ -1,0 +1,55 @@
+---
+import Default from "@astrojs/starlight/components/PageTitle.astro";
+
+const { introduced, plus } = Astro.locals.starlightRoute.entry.data;
+---
+
+<Default />
+{
+	(introduced || plus) && (
+		<p class="feature-badges">
+			{introduced && (
+				<span class="feature-badge" title={`Introduced in Wingspan ${introduced}`}>
+					{introduced}
+				</span>
+			)}
+			{plus && (
+				<span class="feature-badge plus" title="Needs Monarch's Plus plan">
+					Monarch Plus
+				</span>
+			)}
+		</p>
+	)
+}
+
+<style>
+	.feature-badges {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin-top: 0.75rem;
+	}
+
+	/* An outlined pill, like the Preview badges in Apple's apps. */
+	.feature-badge {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.125rem 0.625rem;
+		border: 1.5px solid var(--sl-color-gray-3);
+		border-radius: 999px;
+		font-size: var(--sl-text-xs);
+		font-weight: 600;
+		line-height: 1.4;
+		letter-spacing: 0.01em;
+		color: var(--sl-color-white);
+		white-space: nowrap;
+	}
+
+	/* A gradient border: the gradient shows through a transparent border, under a fill that matches the page. */
+	.feature-badge.plus {
+		border-color: transparent;
+		background:
+			linear-gradient(var(--sl-color-bg), var(--sl-color-bg)) padding-box,
+			linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b) border-box;
+	}
+</style>

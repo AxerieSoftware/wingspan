@@ -7,19 +7,25 @@ import type { Account } from '../../monarch/api/models/account';
 import type { RecurrenceGroupAccount } from '../../monarch/api/models/recurrenceGroupAccount';
 import { EMPTY_SUMMARY, type RecurringSummary, type RecurringSummaryLine, subtractSummary } from '../../monarch/api/models/recurringSummary';
 import type { MonarchRecurringClient } from '../../monarch/api/monarchRecurringClient';
+import type { AccountsPage } from '../../monarch/pages/accounts/accountsPage';
 import type { CashFlowPage } from '../../monarch/pages/cashFlow/cashFlowPage';
+import type { PageHeader } from '../../monarch/pages/header/pageHeader';
 import type { RecurringView } from '../../monarch/pages/recurringV2/models/recurringView';
 import type { RecurringV2Summary, RecurringV2SummaryLine } from '../../monarch/pages/recurringV2/recurringV2EntityFilter';
 import type { RecurringV2Page } from '../../monarch/pages/recurringV2/recurringV2Page';
-import { WingspanAttribute } from '../../monarch/pages/wingspanAttributes';
+import type { SettingsPage } from '../../monarch/pages/settings/settingsPage';
+import type { SidebarPage, SidebarStyles } from '../../monarch/pages/sidebar/sidebarPage';
 import { Island } from '../../monarch/ui/components/island';
 import type { Formatter } from '../../monarch/ui/formatter';
 import type { WingspanFeature } from '../wingspanFeature';
-import { BusinessEntitySwitch } from './components/businessEntitySwitch';
+import { UnfilteredPageNote } from './components/unfilteredPageNote';
+import { WorkspaceSwitcher } from './components/workspaceSwitcher';
 import type { BusinessFilter } from './models/businessFilter';
 import { type EntityScope, HOUSEHOLD_ENTITY_ID } from './models/entityScope';
+import { isUnfilteredPage } from './models/unfilteredPages';
 import type { ScopedMembership } from './services/entityMembership';
 import { MonarchRowScope } from './services/monarchRowScope';
+import type { WorkspaceNavigation } from './services/workspaceNavigation';
 
 const GROUP_ACCOUNTS_QUERY = 'recurrenceGroupAccounts';
 const SUMMARY_QUERY = 'recurringSummary';
@@ -27,16 +33,25 @@ const SUMMARY_QUERY = 'recurringSummary';
 const ALL_VIEW_MONTHS = 12;
 const LOADING_LINE: RecurringV2SummaryLine = { texts: ['', '', ''], completed: 0, total: 0, completedText: '' };
 const FAILED_LINE: RecurringV2SummaryLine = { ...LOADING_LINE, texts: ["Couldn't load; reload to try again", '', ''] };
+const BUSINESSES_SETTINGS_SLUG = 'businesses';
 
 /**
- * Applies the business filter to what Wingspan shows. Cash Flow uses Monarch's own filter. Recurring has none, so
- * Wingspan adds a matching switch that also hides Monarch's rows for unselected entities and replaces the month
- * summary totals with totals for the selected ones.
+ * Keeps Monarch in one workspace, Household or a business, chosen from a switcher in Monarch's sidebar. Pages with
+ * Monarch's own business filter open filtered to it. Recurring has none, so Wingspan hides Monarch's rows for other
+ * entities and replaces the month summary totals with the workspace's.
  */
-export class BusinessEntitySwitchFeature implements WingspanFeature {
+export class WorkspaceFeature implements WingspanFeature {
 	private readonly subscriptions = new DisposableStack();
+	private switcherStyles: SidebarStyles | null = null;
+	/** Household is picked once per visit to Accounts; after that, Monarch's filter there is the household's to change. */
+	private hasPickedHousehold = false;
 
 	public constructor(
+		private readonly sidebar: SidebarPage,
+		private readonly accountsPage: AccountsPage,
+		private readonly pageHeader: PageHeader,
+		private readonly settingsPage: SettingsPage,
+		private readonly navigation: WorkspaceNavigation,
 		private readonly recurringPage: RecurringV2Page,
 		private readonly cashFlowPage: CashFlowPage,
 		private readonly filter: BusinessFilter,
@@ -51,26 +66,34 @@ export class BusinessEntitySwitchFeature implements WingspanFeature {
 	public start(): void {
 		this.subscriptions.defer(
 			effect(() => {
-				void [this.filter.view.scope.value, this.filter.view.businesses.value, this.monarchData.state.value];
+				void [this.filter.view.scope.value, this.filter.view.workspace.value, this.filter.view.businesses.value, this.monarchData.state.value];
 				this.syncScheduler.request();
 			})
 		);
+		this.subscriptions.use(this.navigation);
 	}
 
-	/** Follows Monarch's filter on Cash Flow. On Recurring, shows the switch and filters Monarch's rows and summary to the scope. */
+	/** Shows the switcher and opens pages filtered to the workspace. On Recurring, filters Monarch's rows and summary to it. */
 	public sync(): void {
-		this.filter.view.follow(this.cashFlowPage.businessEntityFilter, this.cashFlowPage.isActive);
+		const view = this.filter.view;
+		view.load();
+		view.follow(this.cashFlowPage.isActive ? this.cashFlowPage.businessEntityFilter : null);
+		const workspace = view.workspace.value;
+		// Saved once businesses load, so the next page load is filtered before Monarch's app starts.
+		if (workspace && view.businesses.value) view.choose(workspace);
+		this.navigation.follow(workspace);
+		this.pickHouseholdOnAccounts(workspace);
+		const isSwitching = workspace !== null && !!view.businesses.value?.length;
+		this.showSwitcher(isSwitching);
+		this.showUnfilteredNote(isSwitching);
+
 		const recurringView = this.recurringPage.view;
-		if (recurringView || this.cashFlowPage.isActive) this.filter.view.load();
 		if (!recurringView) {
-			this.clear();
+			this.recurringPage.removeEntityFilter();
 			return;
 		}
 
-		// The switch needs the business names. Until they load, a previously saved choice still filters rows, same as for Wingspan's rows.
-		if (this.filter.view.businesses.value?.length) this.recurringPage.showControl({ render: hostEl => this.renderSwitch(hostEl) }, WingspanAttribute.entitySwitch);
-		else this.recurringPage.removeControl();
-		const scope = this.filter.view.scope.value;
+		const scope = view.scope.value;
 		void this.monarchData.load();
 		const accounts = this.monarchData.snapshot.value?.accounts;
 		const month = this.recurringPage.monthInView(this.calendar.currentMonth());
@@ -101,7 +124,7 @@ export class BusinessEntitySwitchFeature implements WingspanFeature {
 		);
 	}
 
-	/** Restores Monarch's rows, counts and month summary, and removes the switch since it can't work now. */
+	/** Restores Monarch's rows, counts and month summary, and removes the switcher since it can't work now. */
 	public suspend(): void {
 		this.clear();
 	}
@@ -112,18 +135,64 @@ export class BusinessEntitySwitchFeature implements WingspanFeature {
 	}
 
 	private clear(): void {
+		this.navigation.follow(null);
+		this.accountsPage.cancel();
 		this.recurringPage.removeEntityFilter();
-		this.recurringPage.removeControl();
+		this.sidebar.removeRow();
+		this.pageHeader.removeNote();
 	}
 
-	private renderSwitch(hostEl: HTMLElement): () => void {
+	/** Accounts can't be opened on Household by a link, so Household is picked in Monarch's own filter as the page opens. */
+	private pickHouseholdOnAccounts(workspace: string | null): void {
+		if (!this.accountsPage.isActive) {
+			this.hasPickedHousehold = false;
+			this.accountsPage.cancel();
+			return;
+		}
+		if (this.hasPickedHousehold || workspace !== HOUSEHOLD_ENTITY_ID || this.accountsPage.hasChosenBusinesses) return;
+		this.hasPickedHousehold = this.accountsPage.pickHousehold() === 'done';
+	}
+
+	/** On pages Monarch can't filter by business, says so in the header. */
+	private showUnfilteredNote(isSwitching: boolean): void {
+		if (!isSwitching || !isUnfilteredPage(this.pageHeader.path)) {
+			this.pageHeader.removeNote();
+			return;
+		}
+		this.pageHeader.showNote({
+			render: hostEl => {
+				const island = new Island(hostEl);
+				island.render(<UnfilteredPageNote />);
+				return () => island.unmount();
+			}
+		});
+	}
+
+	private showSwitcher(isSwitching: boolean): void {
+		const styles = isSwitching ? this.sidebar.styles : null;
+		if (!styles) {
+			this.sidebar.removeRow();
+			return;
+		}
+		// Monarch's classes change with its theme, so the switcher is rendered again when they do.
+		if (this.switcherStyles && !isSameStyles(this.switcherStyles, styles)) this.sidebar.removeRow();
+		this.switcherStyles = styles;
+		this.sidebar.showRow({ render: hostEl => this.renderSwitcher(hostEl, styles) });
+	}
+
+	private renderSwitcher(hostEl: HTMLElement, styles: SidebarStyles): () => void {
 		const island = new Island(hostEl);
 		island.render(
-			<BusinessEntitySwitch
+			<WorkspaceSwitcher
 				businesses={this.filter.view.businesses}
-				filter={this.filter.view.filter}
-				buttonClassName={this.recurringPage.filtersButtonClassName}
-				onChange={filter => this.filter.view.choose(filter)}
+				workspace={this.filter.view.workspace}
+				styles={styles}
+				menuContainer={this.sidebar.menuContainer ?? undefined}
+				onChoose={entityId => {
+					this.filter.view.choose(entityId);
+					this.navigation.reloadInto();
+				}}
+				onManage={() => this.settingsPage.open(BUSINESSES_SETTINGS_SLUG)}
 			/>
 		);
 		return () => island.unmount();
@@ -171,4 +240,8 @@ export class BusinessEntitySwitchFeature implements WingspanFeature {
 		const sortedIds = accountIds?.toSorted();
 		return this.queries.read([SUMMARY_QUERY, month, sortedIds?.join(',') ?? 'all'], () => this.recurringClient.getRecurringSummary(`${month}-01`, this.calendar.lastOfMonth(month), sortedIds));
 	}
+}
+
+function isSameStyles(styles: SidebarStyles, other: SidebarStyles): boolean {
+	return styles.linkClassName === other.linkClassName && styles.iconClassName === other.iconClassName;
 }

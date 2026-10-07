@@ -11,7 +11,7 @@ Extended features inside the Monarch Money[^monarch] web app.
 
 [Website](https://wingspan.axerie.com) · [Quick start](https://wingspan.axerie.com/quick-start/) · [Features](https://wingspan.axerie.com/features/) · [Roadmap](https://wingspan.axerie.com/roadmap/) · [Privacy](https://wingspan.axerie.com/privacy/)
 
-[![CI](https://github.com/axerieSoftware/wingspan/actions/workflows/ci.yml/badge.svg)](https://github.com/axerieSoftware/wingspan/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-2563EB.svg)](LICENSE) ![Chrome and Edge](https://img.shields.io/badge/Chrome%20%7C%20Edge-Manifest%20V3-2563EB.svg) ![Firefox and Safari](https://img.shields.io/badge/Firefox%20%7C%20Safari-experimental-6B7280.svg)
+[![CI](https://github.com/AxerieSoftware/wingspan/actions/workflows/ci.yml/badge.svg)](https://github.com/AxerieSoftware/wingspan/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-2563EB.svg)](LICENSE) ![Chrome and Edge](https://img.shields.io/badge/Chrome%20%7C%20Edge-Manifest%20V3-2563EB.svg) ![Firefox and Safari](https://img.shields.io/badge/Firefox%20%7C%20Safari-experimental-6B7280.svg)
 
 <br>
 
@@ -34,7 +34,7 @@ Card payments and bills in Recurring, due dates, projected balances and free cas
 
 ## Install
 
-Wingspan is in beta and not in the browser stores yet. Each [release](https://github.com/axerieSoftware/wingspan/releases) has a zip per browser. Unzip it, then:
+Wingspan is in beta and not in the browser stores yet. Each [release](https://github.com/AxerieSoftware/wingspan/releases) has a zip per browser. Unzip it, then:
 
 - **Chrome or Edge 144+:** open `chrome://extensions` or `edge://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder.
 - **Firefox 141+ (experimental):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `manifest.json` in the unzipped folder. Firefox removes it when it restarts, since the build isn't signed. If Wingspan doesn't appear on Monarch, open **Extensions** in the toolbar and allow it on app.monarch.com.
@@ -64,7 +64,7 @@ See the [privacy policy](https://wingspan.axerie.com/privacy/) and [how it works
 
 ## Contributing
 
-Bugs and ideas go in [Issues](https://github.com/axerieSoftware/wingspan/issues/new/choose). To build, test or find your way around the code, see [CONTRIBUTING.md](CONTRIBUTING.md). Security reports go through [SECURITY.md](SECURITY.md).
+Bugs and ideas go in [Issues](https://github.com/AxerieSoftware/wingspan/issues/new/choose). To build, test or find your way around the code, see [CONTRIBUTING.md](CONTRIBUTING.md). Security reports go through [SECURITY.md](SECURITY.md).
 
 ## License
 

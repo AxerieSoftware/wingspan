@@ -2,7 +2,7 @@ import starlight from "@astrojs/starlight";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 
-const repo = "https://github.com/axerieSoftware/wingspan";
+const repo = "https://github.com/AxerieSoftware/wingspan";
 
 export default defineConfig({
 	site: "https://wingspan.axerie.com",
@@ -15,7 +15,7 @@ export default defineConfig({
 			social: [{ icon: "github", label: "GitHub", href: repo }],
 			editLink: { baseUrl: `${repo}/edit/main/site/` },
 			customCss: ["./src/styles/global.css"],
-			components: { Footer: "./src/components/Footer.astro" },
+			components: { Footer: "./src/components/Footer.astro", PageTitle: "./src/components/PageTitle.astro" },
 			sidebar: [
 				{ label: "Quick start", slug: "quick-start" },
 				{
@@ -27,14 +27,14 @@ export default defineConfig({
 						{ label: "Card payments", slug: "features/card-payments" },
 						{ label: "Projected balances", slug: "features/projected-balances" },
 						{ label: "Retail receipt sync", slug: "features/receipt-sync" },
-						{ label: "Business filter", slug: "features/business-filter" },
+						{ label: "Workspaces", slug: "features/workspaces" },
 					],
 				},
 				{
 					label: "Plans",
 					items: [
 						{ label: "Roadmap", link: "/roadmap/" },
-						{ label: "Feature requests", link: "https://github.com/axerieSoftware/wingspan/discussions/categories/ideas", attrs: { target: "_blank" } },
+						{ label: "Feature requests", link: "https://github.com/AxerieSoftware/wingspan/discussions/categories/ideas", attrs: { target: "_blank" } },
 					],
 				},
 				{

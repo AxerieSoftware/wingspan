@@ -20,7 +20,7 @@ const accounts = [
 	account('joint', 'Joint Checking', 'depository'),
 	account('savings', 'Savings', 'depository'),
 	account('visa', 'Visa', 'credit'),
-	account('studioChecking', 'Studio Checking', 'depository', business),
+	account('studioChecking', 'Contoso Checking', 'depository', business),
 	account('studioSavings', 'Studio Savings', 'depository', business),
 	account('studioCard', 'Studio Card', 'credit', business)
 ];

@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping. Bugs go in [Issues](https://github.com/axerieSoftware/wingspan/issues/new/choose), and pull requests are welcome.
+Thanks for helping. Bugs go in [Issues](https://github.com/AxerieSoftware/wingspan/issues/new/choose), and pull requests are welcome.
 
 Before building a feature, check the [roadmap](https://wingspan.axerie.com/roadmap/). Wingspan only adds what Monarch doesn't have, never rebuilds or unlocks Monarch's own features, and a feature that extends one of Monarch's uses Monarch's name for it.
 

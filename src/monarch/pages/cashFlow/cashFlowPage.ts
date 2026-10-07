@@ -1,4 +1,3 @@
-import { readPersistedField } from '../../persistedState';
 import type { MonarchNavigator } from '../monarchNavigator';
 import { MountedSlot, type SlotContent } from '../mountedSlot';
 import { WingspanAttribute } from '../wingspanAttributes';
@@ -8,8 +7,8 @@ const GOALS_PATH = '/goals';
 /** The grid cell holding the chart, which both the bar and Sankey views have. */
 export const CHART_GRID_ITEM_SELECTOR = '[data-external-id="grid-item"][style*="grid-area: chart"]';
 const TIMEFRAMES = ['month', 'quarter', 'year'] as const;
-/** Where Monarch keeps this tab's Cash Flow filters, its business filter among them. */
-const PERSISTENT_FILTER_STORAGE_KEY = 'persist:persistentFilter';
+/** Monarch keeps its Cash Flow filters in the URL as you change them, one parameter per chosen business. */
+const BUSINESS_FILTER_PARAM = 'businessEntitySet';
 
 export type CashFlowTimeframe = (typeof TIMEFRAMES)[number];
 
@@ -48,13 +47,12 @@ export class CashFlowPage {
 	}
 
 	/**
-	 * Monarch's business filter as last set on Cash Flow in this tab, readable from any page: business ids, plus
-	 * "business_entity_none" for Household. An empty selection shows everything.
+	 * Monarch's business filter on the Cash Flow page: business ids, plus "business_entity_none" for Household. An empty
+	 * selection shows everything. Read from the URL, which Monarch updates as the filter changes; the copy it saves
+	 * to session storage is written a moment later and can be stale.
 	 */
 	public get businessEntityFilter(): string[] {
-		const cashFlowFilters = readPersistedField(this.window.sessionStorage, PERSISTENT_FILTER_STORAGE_KEY, 'cashFlow') as { businessEntitySet?: unknown } | undefined;
-		const entitySet = cashFlowFilters?.businessEntitySet;
-		return Array.isArray(entitySet) ? entitySet.filter((entityId): entityId is string => typeof entityId === 'string') : [];
+		return new URLSearchParams(this.window.location.search).getAll(BUSINESS_FILTER_PARAM);
 	}
 
 	public open(): void {

@@ -13,7 +13,7 @@ import { TransactionMatcher } from './recurringItems/services/transactionMatcher
 import { DueLabelFormatter } from './shared/dueLabelFormatter';
 import { CardPaymentKind } from './statements/cardPaymentKind';
 import { StatementsTotals } from './statements/services/statementsTotals';
-/** Wingspan's recurring items. Cash Flow and the business filter also use them. */
+/** Wingspan's recurring items. Cash Flow and workspaces also use them. */
 export interface Recurring {
 	kinds: RecurringItemKindRegistry;
 	manualBills: ManualBillKind;
