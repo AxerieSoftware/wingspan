@@ -37,6 +37,6 @@ test('About shows the version as a beta, with a link to report a problem', async
 	const report = about.getByRole('link', { name: 'Report a problem' });
 	await expect(report).toHaveAttribute('target', '_blank');
 	const url = new URL((await report.getAttribute('href')) ?? '');
-	expect(url.pathname).toBe('/axerieSoftware/wingspan/issues/new');
+	expect(url.pathname).toBe('/AxerieSoftware/wingspan/issues/new');
 	expect(url.searchParams.get('browser')).toMatch(/^Chrome \d+, Wingspan \d+\.\d+\.\d+$/);
 });

@@ -32,4 +32,4 @@ Reading a supported retailer's site (currently `www.walmart.com` and `www.costco
 
 ## Contact
 
-Questions go to [GitHub Issues](https://github.com/axerieSoftware/wingspan/issues).
+Questions go to [GitHub Issues](https://github.com/AxerieSoftware/wingspan/issues).

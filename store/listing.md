@@ -44,7 +44,7 @@ Up to 132 characters, the same as `description` in `wxt.config.ts`.
 | Category | Chrome: Tools. Edge: Productivity |
 | Language | English (United States) |
 | Website | https://wingspan.axerie.com |
-| Support | https://github.com/axerieSoftware/wingspan/issues |
+| Support | https://github.com/AxerieSoftware/wingspan/issues |
 | Privacy policy | https://wingspan.axerie.com/privacy/ |
 | Visibility for the beta | Unlisted, then public |
 
@@ -83,4 +83,4 @@ Up to 132 characters, the same as `description` in `wxt.config.ts`.
 
 > Wingspan runs on app.monarch.com and needs a Monarch Money account with Recurring 2.0 turned on (Settings → Early Access). It adds rows to the Recurring page, a Projected balances card to Cash Flow, and a Sync retailer menu to Transactions → Receipts. Syncing Walmart or Costco first asks for that site on the extension's own page.
 >
-> Its requests to Monarch's own API are each tagged client=wingspan in their address, and its GraphQL requests are named with a wingspan_ prefix. It reads Monarch's CSRF cookie only to send it back to Monarch with those requests, and Monarch's saved session only for the household's ID. When the household syncs Walmart or Costco, it also calls that store's own API from the store tab it opens, with the session signed in there; for Costco it reuses the sign-in token Costco's page sends with its receipts request, in that tab only. Purchases read there go only to Monarch, as receipts. The source is at https://github.com/axerieSoftware/wingspan.
+> Its requests to Monarch's own API are each tagged client=wingspan in their address, and its GraphQL requests are named with a wingspan_ prefix. It reads Monarch's CSRF cookie only to send it back to Monarch with those requests, and Monarch's saved session only for the household's ID. When the household syncs Walmart or Costco, it also calls that store's own API from the store tab it opens, with the session signed in there; for Costco it reuses the sign-in token Costco's page sends with its receipts request, in that tab only. Purchases read there go only to Monarch, as receipts. The source is at https://github.com/AxerieSoftware/wingspan.

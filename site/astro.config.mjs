@@ -2,7 +2,7 @@ import starlight from "@astrojs/starlight";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 
-const repo = "https://github.com/axerieSoftware/wingspan";
+const repo = "https://github.com/AxerieSoftware/wingspan";
 
 export default defineConfig({
 	site: "https://wingspan.axerie.com",
@@ -34,7 +34,7 @@ export default defineConfig({
 					label: "Plans",
 					items: [
 						{ label: "Roadmap", link: "/roadmap/" },
-						{ label: "Feature requests", link: "https://github.com/axerieSoftware/wingspan/discussions/categories/ideas", attrs: { target: "_blank" } },
+						{ label: "Feature requests", link: "https://github.com/AxerieSoftware/wingspan/discussions/categories/ideas", attrs: { target: "_blank" } },
 					],
 				},
 				{

@@ -1,4 +1,4 @@
-const NEW_ISSUE_URL = 'https://github.com/axerieSoftware/wingspan/issues/new';
+const NEW_ISSUE_URL = 'https://github.com/AxerieSoftware/wingspan/issues/new';
 const BUG_TEMPLATE = 'bug.yml';
 const KNOWN_BROWSERS = [
 	{ name: 'Edge', pattern: /Edg\/(\d+)/ },

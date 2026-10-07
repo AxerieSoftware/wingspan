@@ -8,7 +8,7 @@ description: What Wingspan reads, what it writes, and how to audit it.
 - **Saves in your Monarch account.** See [Where Wingspan saves](/features/where-wingspan-saves/).
 - **Part of the app.** Everything Wingspan adds to the page is built from Monarch's own styles, so it looks like Monarch and follows its light and dark themes.
 - **Easy to audit.** Every request Wingspan sends to Monarch carries `client=wingspan` in its address. Filter DevTools → Network by `client=wingspan` to see exactly what it asks for.
-- **Open source.** The code is on [GitHub](https://github.com/axerieSoftware/wingspan).
+- **Open source.** The code is on [GitHub](https://github.com/AxerieSoftware/wingspan).
 
 :::caution
 Monarch doesn't publish this API. It can change without notice, and parts of Wingspan will stop working until they're updated.
