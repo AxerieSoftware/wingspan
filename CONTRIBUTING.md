@@ -76,7 +76,8 @@ Monarch ships in that bundle. Tests seed Wingspan's storage
 and reload the extension from `chrome://extensions`.
 
 CI also runs `e2e` every morning, so a Monarch release that breaks Wingspan
-shows up even when nothing was pushed.
+shows up even when nothing was pushed. On CI the tests are split across four
+jobs, and the snapshot is cached for the day.
 
 ## Load it unpacked
 

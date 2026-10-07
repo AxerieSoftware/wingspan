@@ -287,8 +287,15 @@ async function snapshotFile(href: string): Promise<string | null> {
 	const response = await fetch(href);
 	if (!response.ok) return null;
 	fs.mkdirSync(path.dirname(file), { recursive: true });
-	fs.writeFileSync(file, Buffer.from(await response.arrayBuffer()));
+	writeAtomically(file, Buffer.from(await response.arrayBuffer()));
 	return file;
+}
+
+/** Parallel workers fill the snapshot at once, so a file must never be seen half-written. */
+function writeAtomically(file: string, data: string | Buffer) {
+	const temp = `${file}.${process.pid}.tmp`;
+	fs.writeFileSync(temp, data);
+	fs.renameSync(temp, file);
 }
 
 /** Monarch's main bundle ships its GraphQL schema as introspection JSON. */
@@ -308,7 +315,7 @@ async function monarchSchema(): Promise<IntrospectionQuery> {
 	let literalEnd = literalStart;
 	while (literalEnd < bundle.length && bundle.charAt(literalEnd) !== "'") literalEnd += bundle.charAt(literalEnd) === '\\' ? 2 : 1;
 	const schema: IntrospectionQuery = JSON.parse(new Function(`return '${bundle.slice(literalStart, literalEnd)}'`)());
-	fs.writeFileSync(cached, JSON.stringify(schema));
+	writeAtomically(cached, JSON.stringify(schema));
 	return schema;
 }
 

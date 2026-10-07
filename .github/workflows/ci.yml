@@ -42,8 +42,13 @@ jobs:
       - name: Unit tests
         run: npm test
 
-  e2e:
+  e2e-shard:
+    name: e2e (${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - name: Check out repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -65,13 +70,33 @@ jobs:
       - name: Ensure classes exist in Monarch
         run: npm run ensure:classes
 
+      - name: Get today's date
+        id: date
+        run: echo "today=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+
+      # Keyed by day, so the daily run still tests a Monarch release from the last day.
+      - name: Cache Monarch snapshot
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: tests/.monarch-snapshot
+          key: monarch-snapshot-${{ steps.date.outputs.today }}
+
       - name: End-to-end tests
-        run: npm run e2e
+        run: npm run e2e -- --shard=${{ matrix.shard }}/4
 
       - name: Upload Playwright traces
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: e2e-traces
+          name: e2e-traces-${{ matrix.shard }}
           path: tests/test-results/
           retention-days: 7
+
+  # The ruleset requires one "e2e" check, whatever the shard count.
+  e2e:
+    needs: e2e-shard
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check every shard passed
+        run: test "${{ needs.e2e-shard.result }}" = success
