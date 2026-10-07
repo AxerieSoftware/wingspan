@@ -29,7 +29,7 @@ describe('a household with a business', () => {
 	const businesses = [{ id: BUSINESS, name: 'Studio' }];
 	const accounts = [
 		account('Joint Checking', 'depository', 3000),
-		account('Studio Checking', 'depository', 8000, business),
+		account('Contoso Checking', 'depository', 8000, business),
 		account('Visa', 'credit', -400),
 		account('Studio Card', 'credit', -900, business)
 	];
@@ -40,7 +40,7 @@ describe('a household with a business', () => {
 	const flows = [
 		recurringFlow('Paycheck', 'income', '2026-10-25', 4000, 'Joint Checking'),
 		recurringFlow('Rent', 'expense', '2026-10-15', -1500, 'Joint Checking'),
-		recurringFlow('Client', 'income', '2026-10-18', 6000, 'Studio Checking'),
+		recurringFlow('Client', 'income', '2026-10-18', 6000, 'Contoso Checking'),
 		recurringFlow('Software', 'expense', '2026-10-12', -200, 'Studio Card'),
 		unaccounted
 	];
@@ -54,7 +54,7 @@ describe('a household with a business', () => {
 		since: '2026-01',
 		...(accountId ? { matchRule: { matchText: name, accountId } } : {})
 	});
-	const items = [bill('Water'), bill('Studio rent', 'Studio Checking')];
+	const items = [bill('Water'), bill('Studio rent', 'Contoso Checking')];
 	const data = { ...emptyWingspanData(), cashSettings: { cushion: 500 }, businessCashSettings: { [BUSINESS]: { cushion: 2000 } } };
 
 	const plan = (filter: string[], extra: Partial<ProjectionInput> = {}) => {

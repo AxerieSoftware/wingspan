@@ -8,7 +8,6 @@ import type { RecurringV2DueDate, RecurringV2Item } from './models/recurringV2It
 import type { RecurringV2WingspanRow, RecurringV2WingspanRows } from './models/recurringV2WingspanRow';
 import type { RecurringView } from './models/recurringView';
 import { RecurringV2AddDialog } from './recurringV2AddDialog';
-import { RecurringV2Controls } from './recurringV2Controls';
 import { RecurringV2EntityFilter, type RecurringV2Summary } from './recurringV2EntityFilter';
 import { RecurringV2LayoutCopier } from './recurringV2LayoutCopier';
 import { RecurringV2Row } from './recurringV2Row';
@@ -67,7 +66,6 @@ export class RecurringV2Page {
 	private readonly statementsCard: RecurringV2StatementsCard;
 	private readonly addDialog: RecurringV2AddDialog;
 	private readonly sidebar: RecurringV2Sidebar;
-	private readonly controls: RecurringV2Controls;
 	private readonly entityFilter: RecurringV2EntityFilter;
 	private readonly wingspanRowEls = new Map<string, HTMLElement>();
 	private readonly wingspanRowOpeners = new Map<string, () => void>();
@@ -78,7 +76,6 @@ export class RecurringV2Page {
 		this.statementsCard = new RecurringV2StatementsCard(window.document, this.layoutCopier);
 		this.addDialog = new RecurringV2AddDialog(window.document);
 		this.sidebar = new RecurringV2Sidebar(window.document);
-		this.controls = new RecurringV2Controls(window.document);
 		this.entityFilter = new RecurringV2EntityFilter(window.document);
 	}
 
@@ -168,20 +165,6 @@ export class RecurringV2Page {
 	public removeDueDates(): void {
 		for (const row of this.sections.flatMap(section => section.rows)) row.dueLabel = '';
 		this.rowOrderStyles.restore();
-	}
-
-	/** The class of Monarch's Filters button, for a Wingspan control next to it. */
-	public get filtersButtonClassName(): string | undefined {
-		return this.controls.buttonClassName;
-	}
-
-	/** Inserts a Wingspan control just before Monarch's Filters button. */
-	public showControl(controlContent: SlotContent, ownAttribute: string): void {
-		this.controls.show(controlContent, ownAttribute);
-	}
-
-	public removeControl(): void {
-		this.controls.remove();
 	}
 
 	/**

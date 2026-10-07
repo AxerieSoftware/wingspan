@@ -80,13 +80,13 @@
 					"cards": []
 				},
 				{
-					"name": "Business filter",
-					"where": "Adds to Recurring",
-					"description": "Monarch's household and business switch on Recurring, for Monarch Plus households with a business",
+					"name": "Workspaces",
+					"where": "Adds to the sidebar",
+					"description": "One switch for the household or a business that every supported page follows, for Monarch Plus households with a business",
 					"cards": [],
-					"monarch": "Monarch has the switch on Cash Flow, Transactions and Reports, but not yet on Recurring 2.0",
+					"monarch": "Monarch filters by business one page at a time, and the choice resets in a new tab",
 					"boardStatus": "Not on the roadmap",
-					"match": "Full, once Recurring 2.0 gets Monarch's switch"
+					"match": "Partial: Monarch's per-page business filter"
 				}
 			]
 		},

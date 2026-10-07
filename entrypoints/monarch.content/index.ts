@@ -16,9 +16,9 @@ export default defineContentScript({
 	main(context: ContentScriptContext) {
 		const builder = new WingspanBuilder(window);
 		const recurring = createRecurring(builder);
-		// Features sync in the order they're added. The business filter goes first so the other features use the selected business.
+		// Features sync in the order they're added. Workspaces go first so the other features use the chosen workspace.
 		const businessFilter = addBusinessEntities(builder, recurring);
-		addSettings(builder);
+		addSettings(builder, businessFilter);
 		addRetailSync(builder);
 		const cashSettings = addCashSettings(builder, businessFilter);
 		const projectedBalances = addProjectedBalances(builder, recurring, cashSettings, businessFilter);
