@@ -19,7 +19,7 @@ async function extensionWorker(context: BrowserContext) {
 }
 
 /** Sends every tab the messages the background script sends while reading Walmart; only the Monarch tab listens. */
-async function fromBackground(context: BrowserContext, messages: unknown[]) {
+async function sendFromBackground(context: BrowserContext, messages: unknown[]) {
 	const worker = await extensionWorker(context);
 	await worker.evaluate(async updates => {
 		const { tabs } = (globalThis as unknown as { chrome: { tabs: { query(filter: object): Promise<{ id?: number }[]>; sendMessage(tabId: number, message: unknown): Promise<unknown> } } }).chrome;
@@ -54,12 +54,12 @@ test("Receipts and Retail Sync get a Sync retailer menu of Walmart and Costco ju
 
 test("while one store syncs, the menu is disabled and shows which store it's reading", async ({ page, context, open }) => {
 	await open({ path: '/transactions/retail-sync', waitForRows: false });
-	await fromBackground(context, [{ type: 'retailSync:progress', retailer: 'costco', found: 3, fetched: 1 }]);
+	await sendFromBackground(context, [{ type: 'retailSync:progress', retailer: 'costco', found: 3, fetched: 1 }]);
 
 	await expect(page.locator('[data-wingspan-retail-sync] > [role=status]')).toHaveText('Read 1 of 3 Costco purchases · sent 0');
 	await expect(syncMenu(page)).toBeDisabled();
 
-	await fromBackground(context, [{ type: 'retailSync:failed', retailer: 'costco', reason: 'retailerTabClosed' }]);
+	await sendFromBackground(context, [{ type: 'retailSync:failed', retailer: 'costco', reason: 'retailerTabClosed' }]);
 	const stopped = page.getByRole('dialog', { name: 'Costco sync stopped' });
 	await expect(stopped).toBeVisible();
 	await page.keyboard.press('Escape');
@@ -123,7 +123,7 @@ test('orders read from Walmart are uploaded to Monarch as PDF receipts, each onl
 	await open({ path: '/transactions/retail-sync', waitForRows: false });
 	const orders = [walmartOrder('200015000000001', 'Bananas', 12.5), walmartOrder('200015000000002', 'Paper towels', 20)];
 
-	await fromBackground(context, [
+	await sendFromBackground(context, [
 		{ type: 'retailSync:progress', retailer: 'walmart', found: 2, fetched: 0 },
 		{ type: 'retailSync:orders', retailer: 'walmart', orders },
 		{ type: 'retailSync:progress', retailer: 'walmart', found: 2, fetched: 2 },
@@ -145,7 +145,7 @@ test('orders read from Walmart are uploaded to Monarch as PDF receipts, each onl
 	await expect(page).toHaveURL(/\/transactions\/receipts$/);
 
 	// The same orders again, as from a sync that overlaps the last one: nothing new is uploaded.
-	await fromBackground(context, [
+	await sendFromBackground(context, [
 		{ type: 'retailSync:orders', retailer: 'walmart', orders },
 		{ type: 'retailSync:done', retailer: 'walmart', found: 2 }
 	]);
@@ -157,7 +157,7 @@ test('orders read from Walmart are uploaded to Monarch as PDF receipts, each onl
 test('a sync that Walmart interrupts tells the user what to do, and keeps the receipts already sent', async ({ page, context, open, apiLog }) => {
 	await open({ path: '/transactions/receipts', waitForRows: false });
 
-	await fromBackground(context, [
+	await sendFromBackground(context, [
 		{ type: 'retailSync:orders', retailer: 'walmart', orders: [walmartOrder('200015000000003', 'Milk', 5)] },
 		{ type: 'retailSync:failed', retailer: 'walmart', reason: 'retailerChallenge' }
 	]);
@@ -172,7 +172,7 @@ test('receipts Monarch rejected are reported even when the sync stops afterward'
 	await open({ path: '/transactions/receipts', waitForRows: false });
 	await page.route('https://api.monarch.com/retail-sync/**', route => route.fulfill({ status: 500, contentType: 'application/json', body: '{}' }));
 
-	await fromBackground(context, [
+	await sendFromBackground(context, [
 		{ type: 'retailSync:orders', retailer: 'walmart', orders: [walmartOrder('200015000000004', 'Eggs', 6)] },
 		{ type: 'retailSync:failed', retailer: 'walmart', reason: 'retailerTabClosed' }
 	]);
@@ -187,7 +187,7 @@ test('when Monarch rejects one receipt in a batch, the ones it already accepted 
 	let filesPosted = 0;
 	await page.route('https://api.monarch.com/retail-sync/**', route => (++filesPosted === 2 ? route.fulfill({ status: 500, contentType: 'application/json', body: '{}' }) : route.fallback()));
 
-	await fromBackground(context, [
+	await sendFromBackground(context, [
 		{ type: 'retailSync:orders', retailer: 'walmart', orders: [walmartOrder('200015000000005', 'Bread', 4), walmartOrder('200015000000006', 'Butter', 7)] },
 		{ type: 'retailSync:done', retailer: 'walmart', found: 2 }
 	]);
@@ -216,7 +216,7 @@ const costcoReceipt = (barcode: string, total: number) => ({
 test("Costco receipts are uploaded to Monarch the same way, tracked separately from Walmart's", async ({ page, context, open, apiLog, household }) => {
 	await open({ path: '/transactions/receipts', waitForRows: false });
 
-	await fromBackground(context, [
+	await sendFromBackground(context, [
 		{ type: 'retailSync:progress', retailer: 'costco', found: 1, fetched: 0 },
 		{ type: 'retailSync:orders', retailer: 'costco', orders: [costcoReceipt('21134300800232509051234', 42.5)] },
 		{ type: 'retailSync:done', retailer: 'costco', found: 1 }
@@ -237,7 +237,7 @@ test("a purchase Monarch already has a receipt for (same store, amount and day) 
 	await chooseStore(page, 'Costco');
 	await (await accessPage).close();
 
-	await fromBackground(context, [
+	await sendFromBackground(context, [
 		{ type: 'retailSync:orders', retailer: 'costco', orders: [costcoReceipt('21134300800232509051234', 42.5), costcoReceipt('21134300800232509059999', 18)] },
 		{ type: 'retailSync:done', retailer: 'costco', found: 2 }
 	]);

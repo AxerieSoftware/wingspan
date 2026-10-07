@@ -1,4 +1,6 @@
 import * as v from 'valibot';
+import { EnvelopeVersionMismatchError } from '../errors/envelopeVersionMismatchError';
+import { ETagMismatchError } from '../errors/eTagMismatchError';
 
 /** Saved data with its schema version and an ETag that changes on every write, so a save never overwrites data it didn't read. */
 export interface Envelope<TValue> {
@@ -16,11 +18,19 @@ export const EnvelopeSchema = v.looseObject({
 	wingspanVersion: v.optional(v.string())
 });
 
+/** Throws unless `envelope` may replace `savedEnvelope`: never over a newer version, or over a copy that changed since it was read. */
+export function ensureCanOverwrite(savedEnvelope: Envelope<unknown> | undefined, envelope: Envelope<unknown>): void {
+	if (!savedEnvelope) return;
+	if (savedEnvelope.version > envelope.version) throw new EnvelopeVersionMismatchError(savedEnvelope.version, envelope.version);
+	if (savedEnvelope.etag !== envelope.etag) throw new ETagMismatchError(savedEnvelope.etag, envelope.etag);
+}
+
 /** Whether `version`, as "1.2.3", is later than `than`. Returns false if either can't be parsed. */
 export function isNewerVersion(version: string | undefined, than: string): boolean {
-	const parts = (text: string) => text.split('.').map(part => Number.parseInt(part, 10));
 	if (!version) return false;
-	const [ours, theirs] = [parts(version), parts(than)];
+
+	const toParts = (text: string) => text.split('.').map(part => Number.parseInt(part, 10));
+	const [ours, theirs] = [toParts(version), toParts(than)];
 	if ([...ours, ...theirs].some(part => Number.isNaN(part))) return false;
 	for (let index = 0; index < Math.max(ours.length, theirs.length); index++) {
 		const difference = (ours[index] ?? 0) - (theirs[index] ?? 0);

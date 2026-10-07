@@ -28,6 +28,7 @@ export default defineConfig({
 						{ label: "Projected balances", slug: "features/projected-balances" },
 						{ label: "Retail receipt sync", slug: "features/receipt-sync" },
 						{ label: "Workspaces", slug: "features/workspaces" },
+						{ label: "Sidebar items", slug: "features/sidebar-items" },
 					],
 				},
 				{

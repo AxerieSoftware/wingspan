@@ -4,9 +4,8 @@ import { type RouterLocation, withoutBusinessFilter, workspaceRedirect } from '.
 const RELOAD_MARK_KEY = 'wingspanWorkspaceReload';
 
 /**
- * Opens Monarch's pages filtered to the workspace. The filter is set before Monarch's page mounts wherever possible:
- * on a full load (`applyBeforeMonarchStarts`) and when a link in the app is clicked. Anything that still arrives
- * unfiltered is fixed afterwards, with a reload for the pages that only read the filter as they mount.
+ * Opens Monarch's pages filtered to the workspace, setting the filter before the page mounts on a full load or link
+ * click. Anything that still arrives unfiltered is fixed afterwards, reloading pages that read the filter only as they mount.
  */
 export class WorkspaceNavigation implements Disposable {
 	private entityId: string | null = null;
@@ -47,9 +46,9 @@ export class WorkspaceNavigation implements Disposable {
 			return;
 		}
 
-		const mark = `${path}|${entityId}`;
-		if (this.window.sessionStorage.getItem(RELOAD_MARK_KEY) === mark) return;
-		this.window.sessionStorage.setItem(RELOAD_MARK_KEY, mark);
+		const reloadMark = `${path}|${entityId}`;
+		if (this.window.sessionStorage.getItem(RELOAD_MARK_KEY) === reloadMark) return;
+		this.window.sessionStorage.setItem(RELOAD_MARK_KEY, reloadMark);
 		this.window.history.replaceState(redirect.state, '', redirect.url);
 		this.window.location.reload();
 	}
@@ -82,8 +81,8 @@ export class WorkspaceNavigation implements Disposable {
 	};
 
 	/** Fires popstate so Monarch's router follows without a reload. */
-	private go(location: RouterLocation, how: 'push' | 'replace'): void {
-		if (how === 'push') this.window.history.pushState(location.state, '', location.url);
+	private go(location: RouterLocation, historyMode: 'push' | 'replace'): void {
+		if (historyMode === 'push') this.window.history.pushState(location.state, '', location.url);
 		else this.window.history.replaceState(location.state, '', location.url);
 		this.window.dispatchEvent(new PopStateEvent('popstate', { state: location.state }));
 	}

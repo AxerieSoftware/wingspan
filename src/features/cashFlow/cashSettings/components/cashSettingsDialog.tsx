@@ -60,9 +60,7 @@ interface MoveButtonsProps {
 
 /** Lets the household choose which cash accounts are checking or reserves, which cards count and in what order, the cushion, and the safety days. */
 export function CashSettingsDialog({ ownerChoice, cashAccounts, cardAccounts, settings, formatter, onSave, onClose }: CashSettingsDialogProps) {
-	const [roles, setRoles] = useState<ReadonlyMap<string, CashRole>>(
-		() => new Map(cashAccounts.map(account => [account.id, settings.checkingAccountIds.includes(account.id) ? 'checking' : settings.reserveAccountIds.includes(account.id) ? 'reserve' : 'none']))
-	);
+	const [roles, setRoles] = useState<ReadonlyMap<string, CashRole>>(() => new Map(cashAccounts.map(account => [account.id, savedRoleOf(account.id, settings)])));
 	const idsWithRole = (role: CashRole) => cashAccounts.filter(account => roles.get(account.id) === role).map(account => account.id);
 	const checkingIds = new Set(idsWithRole('checking'));
 	const [cardIds, setCardIds] = useState<ReadonlySet<string>>(() => new Set(settings.cardAccountIds));
@@ -261,9 +259,15 @@ function missingTermsWarning(card: Account): string | null {
 	return notes.length ? `${notes.join(' ')} Add ${notes.length === 1 ? 'it' : 'them'} in the account's details in Monarch.` : null;
 }
 
+function savedRoleOf(accountId: string, settings: CashSettings): CashRole {
+	if (settings.checkingAccountIds.includes(accountId)) return 'checking';
+	if (settings.reserveAccountIds.includes(accountId)) return 'reserve';
+	return 'none';
+}
+
 function chosenFirst(accounts: Account[], chosenIds: string[]): Account[] {
-	const byId = new Map(accounts.map(account => [account.id, account]));
-	const chosen = chosenIds.flatMap(accountId => byId.get(accountId) ?? []);
+	const accountsById = new Map(accounts.map(account => [account.id, account]));
+	const chosen = chosenIds.flatMap(accountId => accountsById.get(accountId) ?? []);
 	return [...chosen, ...accounts.filter(account => !chosenIds.includes(account.id))];
 }
 

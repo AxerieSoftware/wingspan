@@ -44,7 +44,8 @@ export class MonarchRowScope {
 		// Same name in more than one entity: use the amount to decide when it only matches one entity's items.
 		const sameAmount = candidates.filter(candidate => candidate.amount !== null && item.amount !== null && Math.abs(Math.abs(candidate.amount) - item.amount) < CENT_TOLERANCE);
 		const [first] = sameAmount;
-		return first && sameAmount.every(candidate => candidate.isIncluded === first.isIncluded) ? first.isIncluded : true;
+		if (!first || !sameAmount.every(candidate => candidate.isIncluded === first.isIncluded)) return true;
+		return first.isIncluded;
 	}
 
 	/** For "Show 15 inactive expenses": the number of inactive items of that type that belong to unselected entities. */
@@ -53,6 +54,7 @@ export class MonarchRowScope {
 		const singular = kind.toLowerCase().replace(/s$/, '');
 		if (!(singular in INACTIVE_KINDS)) return 0;
 		const recurringType = INACTIVE_KINDS[singular];
-		return recurringType ? (this.hiddenInactiveByType.get(recurringType) ?? 0) : this.hiddenInactiveByType.values().reduce((total, count) => total + count, 0);
+		if (!recurringType) return this.hiddenInactiveByType.values().reduce((total, count) => total + count, 0);
+		return this.hiddenInactiveByType.get(recurringType) ?? 0;
 	}
 }

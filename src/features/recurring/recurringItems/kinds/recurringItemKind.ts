@@ -32,10 +32,13 @@ export const EXPENSES_SECTION_NAME = 'Expenses';
 /** A kind of item Wingspan adds to Recurring: how it's edited, how its payments are found, and what it owes. */
 export interface RecurringItemKind {
 	readonly kind: string;
+	/** Label for the Type field in Add recurring and the Type row in the item's details. */
 	readonly label: string;
 	readonly typeColumnLabel: string;
+	/** The section its rows go in when Recurring is grouped by type. */
 	readonly typeSectionName: string;
 	readonly paymentWindow: PaymentWindow;
+	/** How many months an unpaid occurrence is carried over before it's dropped. */
 	readonly unpaidCarryMonths: number;
 	readonly showsInStatements: boolean;
 	readonly EditorFields: ComponentType<RecurringItemEditorFieldsProps>;

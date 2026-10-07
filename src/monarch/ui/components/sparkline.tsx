@@ -38,7 +38,7 @@ export function Sparkline({ points, formatter }: SparklineProps) {
 		<div className="justify-self-center">
 			<div role="img" className="flex cursor-default items-stretch justify-end border-b border-chart-axis" style={{ width: 96, height: 24 }} aria-label={pointDescriptions.join('; ')}>
 				{points.map((point, pointIndex) => {
-					const barHeight = point.amount !== null ? Math.max(8, (point.amount / tallestAmount) * 100) : point.paid ? 100 : 0;
+					const barHeight = barHeightPercent(point, tallestAmount);
 
 					return (
 						<Tooltip key={point.dueDate} label={pointDescriptions[pointIndex] ?? ''} delay={0}>
@@ -58,4 +58,9 @@ export function Sparkline({ points, formatter }: SparklineProps) {
 			</div>
 		</div>
 	);
+}
+
+function barHeightPercent(point: SparkPoint, tallestAmount: number): number {
+	if (point.amount !== null) return Math.max(8, (point.amount / tallestAmount) * 100);
+	return point.paid ? 100 : 0;
 }

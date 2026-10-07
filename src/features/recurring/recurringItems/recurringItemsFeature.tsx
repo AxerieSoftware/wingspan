@@ -185,7 +185,9 @@ export class RecurringItemsFeature implements WingspanFeature {
 				case 'type':
 					return kinds.of(line.item).typeSectionName;
 				case 'status':
-					return line.paid ? 'Paid' : line.overdue ? 'Overdue' : 'Upcoming';
+					if (line.paid) return 'Paid';
+					if (line.overdue) return 'Overdue';
+					return 'Upcoming';
 				case 'frequency':
 					return recurrence.describe(recurrence.fromRecurrence(line.item.recurrence));
 				case 'account':
@@ -203,15 +205,12 @@ export class RecurringItemsFeature implements WingspanFeature {
 		const isThisMonth = view === 'month' && month === this.services.calendar.currentMonth();
 		const paidInStatements = statementsLines.flatMap(line => line.occurrences).reduce((total, occurrence) => total + (occurrence.paid ? occurrence.amount : 0), 0);
 		this.rowsData.statementsTotals.publish(isThisMonth && !isPaymentDataMissing ? { paid: paidInStatements, left: owedInStatements.total, unknownCount: owedInStatements.unknownCount } : null);
-		const statementsFooterText = view === 'all' || isPaymentDataMissing ? null : isStale ? `${footerText}, as of ${formatter.asOf(snapshot.fetchedAt)}` : footerText;
+		let statementsFooterText: string | null = footerText;
+		if (view === 'all' || isPaymentDataMissing) statementsFooterText = null;
+		else if (isStale) statementsFooterText = `${footerText}, as of ${formatter.asOf(snapshot.fetchedAt)}`;
 
 		const hasCardPayments = this.rowsData.itemRepository.data.value.recurringItems.some(item => kinds.of(item).showsInStatements && isShown(item));
-		const statementsEmptyText =
-			!this.dataService.isLoaded.value || isWaitingForAccounts
-				? null
-				: hasCardPayments
-					? `No card payments ${view === 'all' ? 'yet' : month === this.services.calendar.currentMonth() ? 'due this month' : `due in ${formatter.longMonthYear(`${month}-01`)}`}.`
-					: 'No card payments yet. Add one with Add recurring.';
+		const statementsEmptyText = this.statementsEmptyText(view, month, isWaitingForAccounts, hasCardPayments);
 
 		return {
 			key,
@@ -231,7 +230,7 @@ export class RecurringItemsFeature implements WingspanFeature {
 					const rowEl = rowEls.get(line.key);
 					if (!rowEl) return [];
 
-					const linkedAccountId = kinds.of(line.item).linkedAccountId(line.item);
+					const linkedAccountId = kinds.linkedAccountId(line.item);
 					const accountName = linkedAccountId === undefined ? paidFromName(line.item) : (accountNames.get(linkedAccountId) ?? '');
 					const points = this.rowsData.statementLines.reconcileHistory(line.item, ledger.historiesByItemId.get(line.item.id) ?? [], plansByItemId.get(line.item.id));
 					const history = payments.monthlyHistory(points, payments.trackingFloor(line.item, this.rowsData.itemRepository.data.value));
@@ -276,6 +275,14 @@ export class RecurringItemsFeature implements WingspanFeature {
 		if (!unknownCount) return owed ?? 'All paid';
 		const unknown = `${unknownCount} ${unknownCount === 1 ? 'amount' : 'amounts'} unknown`;
 		return owed ? `${owed}, plus ${unknown}` : `Unpaid, ${unknown}`;
+	}
+
+	private statementsEmptyText(view: RecurringView, month: string, isWaitingForAccounts: boolean, hasCardPayments: boolean): string | null {
+		if (!this.dataService.isLoaded.value || isWaitingForAccounts) return null;
+		if (!hasCardPayments) return 'No card payments yet. Add one with Add recurring.';
+		if (view === 'all') return 'No card payments yet.';
+		if (month === this.services.calendar.currentMonth()) return 'No card payments due this month.';
+		return `No card payments due in ${this.services.formatter.longMonthYear(`${month}-01`)}.`;
 	}
 
 	private ensureRowsIsland(): Island {

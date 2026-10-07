@@ -3,7 +3,7 @@ import { copyMonarchElement } from '../monarchCopy';
 import { WingspanAttribute } from '../wingspanAttributes';
 import type { RecurringV2Item } from './models/recurringV2Item';
 import type { RecurringV2Row } from './recurringV2Row';
-import { type RecurringV2SectionCard, sectionCountEl } from './recurringV2SectionCards';
+import { findSectionCountEl, type RecurringV2SectionCard } from './recurringV2SectionCards';
 import { RECURRING_V2_SELECTORS as SELECTORS } from './recurringV2Selectors';
 
 /** A line of the month summary as Wingspan shows it: the text after its label, and its progress. */
@@ -52,15 +52,15 @@ export class RecurringV2EntityFilter {
 
 		for (const { card, rows } of sections) {
 			const monarchRows = rows.filter(row => !row.isWingspanRow);
-			const countEl = sectionCountEl(card.cardEl);
+			const countEl = findSectionCountEl(card.cardEl);
 			// Monarch's count only includes active items, which are listed before any inactive ones.
 			const activeCount = Number.parseInt(countEl?.textContent ?? '', 10);
-			let shownActive = 0;
-			let shownAny = rows.length > monarchRows.length;
+			let shownActiveCount = 0;
+			let isAnyRowShown = rows.length > monarchRows.length;
 			monarchRows.forEach((row, index) => {
 				if (!isShown(row)) return hide(row.rowEl);
-				shownAny = true;
-				if (index < activeCount) shownActive++;
+				isAnyRowShown = true;
+				if (index < activeCount) shownActiveCount++;
 			});
 
 			const footer = this.inactiveFooter(card.cardEl, hiddenInactiveCount);
@@ -69,9 +69,9 @@ export class RecurringV2EntityFilter {
 				this.showOwnText(footer.labelEl, footer.label, WingspanAttribute.entityInactiveLabel);
 				replacedEls.add(footer.labelEl);
 			}
-			if (!shownAny && !footer?.shownCount) hide(card.cardEl);
+			if (!isAnyRowShown && !footer?.shownCount) hide(card.cardEl);
 			if (countEl && Number.isFinite(activeCount)) {
-				this.showOwnText(countEl, String(shownActive), WingspanAttribute.entityCount);
+				this.showOwnText(countEl, String(shownActiveCount), WingspanAttribute.entityCount);
 				replacedEls.add(countEl);
 			}
 		}

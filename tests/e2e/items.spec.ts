@@ -1,4 +1,4 @@
-import { addRecurring, chooseMerchant, dismissFirstRunNotice, expect, itemRow, section, seedSampleItems, test } from './fixtures';
+import { APP, addRecurring, chooseMerchant, dismissFirstRunNotice, expect, itemRow, section, seedSampleItems, test } from './fixtures';
 
 const STATUS_SELECT = '[data-external-id="add-recurring-group-status-select"]';
 const MONARCH_MERCHANT = '[data-external-id="add-recurring-group-merchant-field"]';
@@ -52,10 +52,10 @@ test("a bill is added from Monarch's Add recurring dialog, with details inferred
 		.getByRole('checkbox', { name: /Corner Cafe/ })
 		.first()
 		.check();
-	const add = dialog.getByRole('button', { name: 'Add recurring', exact: true }).last();
-	await expect(add).toBeEnabled();
+	const addButton = dialog.getByRole('button', { name: 'Add recurring', exact: true }).last();
+	await expect(addButton).toBeEnabled();
 	await expect(dialog.getByRole('textbox', { name: 'Name' }).last()).toHaveValue(/Corner Cafe/i);
-	await add.click();
+	await addButton.click();
 
 	await expect(dialog).toBeHidden();
 	await expect(
@@ -139,10 +139,10 @@ test('cancelling a removal from the editor keeps the editor open', async ({ page
 
 test('pressing ⋯ again closes its menu', async ({ page, open }) => {
 	await open();
-	const more = itemRow(page, 'Piano Lessons').getByRole('button', { name: 'More options' });
-	await more.click();
+	const menuButton = itemRow(page, 'Piano Lessons').getByRole('button', { name: 'More options' });
+	await menuButton.click();
 	await expect(page.getByRole('menu')).toBeVisible();
-	await more.click();
+	await menuButton.click();
 	await expect(page.getByRole('menu')).toHaveCount(0);
 });
 
@@ -194,7 +194,7 @@ test('changing the due day in the panel updates the item', async ({ page, open }
 test("the editor fills in Monarch's transactions when they arrive after it opens", async ({ page, household, api }) => {
 	api.delayMs = 1500;
 	await seedSampleItems(page, household);
-	await page.goto('https://app.monarch.com/recurring-v2/monthly');
+	await page.goto(`${APP}/recurring-v2/monthly`);
 	const dialog = await addRecurring(page, 'Bill');
 	await chooseMerchant(page, dialog, 'Corner Cafe');
 	await expect(dialog.getByRole('checkbox', { name: /Corner Cafe/ })).toBeVisible();

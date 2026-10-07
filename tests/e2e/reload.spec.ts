@@ -18,8 +18,8 @@ test('a content script disconnected by an extension update greys out what it add
 
 	const row = itemRow(page, 'Piano Lessons');
 	await expect(row).toBeVisible();
-	await expect.poll(() => row.evaluate(rowEl => Number(getComputedStyle(rowEl).opacity))).toBeLessThan(1);
-	await expect.poll(() => row.evaluate(rowEl => getComputedStyle(rowEl).pointerEvents)).toBe('none');
+	await expect.poll(() => row.evaluate(rowElement => Number(getComputedStyle(rowElement).opacity))).toBeLessThan(1);
+	await expect.poll(() => row.evaluate(rowElement => getComputedStyle(rowElement).pointerEvents)).toBe('none');
 	await expect(page.getByText(STALE_MESSAGE)).toBeVisible();
 	await expect(page.getByText('Wingspan now saves to your Monarch account')).toHaveCount(0);
 	await expect(page.getByRole('button', { name: 'Internet' })).not.toContainText('· Due');

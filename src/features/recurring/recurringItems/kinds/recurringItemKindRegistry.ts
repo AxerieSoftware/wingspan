@@ -24,6 +24,16 @@ export class RecurringItemKindRegistry {
 		return this.named(item.kind);
 	}
 
+	/** The Monarch account the item tracks, like a card payment's card. Throws for an unregistered kind. */
+	public linkedAccountId(item: RecurringItem): string | undefined {
+		return this.of(item).linkedAccountId(item);
+	}
+
+	/** Whether the item tracks a Monarch account, like a card payment linked to its card. */
+	public isLinked(item: RecurringItem): boolean {
+		return this.linkedAccountId(item) !== undefined;
+	}
+
 	/** Throws when no kind has that name. */
 	public named(kind: string): RecurringItemKind {
 		const itemKind = this.kindsByName.get(kind);

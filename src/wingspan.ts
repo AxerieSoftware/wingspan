@@ -64,23 +64,6 @@ export class Wingspan implements Disposable {
 		}
 	};
 
-	private followSession(): boolean {
-		const householdId = this.session.householdId();
-		if (!householdId && !this.householdId && this.session.hasUser() && !this.hasReportedUnknownHousehold) {
-			this.hasReportedUnknownHousehold = true;
-			void this.dataService.load();
-		}
-		if (!householdId || householdId === this.householdId) return true;
-		if (this.householdId) {
-			this.window.location.reload();
-			return false;
-		}
-
-		this.householdId = householdId;
-		void this.dataService.load();
-		return true;
-	}
-
 	/** Stops syncing and greys out Wingspan once the extension was updated or disabled under the page. This one never resumes: a reload or a newer Wingspan takes over. */
 	public suspend(): void {
 		if (this.isSuspended) return;
@@ -146,6 +129,23 @@ export class Wingspan implements Disposable {
 		this.sync();
 	}
 
+	private followSession(): boolean {
+		const householdId = this.session.householdId();
+		if (!householdId && !this.householdId && this.session.hasUser() && !this.hasReportedUnknownHousehold) {
+			this.hasReportedUnknownHousehold = true;
+			void this.dataService.load();
+		}
+		if (!householdId || householdId === this.householdId) return true;
+		if (this.householdId) {
+			this.window.location.reload();
+			return false;
+		}
+
+		this.householdId = householdId;
+		void this.dataService.load();
+		return true;
+	}
+
 	private readonly refreshWhenVisible = (): void => {
 		if (this.window.document.visibilityState !== 'visible') return;
 
@@ -168,6 +168,6 @@ export class Wingspan implements Disposable {
 }
 
 function isInWingspansParts(target: Node): boolean {
-	const targetEl = target instanceof Element ? target : target.parentElement;
-	return targetEl?.closest(WINGSPAN_PARTS_SELECTOR) != null;
+	const targetElement = target instanceof Element ? target : target.parentElement;
+	return targetElement?.closest(WINGSPAN_PARTS_SELECTOR) != null;
 }

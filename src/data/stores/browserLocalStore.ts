@@ -1,9 +1,7 @@
 import * as v from 'valibot';
 import { storage } from 'wxt/utils/storage';
-import { EnvelopeVersionMismatchError } from '../errors/envelopeVersionMismatchError';
-import { ETagMismatchError } from '../errors/eTagMismatchError';
 import { InvalidSavedDataError } from '../errors/invalidSavedDataError';
-import { type Envelope, EnvelopeSchema } from '../models/envelope';
+import { type Envelope, EnvelopeSchema, ensureCanOverwrite } from '../models/envelope';
 import type { Store } from './store';
 
 /** The data source name used in error messages. */
@@ -24,8 +22,7 @@ export class BrowserLocalStore<TValue> implements Store<TValue> {
 	/** Refuses to overwrite a newer version or a copy that changed since it was read. Returns the envelope as saved, with its new ETag. */
 	public async store(envelope: Envelope<TValue>): Promise<Envelope<TValue>> {
 		const savedEnvelope = await this.load();
-		if (savedEnvelope && savedEnvelope.version > envelope.version) throw new EnvelopeVersionMismatchError(savedEnvelope.version, envelope.version);
-		if (savedEnvelope && savedEnvelope.etag !== envelope.etag) throw new ETagMismatchError(savedEnvelope.etag, envelope.etag);
+		ensureCanOverwrite(savedEnvelope, envelope);
 
 		const storedEnvelope = { ...envelope, etag: crypto.randomUUID() };
 		await storage.setItem(this.key(), storedEnvelope);

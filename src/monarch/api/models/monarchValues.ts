@@ -1,7 +1,7 @@
-/** Values Monarch's API uses for account types, category groups, recurring types and occurrence statuses. */
+/** Monarch's names for the account types Wingspan acts on. */
 export const MonarchAccountType = { cash: 'depository', credit: 'credit' } as const;
 
-/** Category group types, by their full name or Monarch's one-letter code. */
+/** Transfer's category group type, by its full name or Monarch's one-letter code. */
 export const TRANSFER_GROUP_TYPES: ReadonlySet<string> = new Set(['transfer', 'T']);
 /** Income's category group type, by its full name or Monarch's one-letter code. */
 export const INCOME_GROUP_TYPES: ReadonlySet<string> = new Set(['income', 'I']);

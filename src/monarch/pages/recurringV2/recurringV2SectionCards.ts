@@ -17,7 +17,8 @@ export interface RecurringV2SectionCard {
 }
 
 /** The number beside a section's title. */
-export const sectionCountEl = (cardEl: HTMLElement): HTMLElement | null => cardEl.querySelector(SELECTORS.headerGrid)?.firstElementChild?.querySelector<HTMLElement>(SELECTORS.sectionCount) ?? null;
+export const findSectionCountEl = (cardEl: HTMLElement): HTMLElement | null =>
+	cardEl.querySelector(SELECTORS.headerGrid)?.firstElementChild?.querySelector<HTMLElement>(SELECTORS.sectionCount) ?? null;
 
 /** Monarch's section cards, and the ones Wingspan adds for sections Monarch doesn't have. */
 export class RecurringV2SectionCards {
@@ -155,7 +156,7 @@ export class RecurringV2SectionCards {
 	}
 
 	private updateCount(addedCardEl: HTMLElement): void {
-		const counterEl = sectionCountEl(addedCardEl);
+		const counterEl = findSectionCountEl(addedCardEl);
 		const rowCount = String(addedCardEl.querySelector(SELECTORS.sectionRows)?.childElementCount ?? 0);
 		if (counterEl && counterEl.textContent !== rowCount) counterEl.textContent = rowCount;
 	}

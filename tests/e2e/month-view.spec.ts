@@ -93,9 +93,9 @@ test.describe('grouped by status', () => {
 
 	test("adds a status section Monarch doesn't have yet", async ({ page, open }) => {
 		await open();
-		const own = page.locator('[data-wingspan-section]');
-		await expect(own.first()).toBeVisible();
-		const names = await own.evaluateAll(cards => cards.map(card => card.getAttribute('data-testid')));
+		const wingspanSections = page.locator('[data-wingspan-section]');
+		await expect(wingspanSections.first()).toBeVisible();
+		const names = await wingspanSections.evaluateAll(cards => cards.map(card => card.getAttribute('data-testid')));
 		expect(names.every(name => /recurring-section-card-(Overdue|Upcoming|Paid)$/.test(name ?? ''))).toBe(true);
 	});
 });

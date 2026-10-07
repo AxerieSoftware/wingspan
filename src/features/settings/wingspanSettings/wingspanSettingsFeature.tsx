@@ -2,6 +2,7 @@ import type { WingspanDataService } from '../../../data/services/wingspanDataSer
 import type { SettingsPage } from '../../../monarch/pages/settings/settingsPage';
 import { Island } from '../../../monarch/ui/components/island';
 import type { BusinessEntityView } from '../../businessEntities/services/businessEntityView';
+import type { HiddenSidebarItems } from '../../sidebar/hiddenItems/services/hiddenSidebarItems';
 import type { WingspanFeature } from '../../wingspanFeature';
 import { WingspanSettingsPanel } from './components/wingspanSettingsPanel';
 import type { ProblemReport } from './services/problemReport';
@@ -18,6 +19,7 @@ export class WingspanSettingsFeature implements WingspanFeature {
 		private readonly page: SettingsPage,
 		private readonly dataService: WingspanDataService,
 		private readonly businessView: BusinessEntityView,
+		private readonly hiddenSidebarItems: HiddenSidebarItems,
 		private readonly problemReport: ProblemReport,
 		private readonly version: string
 	) {}
@@ -42,7 +44,15 @@ export class WingspanSettingsFeature implements WingspanFeature {
 			title: SETTINGS_TITLE,
 			render: bodyEl => {
 				const settingsIsland = new Island(bodyEl);
-				settingsIsland.render(<WingspanSettingsPanel dataService={this.dataService} businessView={this.businessView} version={this.version} reportProblemUrl={this.problemReport.url} />);
+				settingsIsland.render(
+					<WingspanSettingsPanel
+						dataService={this.dataService}
+						businessView={this.businessView}
+						hiddenSidebarItems={this.hiddenSidebarItems}
+						version={this.version}
+						reportProblemUrl={this.problemReport.url}
+					/>
+				);
 				return () => settingsIsland.unmount();
 			}
 		});

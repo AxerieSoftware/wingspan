@@ -31,6 +31,7 @@ Up to 132 characters, the same as `description` in `wxt.config.ts`.
 >
 > SIDEBAR
 > • Workspaces: switch between the household and a business, and supported pages show only that one's money. For households using Monarch's businesses (Plus plan).
+> • Sidebar items: hide the pages you don't use from Monarch's sidebar.
 >
 > YOUR DATA
 > Wingspan has no server, analytics or tracking. It talks to Monarch with the session you're already signed into, and to a retailer's site only when you sync receipts from it. It saves its own items in a hidden manual account named "wingspan" in your Monarch account. It never unlocks Monarch's paid features.

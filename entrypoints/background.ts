@@ -56,7 +56,7 @@ export default defineBackground(() => {
 			isCollectorInPage = true;
 			const prepared = await executeScriptInPage<PrepareResult>(
 				storeTabId,
-				(name: string, since: string, known: string[]) => (window as CollectorWindow).__wingspanRetail?.[name]?.prepare(since, known),
+				(name: string, sinceDate: string, knownOrderIds: string[]) => (window as CollectorWindow).__wingspanRetail?.[name]?.prepare(sinceDate, knownOrderIds),
 				[request.retailer, request.since, request.knownOrderIds]
 			);
 
@@ -70,7 +70,8 @@ export default defineBackground(() => {
 				const batch = prepared.orders.slice(start, start + ORDERS_PER_BATCH);
 				const orders = await executeScriptInPage<{ order: unknown; isInStore: boolean }[] | null>(
 					storeTabId,
-					(name: string, listed: ListedOrder[], alreadyRead: number, total: number) => (window as CollectorWindow).__wingspanRetail?.[name]?.fetchOrders(listed, alreadyRead, total) ?? null,
+					(name: string, listedOrders: ListedOrder[], alreadyRead: number, total: number) =>
+						(window as CollectorWindow).__wingspanRetail?.[name]?.fetchOrders(listedOrders, alreadyRead, total) ?? null,
 					[request.retailer, batch, start, prepared.orders.length]
 				);
 
@@ -106,9 +107,9 @@ export default defineBackground(() => {
 		);
 	}
 
-	async function executeScriptInPage<TResult>(tabId: number, func: (...args: never[]) => unknown, args: unknown[]): Promise<TResult | null> {
+	async function executeScriptInPage<TResult>(tabId: number, pageFunction: (...args: never[]) => unknown, pageArguments: unknown[]): Promise<TResult | null> {
 		// The function is serialized into the page: it may use only its arguments and the page's own globals.
-		const injection = { target: { tabId }, world: 'MAIN', func, args } as unknown as Parameters<typeof browser.scripting.executeScript>[0];
+		const injection = { target: { tabId }, world: 'MAIN', func: pageFunction, args: pageArguments } as unknown as Parameters<typeof browser.scripting.executeScript>[0];
 		const [result] = await browser.scripting.executeScript(injection);
 		return (result?.result as TResult | undefined) ?? null;
 	}
@@ -116,11 +117,11 @@ export default defineBackground(() => {
 	function waitForPageLoad(tabId: number): Promise<'loaded' | 'closed' | 'timedOut'> {
 		return new Promise(resolve => {
 			const timeout = setTimeout(() => finish('timedOut'), PAGE_LOAD_TIMEOUT_MS);
-			const onUpdated = (updatedId: number, change: { status?: string }) => {
-				if (updatedId === tabId && change.status === 'complete') finish('loaded');
+			const onUpdated = (updatedTabId: number, change: { status?: string }) => {
+				if (updatedTabId === tabId && change.status === 'complete') finish('loaded');
 			};
-			const onRemoved = (removedId: number) => {
-				if (removedId === tabId) finish('closed');
+			const onRemoved = (removedTabId: number) => {
+				if (removedTabId === tabId) finish('closed');
 			};
 			function finish(outcome: 'loaded' | 'closed' | 'timedOut') {
 				clearTimeout(timeout);

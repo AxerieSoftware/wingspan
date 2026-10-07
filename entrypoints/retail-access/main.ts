@@ -1,9 +1,9 @@
 import { browser } from 'wxt/browser';
 import { isRetailer, RETAILERS, type RetailSyncUpdate } from '@/src/features/retailSync/shared/models/retailSyncMessages';
 
-const params = new URLSearchParams(location.search);
-const retailer = params.get('retailer');
-const monarchTabId = Number(params.get('monarchTab'));
+const searchParams = new URLSearchParams(location.search);
+const retailer = searchParams.get('retailer');
+const monarchTabId = Number(searchParams.get('monarchTab'));
 const status = document.getElementById('status') as HTMLElement;
 
 if (isRetailer(retailer)) {
@@ -15,9 +15,9 @@ if (isRetailer(retailer)) {
 	(document.getElementById('explanation') as HTMLElement).textContent =
 		`To send your ${retailerInfo.name} purchase history to Monarch, Wingspan reads your purchase history on ${siteOrigin}, in a tab it opens while you're signed in there. It never signs in for you or changes anything on ${retailerInfo.name}.`;
 
-	const allowButtonEl = document.getElementById('allow') as HTMLButtonElement;
-	allowButtonEl.textContent = `Allow ${siteOrigin}`;
-	allowButtonEl.addEventListener('click', async () => {
+	const allowButton = document.getElementById('allow') as HTMLButtonElement;
+	allowButton.textContent = `Allow ${siteOrigin}`;
+	allowButton.addEventListener('click', async () => {
 		const isGranted = await browser.permissions.request({ origins: [retailerInfo.origin] });
 		if (!isGranted) {
 			status.textContent = `Permission wasn't granted, so Wingspan can't read your ${retailerInfo.name} purchase history. Nothing was changed.`;

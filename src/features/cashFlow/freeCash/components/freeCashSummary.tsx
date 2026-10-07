@@ -17,7 +17,7 @@ export interface FreeCashSummaryProps {
 /** Free cash today, with any shortfall, a note about cards counted as $0 because their balance is unknown, and a link to projected balances. */
 export function FreeCashSummary({ projection, formatter, onEdit, onOpenProjection }: FreeCashSummaryProps) {
 	if (!projection) return <Button onClick={onEdit}>Choose checking</Button>;
-	const unknownCount = projection.cards.filter(card => !card.hasAmount).length;
+	const cardsWithoutAmountCount = projection.cards.filter(card => !card.hasAmount).length;
 
 	return (
 		<>
@@ -33,7 +33,9 @@ export function FreeCashSummary({ projection, formatter, onEdit, onOpenProjectio
 			</div>
 			<span className="text-xs font-book">
 				{projection.shortfall > 0 ? <span className="text-content-danger">{`${formatter.money(projection.shortfall)} below what you keep in checking · `}</span> : null}
-				{unknownCount ? <span className="text-content-warning">{`Leaves out ${unknownCount === 1 ? 'a card' : `${unknownCount} cards`} with no amount · `}</span> : null}
+				{cardsWithoutAmountCount ? (
+					<span className="text-content-warning">{`Leaves out ${cardsWithoutAmountCount === 1 ? 'a card' : `${cardsWithoutAmountCount} cards`} with no amount · `}</span>
+				) : null}
 				<button type="button" className={LINK_BUTTON_CLASS_NAME} onClick={onOpenProjection}>
 					See projected balances
 				</button>

@@ -60,7 +60,7 @@ export const hasWingspanData = (data: WingspanData): boolean =>
 	hasChosenCashSettings(data.cashSettings) ||
 	Object.values(data.businessCashSettings).some(hasChosenCashSettings);
 
-type Pick = <TValue>(theirs: TValue | undefined, ours: TValue | undefined, base: TValue | undefined) => TValue | undefined;
+type PickValue = <TValue>(theirs: TValue | undefined, ours: TValue | undefined, base: TValue | undefined) => TValue | undefined;
 
 /**
  * Merges both copies. With `base` (the last version both agreed on), each item, due day and entity's cash settings
@@ -70,7 +70,7 @@ type Pick = <TValue>(theirs: TValue | undefined, ours: TValue | undefined, base:
 export const mergeWingspanData = (theirs: WingspanData, ours: WingspanData, base?: WingspanData): WingspanData =>
 	base ? combine(theirs, ours, base, pickChanged) : combine(theirs, ours, undefined, (theirValue, ourValue) => ourValue ?? theirValue);
 
-function combine(theirs: WingspanData, ours: WingspanData, base: WingspanData | undefined, pick: Pick): WingspanData {
+function combine(theirs: WingspanData, ours: WingspanData, base: WingspanData | undefined, pick: PickValue): WingspanData {
 	const earliestTrackingMonth = [theirs.recurring.trackingSince, ours.recurring.trackingSince].filter(month => month !== '').sort()[0] ?? '';
 	const itemsById = (data: WingspanData | undefined) => new Map((data?.recurring.recurringItems ?? []).map(item => [item.id, item]));
 	const items = mergeEntries(itemsById(theirs), itemsById(ours), base && itemsById(base), pick);
@@ -95,7 +95,7 @@ function combine(theirs: WingspanData, ours: WingspanData, base: WingspanData | 
 }
 
 /** Fields this version doesn't know how to merge, e.g. ones added by a newer version. Each comes from whichever side changed it. */
-function mergeOtherFields<TValue extends object>(theirs: TValue, ours: TValue, base: TValue | undefined, pick: Pick): TValue {
+function mergeOtherFields<TValue extends object>(theirs: TValue, ours: TValue, base: TValue | undefined, pick: PickValue): TValue {
 	const [theirFields, ourFields, baseFields] = [theirs, ours, base] as Record<string, unknown>[];
 	const keys = new Set([...Object.keys(theirFields as object), ...Object.keys(ourFields as object)]);
 	return Object.fromEntries(
@@ -113,7 +113,7 @@ function pickChanged<TValue>(theirs: TValue | undefined, ours: TValue | undefine
 	return ours ?? theirs;
 }
 
-function mergeEntries<TValue>(theirs: Map<string, TValue>, ours: Map<string, TValue>, base: Map<string, TValue> | undefined, pick: Pick): Map<string, TValue> {
+function mergeEntries<TValue>(theirs: Map<string, TValue>, ours: Map<string, TValue>, base: Map<string, TValue> | undefined, pick: PickValue): Map<string, TValue> {
 	const merged = new Map<string, TValue>();
 	for (const key of new Set([...theirs.keys(), ...ours.keys()])) {
 		const value = pick(theirs.get(key), ours.get(key), base?.get(key));

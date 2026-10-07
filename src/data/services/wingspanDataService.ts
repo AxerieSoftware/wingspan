@@ -146,7 +146,7 @@ export class WingspanDataService {
 				this.lock.run(this.lockName(), async () => {
 					this.hasBrowserCopy = false;
 					this.hasUnsavedChanges = await this.unsavedChanges.load();
-					this.browserEnvelope = this.validated(await this.browserStore.load(), BROWSER_SOURCE);
+					this.browserEnvelope = this.validate(await this.browserStore.load(), BROWSER_SOURCE);
 					// A load counts if it showed this browser's copy. A save counts only if the change itself was saved to this browser.
 					this.hasBrowserCopy = action === 'load' && this.browserEnvelope !== undefined;
 					await operation();
@@ -196,7 +196,7 @@ export class WingspanDataService {
 	}
 
 	private async loadAccount(): Promise<Envelope<WingspanData> | undefined> {
-		return this.validated(await this.accountStore.load(), MONARCH_SOURCE);
+		return this.validate(await this.accountStore.load(), MONARCH_SOURCE);
 	}
 
 	/** If another browser saved at the same time, re-read Monarch and merge on top of what it saved. */
@@ -224,7 +224,7 @@ export class WingspanDataService {
 		if (monarchEnvelope.etag === this.accountEnvelope?.etag && !this.hasUnsavedChanges) return;
 
 		this.accountEnvelope = monarchEnvelope;
-		const base = await this.syncedBase();
+		const base = await this.loadSyncedBase();
 		// A browser new to this account merges in its own copy, same as one with unsaved changes.
 		const merged = this.hasUnsavedChanges || !base ? mergeWingspanData(monarchEnvelope.value, browserData, base) : undefined;
 		// Nothing to add from this browser, so skip the write; it would only make every other browser re-read it.
@@ -275,13 +275,13 @@ export class WingspanDataService {
 				return;
 			} catch (error) {
 				if (!(error instanceof ETagMismatchError) || attempt >= MAX_SAVE_ATTEMPTS) throw error;
-				this.browserEnvelope = this.validated(await this.browserStore.load(), BROWSER_SOURCE);
+				this.browserEnvelope = this.validate(await this.browserStore.load(), BROWSER_SOURCE);
 			}
 		}
 	}
 
 	/** The last version this browser and its account agreed on. A copy from a different account, or one that can't be read, isn't a valid base. */
-	private async syncedBase(): Promise<WingspanData | undefined> {
+	private async loadSyncedBase(): Promise<WingspanData | undefined> {
 		const syncedCopy = await this.syncedCopy.load();
 		const accountId = this.accountStore.linkedAccountId;
 		if (!syncedCopy || !accountId || syncedCopy.accountId !== accountId) return undefined;
@@ -299,7 +299,7 @@ export class WingspanDataService {
 		await this.unsavedChanges.save(hasUnsavedChanges);
 	}
 
-	private validated(envelope: Envelope<WingspanData> | undefined, source: string): Envelope<WingspanData> | undefined {
+	private validate(envelope: Envelope<WingspanData> | undefined, source: string): Envelope<WingspanData> | undefined {
 		if (!envelope) return undefined;
 		if (envelope.version > CURRENT_SCHEMA_VERSION) throw new EnvelopeVersionMismatchError(envelope.version, CURRENT_SCHEMA_VERSION);
 

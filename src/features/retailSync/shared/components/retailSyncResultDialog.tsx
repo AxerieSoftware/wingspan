@@ -57,9 +57,7 @@ export function RetailSyncResultDialog({ store, result, onViewReceipts, onTryAga
 			}
 		>
 			<div className="flex flex-col gap-sm text-base text-content-primary">
-				<p className="m-0 font-medium">
-					{sent ? `Sent ${sent} ${sent === 1 ? 'receipt' : 'receipts'} to Monarch.` : alreadyInMonarch ? 'Nothing new to send.' : `No new ${store} purchases since your last sync.`}
-				</p>
+				<p className="m-0 font-medium">{headline(store, sent, alreadyInMonarch)}</p>
 				{sent ? (
 					<p className="m-0 text-content-secondary">
 						{sent === 1
@@ -76,4 +74,10 @@ export function RetailSyncResultDialog({ store, result, onViewReceipts, onTryAga
 			</div>
 		</Dialog>
 	);
+}
+
+function headline(store: string, sent: number, alreadyInMonarch: number): string {
+	if (sent) return `Sent ${sent} ${sent === 1 ? 'receipt' : 'receipts'} to Monarch.`;
+	if (alreadyInMonarch) return 'Nothing new to send.';
+	return `No new ${store} purchases since your last sync.`;
 }

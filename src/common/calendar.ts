@@ -6,7 +6,7 @@ export const LAST_DAY_OF_MONTH = 31;
 
 /** Calendar dates as ISO strings ("YYYY-MM-DD", months "YYYY-MM"), which also compare correctly as strings. */
 export class Calendar {
-	private readonly datesFrom = new Map<string, string[]>();
+	private readonly cachedDatesByFirstDate = new Map<string, string[]>();
 
 	public constructor(private readonly currentDate: () => Temporal.PlainDate = () => Temporal.Now.plainDateISO()) {}
 
@@ -29,10 +29,10 @@ export class Calendar {
 
 	/** Every date from the first through the last, inclusive. Cached by start date, since projections iterate the same days often. */
 	public datesBetween(firstDate: string, lastDate: string): string[] {
-		let dates = this.datesFrom.get(firstDate);
+		let dates = this.cachedDatesByFirstDate.get(firstDate);
 		if (!dates) {
 			dates = [firstDate];
-			this.datesFrom.set(firstDate, dates);
+			this.cachedDatesByFirstDate.set(firstDate, dates);
 		}
 		for (let date = Temporal.PlainDate.from(dates.at(-1) as string); (dates.at(-1) as string) < lastDate; ) {
 			date = date.add({ days: 1 });

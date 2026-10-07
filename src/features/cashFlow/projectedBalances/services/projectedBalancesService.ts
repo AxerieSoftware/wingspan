@@ -29,9 +29,8 @@ export type ProjectionState =
 	  };
 
 /**
- * Shared by the cash flow features and the card payment notes on Recurring rows, so the projection is calculated once
- * per input change. It covers the part of the household being shown: only its accounts, its items, and Monarch's
- * recurring items on its accounts. A bill or recurring item with no account belongs to the household.
+ * Calculates the projection once per input change for every feature that shows it. It covers only the part of the
+ * household being shown; a bill or recurring item with no account belongs to the household.
  */
 export class ProjectedBalancesService implements CardPaymentPlans {
 	/** Each card payment item's planned payments, for its card payment notes on Recurring. */

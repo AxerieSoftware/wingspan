@@ -44,9 +44,8 @@ export class AccountsPage {
 	}
 
 	/**
-	 * Picks Household in Monarch's business filter, out of sight. Monarch opens its menu a frame after the click, so
-	 * this is called again on each sync: it opens the menu, then picks Household and closes it. Done straight away when
-	 * the filter already shows a choice, which is left alone.
+	 * Picks Household in Monarch's business filter, out of sight, leaving an existing choice alone. Monarch opens its
+	 * menu a frame after the click, so this runs again on each sync until it's done.
 	 */
 	public pickHousehold(): HouseholdPick {
 		const document = this.window.document;
@@ -69,7 +68,7 @@ export class AccountsPage {
 			this.cancel();
 			return 'done';
 		}
-		const optionEl = [...popoverEl.querySelectorAll<HTMLElement>('*')].find(el => el.children.length === 0 && labelOf(el) === HOUSEHOLD_OPTION);
+		const optionEl = [...popoverEl.querySelectorAll<HTMLElement>('*')].find(descendantEl => descendantEl.children.length === 0 && labelOf(descendantEl) === HOUSEHOLD_OPTION);
 		optionEl?.click();
 		// Monarch's menu closes from its button.
 		buttonEl.click();
@@ -86,6 +85,6 @@ export class AccountsPage {
 }
 
 /** The element's text without the icon-font glyphs Monarch puts in its buttons. */
-function labelOf(el: Element): string {
-	return (el.textContent ?? '').replace(/[^\p{L}\p{N}\s]/gu, '').trim();
+function labelOf(element: Element): string {
+	return (element.textContent ?? '').replace(/[^\p{L}\p{N}\s]/gu, '').trim();
 }

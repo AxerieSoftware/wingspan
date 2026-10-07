@@ -7,7 +7,7 @@ export interface RetailSyncData {
 	lastSyncedOn: string;
 }
 
-/** Validates a store's saved sync record, filling in defaults for fields older saves didn't have. */
+/** Validates a store's saved sync record, filling in defaults for missing fields. */
 export const RetailSyncDataSchema: v.GenericSchema<Partial<RetailSyncData>, RetailSyncData> = v.looseObject({
 	uploadedOrderIds: v.optional(v.array(v.string()), () => []),
 	lastSyncedOn: v.optional(v.string(), '')

@@ -11,8 +11,8 @@ export class RecurringItemValidator {
 	public problemsWith(item: RecurringItem, schedule: Schedule, otherItems: readonly RecurringItem[]): string[] {
 		const problems: string[] = [];
 		if (!item.name.trim()) problems.push('Add a name.');
-		const accountId = this.kinds.of(item).linkedAccountId(item);
-		const tracker = accountId === undefined ? undefined : otherItems.find(other => other.id !== item.id && this.kinds.of(other).linkedAccountId(other) === accountId);
+		const accountId = this.kinds.linkedAccountId(item);
+		const tracker = accountId === undefined ? undefined : otherItems.find(other => other.id !== item.id && this.kinds.linkedAccountId(other) === accountId);
 		if (tracker) problems.push(`${tracker.name} already tracks this card.`);
 		if (!Number.isInteger(schedule.every) || schedule.every < 1) problems.push('Repeats every needs a whole number.');
 		if (!ISO_DATE_PATTERN.test(schedule.start)) problems.push('Add the next due date.');

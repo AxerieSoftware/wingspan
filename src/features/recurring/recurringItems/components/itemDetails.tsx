@@ -82,6 +82,28 @@ export function ItemDetails({ item, historyPoints, trackingSince, accountNames, 
 	const paidFromAccountId = item.matchRule?.accountId;
 	const setMonthDay = (monthDay: number) => onSave({ ...item, recurrence: recurrence.toRecurrence({ ...schedule, monthDay, twiceMonthlyDays: undefined }) });
 
+	let history: ReactNode;
+	if (isLoading) history = <LoadingHistory />;
+	else if (couldNotCheckPayments) history = <p className={`m-0 text-sm ${MUTED_TEXT_CLASS_NAME}`}>Couldn't check payments: Monarch's transactions didn't load.</p>;
+	else {
+		history = (
+			<>
+				<div className="mb-2xl">
+					<AmountHistory points={payments.monthlyHistory(historyPoints, trackingSince)} services={services} />
+				</div>
+				<div className="-mx-default my-lg border-t border-t-divider-primary" />
+				<Transactions
+					points={historyPoints}
+					trackingSince={trackingSince}
+					owedFromMonth={services.calendar.addMonths(services.calendar.currentMonth(), -itemKind.unpaidCarryMonths)}
+					nextDueDate={nextDueDate}
+					nextAmount={nextAmount}
+					services={services}
+				/>
+			</>
+		);
+	}
+
 	return (
 		<div role="region" aria-label={`${item.name} details`} className="relative flex min-h-0 w-full flex-col overflow-hidden rounded-default bg-background-primary shadow-card">
 			<LogoWash logoUrl={savedLogoUrl(item.icon?.kind === 'logo' ? item.icon.url : undefined)} />
@@ -117,26 +139,7 @@ export function ItemDetails({ item, historyPoints, trackingSince, accountNames, 
 							{item.notes ? <MetaRow label="Notes">{item.notes}</MetaRow> : null}
 						</div>
 					</div>
-					{isLoading ? (
-						<LoadingHistory />
-					) : couldNotCheckPayments ? (
-						<p className={`m-0 text-sm ${MUTED_TEXT_CLASS_NAME}`}>Couldn't check payments: Monarch's transactions didn't load.</p>
-					) : (
-						<>
-							<div className="mb-2xl">
-								<AmountHistory points={payments.monthlyHistory(historyPoints, trackingSince)} services={services} />
-							</div>
-							<div className="-mx-default my-lg border-t border-t-divider-primary" />
-							<Transactions
-								points={historyPoints}
-								trackingSince={trackingSince}
-								owedFromMonth={services.calendar.addMonths(services.calendar.currentMonth(), -itemKind.unpaidCarryMonths)}
-								nextDueDate={nextDueDate}
-								nextAmount={nextAmount}
-								services={services}
-							/>
-						</>
-					)}
+					{history}
 				</div>
 			</div>
 		</div>

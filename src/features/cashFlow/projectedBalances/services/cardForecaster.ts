@@ -93,7 +93,7 @@ export class CardForecaster {
 	) {}
 
 	/** One schedule per active card payment item, skipping uncounted cards and a second item on the same card, then one per counted Monarch card no item tracks. */
-	public schedules({
+	public toSchedules({
 		accounts,
 		recurringItems,
 		outstandingOccurrences,
@@ -196,7 +196,10 @@ export class CardForecaster {
 		const paidDueDates = occurrences.filter(occurrence => occurrence.paid).map(occurrence => occurrence.dueDate);
 		const lastPaidDueDate = paidDueDates.reduce((latest, dueDate) => (dueDate > latest ? dueDate : latest), '');
 		const searchFrom = lastPaidDueDate >= today ? this.calendar.addDays(lastPaidDueDate, 1) : today;
-		const firstDueDate = unpaidOccurrence ? (unpaidOccurrence.dueDate < today ? today : unpaidOccurrence.dueDate) : this.recurrence.upcomingDue(item.recurrence, searchFrom);
+		let firstDueDate: string | null;
+		if (!unpaidOccurrence) firstDueDate = this.recurrence.upcomingDue(item.recurrence, searchFrom);
+		else if (unpaidOccurrence.dueDate < today) firstDueDate = today;
+		else firstDueDate = unpaidOccurrence.dueDate;
 		if (!firstDueDate || firstDueDate > endDate) return [];
 		const counted = new Set([...countedDueDates, ...paidDueDates]);
 		const laterDueDates = this.recurrence.dueDates(item.recurrence, this.calendar.addDays(firstDueDate, 1), endDate).filter(dueDate => !counted.has(dueDate));
@@ -204,10 +207,8 @@ export class CardForecaster {
 	}
 
 	/**
-	 * A Monarch card's statements are calculated from its balance, which already reflects every payment (including
-	 * partial ones), so matched payments don't remove due dates from its schedule. The latest statement already due that
-	 * the ledger tracks, whether unpaid or partly paid, may still have a balance, which is due today; the projector
-	 * calculates how much, if any.
+	 * A Monarch card's statements come from its balance, which already reflects every payment, so matched payments don't
+	 * remove due dates. The latest statement already due may still have a balance, so it's due today.
 	 */
 	private linkedDueDates(item: RecurringItem, occurrences: Occurrence[], endDate: string): Pick<CardSchedule, 'dueDates' | 'firstStatementDueDate'> {
 		const today = this.calendar.today();
@@ -250,10 +251,10 @@ export class CardForecaster {
 		return { dueDates: this.monthlyFrom(this.calendar.addDays(today, UNKNOWN_DUE_DAYS), this.calendar.dayOf(this.calendar.addDays(today, UNKNOWN_DUE_DAYS)), endDate), hasDueDate: false };
 	}
 
-	private monthlyFrom(fromDate: string, day: number, endDate: string): string[] {
+	private monthlyFrom(fromDate: string, dayOfMonth: number, endDate: string): string[] {
 		const dueDates: string[] = [];
 		for (let months = 0; ; months++) {
-			const dueDate = this.calendar.dayInMonth(this.calendar.addMonths(this.calendar.monthOf(fromDate), months), day);
+			const dueDate = this.calendar.dayInMonth(this.calendar.addMonths(this.calendar.monthOf(fromDate), months), dayOfMonth);
 			if (dueDate > endDate) return dueDates;
 			if (dueDate >= fromDate) dueDates.push(dueDate);
 		}

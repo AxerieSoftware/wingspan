@@ -28,7 +28,6 @@ export class DueDayPanelRow implements RecurringV2DetailRow {
 		this.renderContent();
 	}
 
-	/** Mounts into the panel's row; the function it returns unmounts it. */
 	public render(detailRowEl: HTMLElement): () => void {
 		this.rowIsland = new Island(detailRowEl);
 		this.renderedKey = '';

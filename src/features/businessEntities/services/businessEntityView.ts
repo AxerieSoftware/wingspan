@@ -13,8 +13,8 @@ const BUSINESS_ENTITIES_QUERY = 'monarchBusinessEntities';
 const LOAD_RETRY_MS = 60_000;
 
 /**
- * Which workspace Wingspan shows: Household or one business, never a mix. The choice is saved per browser and
- * household. On Cash Flow, whose own business filter can still be changed on the page, Wingspan follows that filter.
+ * Which workspace Wingspan shows, Household or one business, saved per browser and household. On Cash Flow, whose
+ * business filter can still be changed on the page, Wingspan follows that filter instead.
  */
 export class BusinessEntityView {
 	private readonly businessList = signal<BusinessEntity[] | null>(null);

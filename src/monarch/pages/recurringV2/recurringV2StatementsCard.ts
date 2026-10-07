@@ -131,7 +131,9 @@ export class RecurringV2StatementsCard {
 
 	private columnLabelEl(label: string): HTMLElement {
 		const labelEl = this.document.createElement('span');
-		const alignment = label === 'History' ? 'text-center' : label === 'Amount' ? 'text-right' : '';
+		let alignment = '';
+		if (label === 'History') alignment = 'text-center';
+		else if (label === 'Amount') alignment = 'text-right';
 		labelEl.className = `text-sm font-medium text-content-secondary ${alignment}`;
 		labelEl.textContent = label;
 		return labelEl;

@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
-import { expect, itemRow, section, test, useTheme } from './fixtures';
+import { expect, itemRow, type OpenOptions, section, test, useTheme } from './fixtures';
 
 /*
  * The README's screenshots (assets/screenshots, at 2x), the site's feature pages' (site/src/assets/screenshots,
@@ -12,7 +12,7 @@ const THEMES = ['light', 'dark'] as const;
 
 const projectedBalances = (page: Page) => page.getByRole('group', { name: 'Projected balances' });
 
-type Open = (options?: { path?: string; waitForRows?: boolean }) => Promise<void>;
+type Open = (options?: OpenOptions) => Promise<void>;
 
 /** Opens a page as a household that has used Wingspan before: otherwise the first open creates the hidden account and shows a notice about it. */
 async function openAsReturning(page: Page, open: Open, path?: string) {
@@ -56,7 +56,10 @@ async function siteShot(page: Page, name: string, theme: string, target: Locator
 	await page.mouse.move(0, 0);
 	await expect(page.locator("[data-wingspan-toasts] [role='status'], [data-wingspan-toasts] [role='alert']")).toHaveCount(0);
 	const path = `${SITE}/${name}-${theme}.png`;
-	if (!options.band && !options.pad) return void (await target.screenshot({ path, animations: 'disabled' }));
+	if (!options.band && !options.pad) {
+		await target.screenshot({ path, animations: 'disabled' });
+		return;
+	}
 	if (!options.band) await target.evaluate(element => element.scrollIntoView({ block: 'center' }));
 	const box = await target.boundingBox();
 	const viewport = page.viewportSize();
@@ -139,6 +142,15 @@ for (const theme of THEMES) {
 			const menu = page.getByRole('menu');
 			await expect(menu.getByRole('menuitem').first()).toBeVisible();
 			await siteShot(page, 'workspaces', theme, menu, { band: true });
+		});
+
+		test('sidebar items', async ({ page, open }) => {
+			await openAsReturning(page, open, '/settings/wingspan');
+			await useTheme(page, theme);
+			const group = page.getByRole('group', { name: 'Sidebar' });
+			await group.getByRole('checkbox', { name: 'Investments' }).click();
+			await group.getByRole('checkbox', { name: 'Invite a friend, get $30' }).click();
+			await siteShot(page, 'sidebar-items', theme, group, { pad: 24 });
 		});
 
 		test('where Wingspan saves', async ({ page, open }) => {

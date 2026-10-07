@@ -1,33 +1,48 @@
 import type { WingspanDataService } from '../../../../data/services/wingspanDataService';
+import { CheckboxLabel } from '../../../../monarch/ui/components/checkbox';
 import { Fieldset } from '../../../../monarch/ui/components/fieldset';
 import { Spinner } from '../../../../monarch/ui/components/spinner';
 import { SwitchRow } from '../../../../monarch/ui/components/switch';
 import { useSignalValue } from '../../../../monarch/ui/hooks/useSignalValue';
 import type { BusinessEntityView } from '../../../businessEntities/services/businessEntityView';
+import type { HiddenSidebarItems } from '../../../sidebar/hiddenItems/services/hiddenSidebarItems';
 import { WingspanAccountLink } from './wingspanAccountLink';
 
-/** reportProblemUrl opens a new GitHub issue with the versions filled in. */
 export interface WingspanSettingsPanelProps {
 	dataService: WingspanDataService;
 	businessView: BusinessEntityView;
+	hiddenSidebarItems: HiddenSidebarItems;
 	version: string;
+	/** Opens a new GitHub issue with the versions filled in. */
 	reportProblemUrl: string;
 }
 
 /** The body of Wingspan's page in Monarch's settings. */
-export function WingspanSettingsPanel({ dataService, businessView, version, reportProblemUrl }: WingspanSettingsPanelProps) {
+export function WingspanSettingsPanel({ dataService, businessView, hiddenSidebarItems, version, reportProblemUrl }: WingspanSettingsPanelProps) {
 	const storageStatus = useSignalValue(dataService.status);
 	const businesses = useSignalValue(businessView.businesses);
-	const workspacesEnabled = useSignalValue(businessView.isEnabled);
+	const areWorkspacesEnabled = useSignalValue(businessView.isEnabled);
+	const sidebarItems = useSignalValue(hiddenSidebarItems.items);
+	const hiddenIds = useSignalValue(hiddenSidebarItems.hidden);
 
 	return (
 		<div className="flex flex-col gap-xl">
 			{businesses?.length ? (
 				<Fieldset legend="Business workspaces">
-					<SwitchRow label="Keep the household and businesses separate" checked={workspacesEnabled} onChange={isEnabled => businessView.setEnabled(isEnabled)} />
+					<SwitchRow label="Keep the household and businesses separate" checked={areWorkspacesEnabled} onChange={isEnabled => businessView.setEnabled(isEnabled)} />
 					<p className="m-0 text-sm text-content-secondary">
 						Adds a switcher to the top of the sidebar. Supported pages then show the household or one business, never both, and the rest say so in their header. Saved for this browser.
 					</p>
+				</Fieldset>
+			) : null}
+			{sidebarItems.length ? (
+				<Fieldset legend="Sidebar">
+					<p className="m-0 text-sm text-content-secondary">Uncheck what you don't use to hide it from the sidebar. Hidden pages still open from links. Saved for this browser.</p>
+					<div className="grid grid-cols-2 gap-xs">
+						{sidebarItems.map(item => (
+							<CheckboxLabel key={item.id} label={item.label} checked={!hiddenIds.includes(item.id)} onChange={isShown => hiddenSidebarItems.setHidden(item.id, !isShown)} />
+						))}
+					</div>
 				</Fieldset>
 			) : null}
 			<Fieldset legend="Where Wingspan saves">

@@ -37,7 +37,7 @@ export class FreeCashFeature implements WingspanFeature {
 			return;
 		}
 
-		this.page.showSummaryStatements({ render: summaryEl => this.mountSummary(summaryEl) });
+		this.page.showSummaryStatements({ render: summaryElement => this.mountSummary(summaryElement) });
 	}
 
 	public [Symbol.dispose](): void {
@@ -45,8 +45,8 @@ export class FreeCashFeature implements WingspanFeature {
 		this.page.removeSummaryStatements();
 	}
 
-	private mountSummary(summaryEl: HTMLElement): () => void {
-		this.summaryIsland = new Island(summaryEl);
+	private mountSummary(summaryElement: HTMLElement): () => void {
+		this.summaryIsland = new Island(summaryElement);
 		this.renderSummary(this.projectedBalances.state.peek(), this.statementsTotals.totals.peek());
 		return () => {
 			this.summaryIsland?.unmount();
@@ -59,11 +59,11 @@ export class FreeCashFeature implements WingspanFeature {
 		if (!this.summaryIsland) return;
 		const statementsLine = totals ? <StatementsSummaryLine totals={totals} formatter={this.formatter} /> : null;
 		if (state.status === 'unavailable') {
-			const what = state.missing === 'monarch' ? 'from Monarch' : "Wingspan's saved items and settings";
+			const missingData = state.missing === 'monarch' ? 'from Monarch' : "Wingspan's saved items and settings";
 			this.summaryIsland.render(
 				<>
 					{statementsLine}
-					<span className="text-sm font-book text-content-secondary">{`Couldn't load ${what}. Try again from Cash Flow.`}</span>
+					<span className="text-sm font-book text-content-secondary">{`Couldn't load ${missingData}. Try again from Cash Flow.`}</span>
 				</>
 			);
 			return;

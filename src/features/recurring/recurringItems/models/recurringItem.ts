@@ -29,10 +29,7 @@ export interface RecurringItem {
 	icon?: RecurringItemIcon;
 	notes?: string;
 	matchRule?: MerchantContainsMatchRule;
-	/**
-	 * Date ranges before the schedule's start whose due dates are still owed. When an edit only moves the due date later,
-	 * this covers the old start through the day of the edit. Due dates after the edit were skipped on purpose.
-	 */
+	/** Date ranges before the schedule's start whose due dates are still owed, kept when an edit only moves the due date later. */
 	owedSpans?: OwedSpan[];
 }
 

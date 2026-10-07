@@ -44,10 +44,10 @@ export class RetailSyncSession implements Disposable {
 	private uploads: Promise<void> = Promise.resolve();
 	private waitingReceipts: PendingReceipt[] = [];
 	private readonly queuedOrderIds = new Set<string>();
-	private unreadable = 0;
+	private unreadableCount = 0;
 	private sentCount = 0;
 	/** Receipts already in Monarch before the sync. Purchases that match one are skipped instead of sent again. */
-	private existing = new ExistingReceiptMatcher([]);
+	private existingReceipts = new ExistingReceiptMatcher([]);
 	private alreadyInMonarchIds: string[] = [];
 	private uploadFailure: string | null = null;
 	/** Saved so the sync can be retried once site permission is granted. */
@@ -66,15 +66,6 @@ export class RetailSyncSession implements Disposable {
 		private readonly calendar: Calendar
 	) {}
 
-	public listen(): void {
-		this.subscriptions.defer(this.channel.listen(this.store.retailer, update => this.onUpdate(update)));
-	}
-
-	public [Symbol.dispose](): void {
-		this.subscriptions.dispose();
-		this.resultLayer?.close();
-	}
-
 	public get state(): ReadonlySignal<RetailSyncState> {
 		return this.syncState;
 	}
@@ -87,28 +78,13 @@ export class RetailSyncSession implements Disposable {
 		return RETAILERS[this.store.retailer].name;
 	}
 
-	private synced(): RetailSyncData {
-		return this.dataService.data.peek()[this.store.dataKey] ?? emptyRetailSyncData();
+	public listen(): void {
+		this.subscriptions.defer(this.channel.listen(this.store.retailer, update => this.onUpdate(update)));
 	}
 
-	private failureMessage(reason: RetailSyncFailure): string {
-		const name = this.displayName;
-		switch (reason) {
-			case 'retailerSignedOut':
-				return `Sign in to ${name} in the tab that opened, then sync ${name} again.`;
-			case 'retailerChallenge':
-				return `${name} asked to check you're not a robot. Finish that in the ${name} tab, then sync ${name} again.`;
-			case 'retailerFormatChanged':
-				return `${name}'s purchase history changed in a way Wingspan can't read yet. Nothing more was sent.`;
-			case 'retailerTabClosed':
-				return `The ${name} tab closed before the sync finished. Receipts that were already sent won't be sent again.`;
-			case 'retailerTimedOut':
-				return `${name} took too long to load. Try again in a moment.`;
-			case 'retailerError':
-				return `Something went wrong while reading ${name}. Receipts that were already sent won't be sent again.`;
-			case 'retailerPermission':
-				return `Wingspan needs permission to read ${name}'s site to sync ${name}.`;
-		}
+	public [Symbol.dispose](): void {
+		this.subscriptions.dispose();
+		this.resultLayer?.close();
 	}
 
 	/** Starts a sync unless one is already running. Purchases Monarch already has a receipt for are skipped. */
@@ -116,19 +92,19 @@ export class RetailSyncSession implements Disposable {
 		if (this.syncState.peek().phase !== 'idle') return;
 		this.isAwaitingPermission = false;
 		await this.dataService.load();
-		const synced = this.synced();
+		const synced = this.readSyncData();
 		const today = this.calendar.today();
 		const since = synced.lastSyncedOn ? this.calendar.addDays(synced.lastSyncedOn, -OVERLAP_DAYS) : this.calendar.addDays(today, -FIRST_SYNC_DAYS);
 		this.waitingReceipts = [];
 		this.queuedOrderIds.clear();
-		this.unreadable = 0;
+		this.unreadableCount = 0;
 		this.sentCount = 0;
 		this.alreadyInMonarchIds = [];
 		this.uploadFailure = null;
 		this.resultLayer?.close();
 		this.syncState.value = { phase: 'waiting' };
 		try {
-			this.existing = new ExistingReceiptMatcher(await this.receiptsClient.existingReceipts(since, today));
+			this.existingReceipts = new ExistingReceiptMatcher(await this.receiptsClient.getExistingReceipts(since, today));
 		} catch (error) {
 			logError(error);
 			const reason = error instanceof MonarchApiError ? ` ${error.message}` : '';
@@ -136,6 +112,10 @@ export class RetailSyncSession implements Disposable {
 		}
 		this.request = { type: 'retailSync:start', retailer: this.store.retailer, knownOrderIds: synced.uploadedOrderIds, since };
 		await this.askBackground(this.request);
+	}
+
+	private readSyncData(): RetailSyncData {
+		return this.dataService.data.peek()[this.store.dataKey] ?? emptyRetailSyncData();
 	}
 
 	private async askBackground(request: RetailSyncRequest): Promise<void> {
@@ -177,18 +157,38 @@ export class RetailSyncSession implements Disposable {
 		}
 	}
 
+	private failureMessage(reason: RetailSyncFailure): string {
+		const name = this.displayName;
+		switch (reason) {
+			case 'retailerSignedOut':
+				return `Sign in to ${name} in the tab that opened, then sync ${name} again.`;
+			case 'retailerChallenge':
+				return `${name} asked to check you're not a robot. Finish that in the ${name} tab, then sync ${name} again.`;
+			case 'retailerFormatChanged':
+				return `${name}'s purchase history changed in a way Wingspan can't read yet. Nothing more was sent.`;
+			case 'retailerTabClosed':
+				return `The ${name} tab closed before the sync finished. Receipts that were already sent won't be sent again.`;
+			case 'retailerTimedOut':
+				return `${name} took too long to load. Try again in a moment.`;
+			case 'retailerError':
+				return `Something went wrong while reading ${name}. Receipts that were already sent won't be sent again.`;
+			case 'retailerPermission':
+				return `Wingspan needs permission to read ${name}'s site to sync ${name}.`;
+		}
+	}
+
 	private queue(orders: { order: unknown; isInStore: boolean }[]): void {
-		const alreadySent = new Set([...this.synced().uploadedOrderIds, ...this.queuedOrderIds]);
+		const alreadySent = new Set([...this.readSyncData().uploadedOrderIds, ...this.queuedOrderIds]);
 		for (const { order, isInStore } of orders) {
 			const receipt = this.store.receiptOf(order, isInStore);
 			if (!receipt) {
-				this.unreadable++;
+				this.unreadableCount++;
 				continue;
 			}
 			if (alreadySent.has(receipt.orderId)) continue;
 			alreadySent.add(receipt.orderId);
 			this.queuedOrderIds.add(receipt.orderId);
-			if (this.existing.claim(receipt)) {
+			if (this.existingReceipts.claim(receipt)) {
 				this.alreadyInMonarchIds.push(receipt.orderId);
 				continue;
 			}
@@ -245,14 +245,14 @@ export class RetailSyncSession implements Disposable {
 		const today = this.calendar.today();
 		const { dataKey } = this.store;
 		await this.dataService.update(data => ({ ...data, [dataKey]: { ...(data[dataKey] ?? emptyRetailSyncData()), lastSyncedOn: today } }));
-		this.showResult({ outcome: 'done', sent: this.sentCount, alreadyInMonarch, unreadable: this.unreadable });
+		this.showResult({ outcome: 'done', sent: this.sentCount, alreadyInMonarch, unreadable: this.unreadableCount });
 	}
 
 	/** Resets the button to idle and shows the sync result in a dialog. */
 	private showResult(result: RetailSyncResult): void {
 		this.syncState.value = { phase: 'idle' };
 		this.sentCount = 0;
-		this.unreadable = 0;
+		this.unreadableCount = 0;
 		this.alreadyInMonarchIds = [];
 		this.resultLayer?.close();
 		this.resultLayer = new Layer(this.document, close => (

@@ -49,7 +49,7 @@ export function BalanceChart({ days, events, cushion, freeCash, formatter }: Bal
 	const width = useElementWidth(containerRef);
 	const [hover, setHover] = useState<{ index: number; y: number } | null>(null);
 	const hoverIndex = hover?.index ?? null;
-	const ids = useId().replaceAll(':', '');
+	const idPrefix = useId().replaceAll(':', '');
 
 	// Compact format rounds amounts under $1,000 to a dime, which wouldn't match the stats, so those use the full format.
 	const lineLabelMoney = (amount: number) => (Math.abs(amount) < COMPACT_FROM ? formatter.money(amount) : formatter.compactMoney(amount));
@@ -112,13 +112,13 @@ export function BalanceChart({ days, events, cushion, freeCash, formatter }: Bal
 						className="block"
 					>
 						<defs>
-							<linearGradient id={`${ids}-line`} gradientUnits="userSpaceOnUse" x1="0" y1={PLOT_TOP} x2="0" y2={plotBottom}>
+							<linearGradient id={`${idPrefix}-line`} gradientUnits="userSpaceOnUse" x1="0" y1={PLOT_TOP} x2="0" y2={plotBottom}>
 								<stop offset={0} stopColor="var(--content-primary)" />
 								<stop offset={offsetOf(cushion)} stopColor="var(--content-primary)" />
 								<stop offset={offsetOf(cushion)} stopColor="var(--content-danger)" />
 								<stop offset={1} stopColor="var(--content-danger)" />
 							</linearGradient>
-							<pattern id={`${ids}-negative`} patternUnits="userSpaceOnUse" width="9" height="13" patternTransform="rotate(0)">
+							<pattern id={`${idPrefix}-negative`} patternUnits="userSpaceOnUse" width="9" height="13" patternTransform="rotate(0)">
 								<path d="M10.6 -0.75L-1 16.1" stroke="var(--chart-negative-area)" strokeWidth="1.5" />
 							</pattern>
 						</defs>
@@ -132,7 +132,7 @@ export function BalanceChart({ days, events, cushion, freeCash, formatter }: Bal
 							</g>
 						))}
 
-						{domainLow < 0 ? <rect x={PLOT_LEFT} y={yOf(0)} width={plotRight - PLOT_LEFT} height={plotBottom - yOf(0)} fill={`url(#${ids}-negative)`} fillOpacity={0.5} /> : null}
+						{domainLow < 0 ? <rect x={PLOT_LEFT} y={yOf(0)} width={plotRight - PLOT_LEFT} height={plotBottom - yOf(0)} fill={`url(#${idPrefix}-negative)`} fillOpacity={0.5} /> : null}
 						{freeCash > 0 ? (
 							<>
 								<rect x={PLOT_LEFT} y={yOf(cushion + freeCash)} width={plotRight - PLOT_LEFT} height={yOf(cushion) - yOf(cushion + freeCash)} fill="var(--chart-fill-green)" fillOpacity={0.14} />
@@ -154,7 +154,7 @@ export function BalanceChart({ days, events, cushion, freeCash, formatter }: Bal
 						})}
 
 						{afterCardsPath ? <path d={afterCardsPath} fill="none" stroke={AFTER_CARDS_COLOR} strokeWidth={2} strokeDasharray="6 4" strokeLinejoin="round" /> : null}
-						<path d={path} fill="none" stroke={`url(#${ids}-line)`} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+						<path d={path} fill="none" stroke={`url(#${idPrefix}-line)`} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
 
 						{days.map((day, index) =>
 							index % xTickEvery === 0 ? (
@@ -256,9 +256,9 @@ function tooltipPosition(x: number, pointerY: number, width: number): { left: nu
 }
 
 function DayTooltip({ day, events, left, top, width, formatter }: { day: ProjectedDay; events: ProjectionEvent[]; left: number; top: number; width: number; formatter: Formatter }) {
-	const named = day.flows.filter(flow => flow.accountId === undefined && flow.kind !== 'spending').sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
+	const namedFlows = day.flows.filter(flow => flow.accountId === undefined && flow.kind !== 'spending').sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
 	const spending = day.flows.filter(flow => flow.accountId === undefined && flow.kind === 'spending').reduce((total, flow) => total + flow.amount, 0);
-	const shown: ScheduledFlow[] = named.slice(0, MAX_TOOLTIP_FLOWS);
+	const shown: ScheduledFlow[] = namedFlows.slice(0, MAX_TOOLTIP_FLOWS);
 
 	return (
 		<div data-theme="dark" className="pointer-events-none absolute z-tooltip" style={{ left, top, width }}>
@@ -276,7 +276,7 @@ function DayTooltip({ day, events, left, top, width, formatter }: { day: Project
 					// biome-ignore lint/suspicious/noArrayIndexKey: two flows can share a label and amount on a day, and a day's flows never reorder while shown.
 					<FlowRow key={index} label={flow.label} amount={flow.amount} formatter={formatter} />
 				))}
-				{named.length > shown.length ? <span className="text-xs text-content-secondary">{`${named.length - shown.length} more`}</span> : null}
+				{namedFlows.length > shown.length ? <span className="text-xs text-content-secondary">{`${namedFlows.length - shown.length} more`}</span> : null}
 				{spending ? <FlowRow label="Everyday spending" amount={spending} formatter={formatter} /> : null}
 			</div>
 		</div>

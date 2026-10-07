@@ -39,6 +39,7 @@ export class CashSettingsResolver {
 			.map(account => account.id);
 	}
 
+	/** Monarch's visible cards. */
 	public cardAccounts(accounts: Account[]): Account[] {
 		return accounts.filter(account => account.type.name === MonarchAccountType.credit && !account.isHidden);
 	}

@@ -4,6 +4,10 @@ import { WingspanAttribute } from '../wingspanAttributes';
 const SIDEBAR_SELECTOR = '[data-external-id="side-bar"]';
 const HEADER_LINK_SELECTOR = '[data-external-id="header-link"]';
 const NAV_LINK_SELECTOR = 'a[data-external-id="nav-bar-link"]';
+/** Page links, plus the buttons at the bottom like Help & Support, which reuse the link component without an href. */
+const ITEM_SELECTOR = ':is([data-external-id="nav-bar-link"], [data-external-id="sidebar-persistent-assistant"])';
+/** Buttons have no href, so they're identified by their icon, which stays put when Monarch rewords a label. */
+const ICON_ID_PREFIX = 'icon:';
 /** Monarch marks the link to the page you're on. */
 const ACTIVE_CLASS = 'active';
 /** The padding Monarch's nav section has, without its fill and scroll, so the links stay below the row. */
@@ -15,6 +19,12 @@ export interface SidebarStyles {
 	linkClassName: string;
 	/** The icon box at the start of a nav link. */
 	iconClassName: string;
+}
+
+export interface SidebarItem {
+	/** A link's path, or a button's icon. */
+	id: string;
+	label: string;
 }
 
 /*
@@ -46,6 +56,30 @@ export class SidebarPage {
 		};
 	}
 
+	/** Every item in the sidebar, including hidden ones. */
+	public get items(): SidebarItem[] {
+		return [...this.document.querySelectorAll(`${SIDEBAR_SELECTOR} ${ITEM_SELECTOR}`)].flatMap(itemEl => {
+			const id = itemId(itemEl);
+			const label = itemEl.querySelector(':scope > span')?.textContent?.trim();
+			return id && label ? [{ id, label }] : [];
+		});
+	}
+
+	/** A stylesheet, not inline styles, so it works before Monarch's app has rendered the sidebar and survives its re-renders. */
+	public hideItems(itemIds: readonly string[]): void {
+		let styleEl = this.document.querySelector(`style[${WingspanAttribute.hiddenSidebarItems}]`);
+		if (!itemIds.length) {
+			styleEl?.remove();
+			return;
+		}
+		if (!styleEl) {
+			styleEl = this.document.createElement('style');
+			styleEl.setAttribute(WingspanAttribute.hiddenSidebarItems, '');
+			this.document.documentElement.append(styleEl);
+		}
+		styleEl.textContent = `${itemIds.map(itemSelector).join(',\n')} { display: none !important; }`;
+	}
+
 	/**
 	 * Where a Wingspan menu from the sidebar renders. Inside the sidebar, so moving onto the menu still counts as
 	 * hovering it and Monarch keeps it open.
@@ -70,4 +104,17 @@ export class SidebarPage {
 		this.row?.remove();
 		this.row = null;
 	}
+}
+
+function itemId(itemEl: Element): string | null {
+	const href = itemEl.getAttribute('href');
+	if (href) return href;
+	const icon = itemEl.querySelector('[data-mds-icon]')?.getAttribute('data-mds-icon');
+	return icon ? `${ICON_ID_PREFIX}${icon}` : null;
+}
+
+function itemSelector(itemId: string): string {
+	if (!itemId.startsWith(ICON_ID_PREFIX)) return `${SIDEBAR_SELECTOR} ${ITEM_SELECTOR}[href=${JSON.stringify(itemId)}]`;
+	const icon = JSON.stringify(itemId.slice(ICON_ID_PREFIX.length));
+	return `${SIDEBAR_SELECTOR} ${ITEM_SELECTOR}:not([href]):has([data-mds-icon=${icon}])`;
 }

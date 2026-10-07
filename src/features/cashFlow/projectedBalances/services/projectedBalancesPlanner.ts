@@ -9,9 +9,8 @@ import type { ScheduledFlowBuilder } from './scheduledFlowBuilder';
 import type { SpendingPaceCalculator } from './spendingPaceCalculator';
 
 /**
- * Runs the same days twice. The cash-only run, with nothing borrowed or moved in, gives free cash: what can be spent
- * from checking today while still keeping the cushion through the reversible window. The burndown run follows the
- * household's order for covering checking once it runs low, and shows when a card or checking would run out.
+ * Runs the same days twice: a cash-only run, with nothing borrowed or moved in, gives free cash, and a burndown run
+ * covers checking in the household's order once it runs low, showing when a card or checking would run out.
  */
 export class ProjectedBalancesPlanner {
 	public constructor(
@@ -44,7 +43,7 @@ export class ProjectedBalancesPlanner {
 		const projectorInput = {
 			checkingBalance,
 			flows,
-			cards: this.cardForecaster.schedules({ ...input, endDate }),
+			cards: this.cardForecaster.toSchedules({ ...input, endDate }),
 			monthlySpendingByAccountId,
 			startDate: today,
 			endDate,

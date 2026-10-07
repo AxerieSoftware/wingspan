@@ -5,7 +5,7 @@ import { WingspanAttribute } from '../wingspanAttributes';
 const CASH_FLOW_PATH = '/cash-flow';
 const GOALS_PATH = '/goals';
 /** The grid cell holding the chart, which both the bar and Sankey views have. */
-export const CHART_GRID_ITEM_SELECTOR = '[data-external-id="grid-item"][style*="grid-area: chart"]';
+const CHART_GRID_ITEM_SELECTOR = '[data-external-id="grid-item"][style*="grid-area: chart"]';
 const TIMEFRAMES = ['month', 'quarter', 'year'] as const;
 /** Monarch keeps its Cash Flow filters in the URL as you change them, one parameter per chosen business. */
 const BUSINESS_FILTER_PARAM = 'businessEntitySet';
@@ -47,9 +47,8 @@ export class CashFlowPage {
 	}
 
 	/**
-	 * Monarch's business filter on the Cash Flow page: business ids, plus "business_entity_none" for Household. An empty
-	 * selection shows everything. Read from the URL, which Monarch updates as the filter changes; the copy it saves
-	 * to session storage is written a moment later and can be stale.
+	 * The business ids chosen in Monarch's filter, with "business_entity_none" for Household; empty shows everything.
+	 * Read from the URL, since Monarch's session storage copy lags behind it.
 	 */
 	public get businessEntityFilter(): string[] {
 		return new URLSearchParams(this.window.location.search).getAll(BUSINESS_FILTER_PARAM);

@@ -117,19 +117,21 @@ function RowCells({
 					</span>
 				</div>
 			</div>
-			{columnLabels.map(columnLabel =>
-				isLoading && COLUMNS_NEEDING_DATA.has(columnLabel.toLowerCase()) ? (
-					<LoadingCell key={columnLabel} columnLabel={columnLabel} />
-				) : couldNotCheckPayments && columnLabel.toLowerCase() === 'status' ? (
-					<div key={columnLabel} id={cellId(columnLabel)}>
-						<CellText tone="font-book text-content-secondary">Couldn't check payments</CellText>
-					</div>
-				) : (
+			{columnLabels.map(columnLabel => {
+				if (isLoading && COLUMNS_NEEDING_DATA.has(columnLabel.toLowerCase())) return <LoadingCell key={columnLabel} columnLabel={columnLabel} />;
+				if (couldNotCheckPayments && columnLabel.toLowerCase() === 'status') {
+					return (
+						<div key={columnLabel} id={cellId(columnLabel)}>
+							<CellText tone="font-book text-content-secondary">Couldn't check payments</CellText>
+						</div>
+					);
+				}
+				return (
 					<div key={columnLabel} id={cellId(columnLabel)} className="contents">
 						<ColumnCell columnLabel={columnLabel} line={line} history={history} accountName={accountName} plannedPayment={plannedPayment} services={services} />
 					</div>
-				)
-			)}
+				);
+			})}
 			<div data-external-id="recurring-section-row-menu" {...{ [RecurringV2Page.rowMenuAttribute]: '' }}>
 				<MoreMenu items={menuItems} triggerClassName={menuClassName} label={`More options for ${line.item.name}`} />
 			</div>
@@ -182,7 +184,9 @@ function StatusCell({ line, services: { formatter } }: StatusCellProps) {
 		const firstOverdue = line.occurrences.find(occurrence => occurrence.overdue);
 		const dueText = firstOverdue ? formatter.shortDate(firstOverdue.dueDate) : '';
 		const overdueCount = line.occurrences.filter(occurrence => occurrence.overdue).length;
-		const overdueText = overdueCount > 1 ? `${overdueCount} owed since ${dueText}` : firstOverdue?.carried ? `Owed since ${dueText}` : `Overdue ${dueText}`;
+		let overdueText = `Overdue ${dueText}`;
+		if (overdueCount > 1) overdueText = `${overdueCount} owed since ${dueText}`;
+		else if (firstOverdue?.carried) overdueText = `Owed since ${dueText}`;
 		content = (
 			<>
 				<Icon shape="alert" size={14} className="shrink-0 text-content-danger" />
@@ -198,10 +202,13 @@ function StatusCell({ line, services: { formatter } }: StatusCellProps) {
 		);
 	} else if (line.paid) {
 		const matchedTransaction = line.occurrences[0]?.matchedTransaction;
+		let paidText = 'Nothing owed';
+		if (matchedTransaction) paidText = `Paid ${formatter.shortDate(matchedTransaction.date)}`;
+		else if (line.amount > 0) paidText = 'Paid';
 		content = (
 			<>
 				<PaidMark />
-				<CellText>{matchedTransaction ? `Paid ${formatter.shortDate(matchedTransaction.date)}` : line.amount > 0 ? 'Paid' : 'Nothing owed'}</CellText>
+				<CellText>{paidText}</CellText>
 			</>
 		);
 	} else {
@@ -226,17 +233,19 @@ function CanPayNote({ plannedPayment, shownAmount, formatter }: { plannedPayment
 	const isStatementOnly = shownAmount - owed > CENT_TOLERANCE;
 	const isInFull = paysInFull(plannedPayment);
 	const isShortOfMinimum = missesMinimum(plannedPayment);
-	const tone = isInFull ? 'text-content-success' : isShortOfMinimum ? 'text-content-danger' : 'text-content-warning';
 	const minimumText = minimum === null ? '' : `${minimumIsEstimated ? '~' : ''}${formatter.money(minimum)} ${minimumIsEstimated ? 'est. ' : ''}min`;
-	const text = isInFull
-		? isStatementOnly
-			? `Can pay the ${formatter.money(owed)} statement`
-			: 'Can pay in full'
-		: isShortOfMinimum
-			? `Can pay ${formatter.money(amount)} of ${minimumText}`
-			: isStatementOnly
-				? `Can pay ${formatter.money(amount)} of the ${formatter.money(owed)} statement`
-				: `Can pay ${formatter.money(amount)}`;
+	let tone: string;
+	let text: string;
+	if (isInFull) {
+		tone = 'text-content-success';
+		text = isStatementOnly ? `Can pay the ${formatter.money(owed)} statement` : 'Can pay in full';
+	} else if (isShortOfMinimum) {
+		tone = 'text-content-danger';
+		text = `Can pay ${formatter.money(amount)} of ${minimumText}`;
+	} else {
+		tone = 'text-content-warning';
+		text = isStatementOnly ? `Can pay ${formatter.money(amount)} of the ${formatter.money(owed)} statement` : `Can pay ${formatter.money(amount)}`;
+	}
 	const note = <div className={`mt-px text-xs font-medium ${tone}`}>{text}</div>;
 	if (isInFull || !minimumIsEstimated || minimum === null) return note;
 
@@ -285,14 +294,13 @@ function ColumnCell({ columnLabel, line, history, accountName, plannedPayment, s
 			const itemKind = services.kinds.of(line.item);
 			const unknownNote = itemKind.linkedAccountId(line.item) === undefined ? 'Set a typical payment' : 'No balance from Monarch';
 			const amountNote = line.amountUnknown && !line.paid ? unknownNote : itemKind.amountNote(line.item, line.paid);
+			let note: ReactNode = null;
+			if (plannedPayment) note = <CanPayNote plannedPayment={plannedPayment} shownAmount={line.amount} formatter={formatter} />;
+			else if (amountNote) note = <div className="mt-px text-xs font-medium text-content-secondary">{amountNote}</div>;
 			return (
 				<div data-external-id="recurring-amount-with-delta" className="text-right">
 					<span className="text-base font-medium text-content-primary">{line.amountUnknown && !line.paid ? 'Unknown' : formatter.money(line.amount)}</span>
-					{plannedPayment ? (
-						<CanPayNote plannedPayment={plannedPayment} shownAmount={line.amount} formatter={formatter} />
-					) : amountNote ? (
-						<div className="mt-px text-xs font-medium text-content-secondary">{amountNote}</div>
-					) : null}
+					{note}
 				</div>
 			);
 		}

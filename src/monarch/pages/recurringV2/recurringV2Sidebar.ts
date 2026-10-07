@@ -5,7 +5,7 @@ import { RECURRING_V2_SELECTORS as SELECTORS } from './recurringV2Selectors';
 
 const STATEMENTS_LABEL = 'Statements';
 /** What Monarch shows for Statements until it has any. */
-export const COMING_SOON_TEXT = 'Coming soon';
+const COMING_SOON_TEXT = 'Coming soon';
 const PANEL_STYLE = 'position: absolute; inset: 0; z-index: 1;';
 const SUMMARY_STATEMENTS_STYLE = 'align-self: stretch;';
 

@@ -12,8 +12,9 @@ export type PrepareResult = { status: 'ok'; orders: ListedOrder[] } | { status: 
 export interface RetailCollector {
 	/** The purchases on or after `since` that aren't in `knownOrderIds`, newest first. */
 	prepare(since: string, knownOrderIds: string[]): Promise<PrepareResult>;
-	/** Each purchase, trimmed to what a receipt needs. Null when the store didn't return it. */
+	/** Each purchase, trimmed to what a receipt needs, or null when the store didn't return one. `alreadyRead` and `total` count across the whole sync, for progress. */
 	fetchOrders(orders: ListedOrder[], alreadyRead?: number, total?: number): Promise<{ order: unknown; isInStore: boolean }[] | null>;
+	/** Removes the overlay so the user can deal with whatever stopped the sync. */
 	hideOverlay(): void;
 }
 
