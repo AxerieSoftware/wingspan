@@ -2,22 +2,25 @@ import { useMemo, useState } from 'react';
 import { Field, FormGrid } from '../../../../monarch/ui/components/field';
 import { TextInput } from '../../../../monarch/ui/components/input';
 import { type MerchantChoice, MerchantSelect } from '../../../../monarch/ui/components/merchantSelect';
-import type { RecurringItemEditorFieldsProps } from '../../recurringItems/kinds/recurringItemKind';
-import type { ManualBillItem } from '../models/manualBillItem';
+import type { MoneyFlow, RecurringItemEditorFieldsProps } from '../../recurringItems/kinds/recurringItemKind';
+import type { RecurringItem } from '../../recurringItems/models/recurringItem';
 import type { RecurringItemInferrer } from '../services/recurringItemInferrer';
 import { BillFields } from './billFields';
 import { IconPicker } from './iconPicker';
 import { MatchSummary } from './matchSummary';
 import { TransactionPicker } from './transactionPicker';
 
-/** `item` is the draft's item, already known to be a bill. */
+/** `item` is the draft's item, already known to be a bill or income. `moneyFlow` is which way its transactions go. */
 export interface ManualBillFieldsProps extends RecurringItemEditorFieldsProps {
-	item: ManualBillItem;
+	item: RecurringItem;
+	moneyFlow: MoneyFlow;
 	inferrer: RecurringItemInferrer;
 }
 
-/** Bill editor: pick a merchant and past payments, and the other fields are filled in from them unless edited. */
-export function ManualBillFields({ item, startItem, draft, editedFields, accounts, transactions, transactionsStatus, services, inferrer, onChange }: ManualBillFieldsProps) {
+const PICKER_PROMPTS: Record<MoneyFlow, string> = { outflow: 'Select the payments that belong to this bill.', inflow: 'Select the deposits that belong to this income.' };
+
+/** Bill or income editor: pick a merchant and past transactions, and the other fields are filled in from them unless edited. */
+export function ManualBillFields({ item, moneyFlow, startItem, draft, editedFields, accounts, transactions, transactionsStatus, services, inferrer, onChange }: ManualBillFieldsProps) {
 	const [changedPickedIds, setChangedPickedIds] = useState<ReadonlySet<string> | null>(null);
 	const [chosenMerchant, setChosenMerchant] = useState<MerchantChoice | null>(null);
 	const [startItemPaymentIds] = useState<ReadonlySet<string>>(
@@ -50,7 +53,7 @@ export function ManualBillFields({ item, startItem, draft, editedFields, account
 			</FormGrid>
 			<div className="mt-lg flex flex-col gap-xs">
 				<span data-mds="text" className="text-sm font-book text-content-secondary">
-					Select the payments that belong to this bill.
+					{PICKER_PROMPTS[moneyFlow]}
 				</span>
 				<TransactionPicker
 					transactions={transactions}
@@ -63,7 +66,7 @@ export function ManualBillFields({ item, startItem, draft, editedFields, account
 					onChange={changePicked}
 				/>
 			</div>
-			<BillFields item={item} draft={draft} accounts={accounts} services={services} onChange={onChange} />
+			<BillFields item={item} moneyFlow={moneyFlow} draft={draft} accounts={accounts} services={services} onChange={onChange} />
 		</>
 	);
 }

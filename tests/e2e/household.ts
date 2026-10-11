@@ -46,6 +46,7 @@ const CATEGORIES = {
 	utilities: { id: 'cat-utilities', name: 'Internet & Phone', icon: '📱', group: EXPENSES },
 	rent: { id: 'cat-rent', name: 'Rent', icon: '🏠', group: EXPENSES },
 	paychecks: { id: 'cat-paychecks', name: 'Paychecks', icon: '💰', group: INCOME },
+	clientPayments: { id: 'cat-client-payments', name: 'Client Payments', icon: '🧾', group: INCOME },
 	lessons: { id: 'cat-lessons', name: 'Lessons', icon: '🎹', group: EXPENSES },
 	cardPayment: { id: 'cat-card-payment', name: 'Credit Card Payment', icon: '💳', group: TRANSFERS },
 	coffee: { id: 'cat-coffee', name: 'Coffee Shops', icon: '☕', group: EXPENSES },
@@ -425,6 +426,10 @@ export class Household {
 			),
 			transaction('tx-grocer-0', this.today, -45, 'GREEN GROCER', 'Green Grocer', 'acct-rewards', CATEGORIES.groceries),
 			...[1, 2, 3, 4, 5, 6].map(monthsAgo => transaction(`tx-gas-${monthsAgo}`, this.monthDay(monthsAgo, 12), -60, 'FUEL STOP', 'Fuel Stop', 'acct-checking', CATEGORIES.gas)),
+			// Client payouts land in checking about weekly, in amounts that vary. Monarch has no recurring item for them.
+			...Array.from({ length: 12 }, (_, weeksAgo) =>
+				transaction(`tx-payout-${weeksAgo}`, this.dayOffset(-7 * weeksAgo - 1), 145 + (weeksAgo % 3) * 145, 'FABRIKAM TRANSFER', 'Fabrikam Payouts', 'acct-checking', CATEGORIES.clientPayments)
+			),
 			// Paychecks are deposited to checking; Monarch's recurring items cover them, so they're marked recurring.
 			...[1, 2, 3, 4, 5, 6].flatMap(monthsAgo =>
 				[1, 15].map(day => ({

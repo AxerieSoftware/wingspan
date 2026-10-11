@@ -14,6 +14,7 @@ import { Tooltip } from '../../../../monarch/ui/components/tooltip';
 import { savedLogoUrl } from '../../../../monarch/ui/savedLogoUrl';
 import { PANEL_ICON_BUTTON_CLASS_NAME } from '../../../../monarch/ui/styles';
 import { WingspanMark } from '../../../wingspanMark';
+import type { MoneyFlow } from '../kinds/recurringItemKind';
 import type { HistoryPoint } from '../models/historyPoint';
 import type { RecurringItem } from '../models/recurringItem';
 import type { RecurringItemServices } from '../services/recurringItemServices';
@@ -55,8 +56,11 @@ interface TransactionListRowProps {
 interface TransactionsProps {
 	points: HistoryPoint[];
 	trackingSince: string;
-	/** Unpaid months from this one on are still owed, since the list carries them over. */
-	owedFromMonth: string;
+	/** Unpaid months from this one on are still owed, since the list carries them over. Null when nothing is ever owed, like income. */
+	owedFromMonth: string | null;
+	/** Shown for a past due date with nothing found and nothing owed. */
+	missedLabel: string;
+	moneyFlow: MoneyFlow;
 	/** Null once a schedule has run out. */
 	nextDueDate: string | null;
 	nextAmount: number;
@@ -95,7 +99,9 @@ export function ItemDetails({ item, historyPoints, trackingSince, accountNames, 
 				<Transactions
 					points={historyPoints}
 					trackingSince={trackingSince}
-					owedFromMonth={services.calendar.addMonths(services.calendar.currentMonth(), -itemKind.unpaidCarryMonths)}
+					owedFromMonth={itemKind.moneyFlow === 'inflow' ? null : services.calendar.addMonths(services.calendar.currentMonth(), -itemKind.unpaidCarryMonths)}
+					missedLabel={itemKind.moneyFlow === 'inflow' ? 'No deposit found' : 'No payment found'}
+					moneyFlow={itemKind.moneyFlow}
 					nextDueDate={nextDueDate}
 					nextAmount={nextAmount}
 					services={services}
@@ -135,7 +141,7 @@ export function ItemDetails({ item, historyPoints, trackingSince, accountNames, 
 									{detailRow.value}
 								</MetaRow>
 							))}
-							{paidFromAccountId ? <MetaRow label="Paid from">{accountNames.get(paidFromAccountId) ?? 'Linked account'}</MetaRow> : null}
+							{paidFromAccountId ? <MetaRow label={itemKind.moneyFlow === 'inflow' ? 'Paid into' : 'Paid from'}>{accountNames.get(paidFromAccountId) ?? 'Linked account'}</MetaRow> : null}
 							{item.notes ? <MetaRow label="Notes">{item.notes}</MetaRow> : null}
 						</div>
 					</div>
@@ -225,7 +231,10 @@ function TransactionListRow({ date, dateClassName, amount, amountClassName, exte
 	);
 }
 
-function Transactions({ points, trackingSince, owedFromMonth, nextDueDate, nextAmount, services: { formatter } }: TransactionsProps) {
+function Transactions({ points, trackingSince, owedFromMonth, missedLabel, moneyFlow, nextDueDate, nextAmount, services: { formatter } }: TransactionsProps) {
+	// Income shows like Monarch's: green with a plus sign.
+	const isIncome = moneyFlow === 'inflow';
+	const signed = (amount: number) => `${isIncome ? '+' : ''}${formatter.money(amount)}`;
 	return (
 		<div data-external-id="recurring-stream-transaction-list" className="-mx-default px-default">
 			<span className="text-base font-medium text-content-primary">Transactions</span>
@@ -235,7 +244,7 @@ function Transactions({ points, trackingSince, owedFromMonth, nextDueDate, nextA
 					externalId="upcoming-transaction-row"
 					date={formatter.longDate(nextDueDate)}
 					dateClassName={MUTED_TEXT_CLASS_NAME}
-					amount={formatter.money(nextAmount)}
+					amount={signed(nextAmount)}
 					amountClassName={MUTED_TEXT_CLASS_NAME}
 				>
 					<Icon shape="calendar" size={14} className="shrink-0 text-content-secondary" />
@@ -253,8 +262,8 @@ function Transactions({ points, trackingSince, owedFromMonth, nextDueDate, nextA
 							externalId="recurring-stream-transaction-row"
 							date={formatter.longDate(point.paidDate ?? point.dueDate)}
 							dateClassName="font-medium text-content-primary"
-							amount={point.amount !== null ? formatter.money(point.amount) : '–'}
-							amountClassName="font-medium text-content-primary"
+							amount={point.amount !== null ? signed(point.amount) : '–'}
+							amountClassName={`font-medium ${isIncome ? 'text-content-success' : 'text-content-primary'}`}
 						>
 							<span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-background-success text-content-success">
 								<Icon shape="check" size={9} className="shrink-0" />
@@ -268,11 +277,11 @@ function Transactions({ points, trackingSince, owedFromMonth, nextDueDate, nextA
 
 				if (point.month < trackingSince) return null;
 				// Same as the row: only carried-over months are owed; earlier ones just had no payment found.
-				if (point.month < owedFromMonth) {
+				if (owedFromMonth === null || point.month < owedFromMonth) {
 					return (
 						<TransactionListRow key={point.dueDate} date={formatter.longDate(point.dueDate)} dateClassName={MUTED_TEXT_CLASS_NAME} amount="" amountClassName={MUTED_TEXT_CLASS_NAME}>
 							<span className="size-4 shrink-0" />
-							<span className={`text-sm ${MUTED_TEXT_CLASS_NAME}`}>No payment found</span>
+							<span className={`text-sm ${MUTED_TEXT_CLASS_NAME}`}>{missedLabel}</span>
 						</TransactionListRow>
 					);
 				}

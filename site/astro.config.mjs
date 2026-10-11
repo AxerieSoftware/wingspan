@@ -25,6 +25,7 @@ export default defineConfig({
 						{ label: "Due dates", slug: "features/due-dates" },
 						{ label: "Manual bills", slug: "features/manual-bills" },
 						{ label: "Card payments", slug: "features/card-payments" },
+						{ label: "Expected income", slug: "features/expected-income" },
 						{ label: "Projected balances", slug: "features/projected-balances" },
 						{ label: "Retail receipt sync", slug: "features/receipt-sync" },
 						{ label: "HSA reimbursements", slug: "features/hsa-reimbursements" },

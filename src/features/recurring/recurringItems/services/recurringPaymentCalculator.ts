@@ -342,6 +342,8 @@ export class RecurringPaymentCalculator {
 
 	private occurrence(item: RecurringItem, dueDate: string, matchedTransaction: Transaction | null, amount: number, carried: boolean, owesNothing = false): Occurrence {
 		const paid = matchedTransaction !== null || owesNothing;
-		return { item, dueDate, key: this.occurrenceKey(item.id, dueDate), amount, paid, matchedTransaction, carried, overdue: !paid && dueDate < this.calendar.today() };
+		// Income that didn't arrive isn't owed, so it's never overdue.
+		const isOwed = this.kinds.of(item).moneyFlow === 'outflow';
+		return { item, dueDate, key: this.occurrenceKey(item.id, dueDate), amount, paid, matchedTransaction, carried, overdue: isOwed && !paid && dueDate < this.calendar.today() };
 	}
 }

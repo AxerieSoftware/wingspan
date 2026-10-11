@@ -189,7 +189,7 @@ export const itemRow = (scope: Page | Locator, name: string) => scope.getByRole(
 export const section = (page: Page, name: string) => page.getByTestId(`recurring-section-card-${name}`);
 
 /** Opens Monarch's "Add recurring" dialog from "Add manually" with one of Wingspan's types chosen. */
-export async function addRecurring(page: Page, type: 'Bill' | 'Card payment') {
+export async function addRecurring(page: Page, type: 'Bill' | 'Income' | 'Card payment') {
 	await page.getByRole('button', { name: 'Add recurring' }).click();
 	await page.getByRole('menuitem', { name: 'Add manually' }).click();
 	const dialog = page.getByRole('dialog', { name: 'Add recurring' });

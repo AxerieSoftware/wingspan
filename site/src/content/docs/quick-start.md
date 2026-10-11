@@ -24,11 +24,11 @@ npm run build:edge   # or npm run build:chrome for Chrome
 
 Wingspan adds to Monarch's newer Recurring page. In Monarch, go to **Settings → Early Access** and turn on **Recurring 2.0**.
 
-## Add a card payment or a bill
+## Add a card payment, bill or income
 
 1. Open **Recurring** while signed in to Monarch.
 2. Choose **Add recurring → Add manually**.
-3. Set **Type** to **Card payment** or **Bill**. Wingspan shows its own fields in place of Monarch's.
+3. Set **Type** to **Card payment**, **Bill** or **Income**. Wingspan shows its own fields in place of Monarch's.
 4. Save. It shows up with Monarch's recurring items, sorted by date.
 
 ## Pick what counts as checking

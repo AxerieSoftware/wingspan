@@ -17,6 +17,7 @@ export class ManualBillKind implements RecurringItemKind {
 	public readonly label = 'Bill';
 	public readonly typeColumnLabel = 'Bill';
 	public readonly typeSectionName = EXPENSES_SECTION_NAME;
+	public readonly moneyFlow = 'outflow';
 	public readonly paymentWindow = 'afterDueDate';
 	public readonly unpaidCarryMonths = UNPAID_CARRY_MONTHS;
 	public readonly showsInStatements = false;
@@ -30,7 +31,7 @@ export class ManualBillKind implements RecurringItemKind {
 	/** Editor fields for a bill, or nothing for other kinds. */
 	public readonly EditorFields = (fieldsProps: RecurringItemEditorFieldsProps) => {
 		const { item } = fieldsProps.draft;
-		return this.owns(item) ? <ManualBillFields {...fieldsProps} item={item} inferrer={this.inferrer} /> : null;
+		return this.owns(item) ? <ManualBillFields {...fieldsProps} item={item} moneyFlow={this.moneyFlow} inferrer={this.inferrer} /> : null;
 	};
 
 	public owns(item: RecurringItem): item is ManualBillItem {
@@ -39,7 +40,7 @@ export class ManualBillKind implements RecurringItemKind {
 
 	/** Outflows containing the match text, within 10% or $5 of the bill's amount unless any amount is allowed. */
 	public paymentRule(item: RecurringItem): TransactionPredicate | null {
-		return this.matcher.predicateFor(item, true);
+		return this.matcher.predicateFor(item, true, this.moneyFlow);
 	}
 
 	/** The matched payment's amount, or the bill's amount while unpaid. */
@@ -71,7 +72,7 @@ export class ManualBillKind implements RecurringItemKind {
 	public detailRows(item: RecurringItem): DetailRow[] {
 		return [
 			{ label: 'Amount', value: this.formatter.money(item.amount) },
-			{ label: 'Matches', value: this.matcher.describe(item, false) }
+			{ label: 'Matches', value: this.matcher.describe(item, 'whenAllowed') }
 		];
 	}
 }

@@ -11,6 +11,9 @@ import type { RecurringItemServices } from '../services/recurringItemServices';
 /** A card payment is paid near its due date; a manual bill can be paid any time after, no matter how late. */
 export type PaymentWindow = 'nearDueDate' | 'afterDueDate';
 
+/** Whether an item's payments leave the household, like a bill, or arrive, like income. */
+export type MoneyFlow = 'outflow' | 'inflow';
+
 /** Load state of Monarch's transactions. */
 export type TransactionsStatus = 'loading' | 'failed' | 'ready';
 
@@ -29,6 +32,9 @@ export interface RecurringItemEditorFieldsProps {
 /** Monarch's Expenses section. Wingspan's items are added to it when Recurring is grouped by type. */
 export const EXPENSES_SECTION_NAME = 'Expenses';
 
+/** Monarch's Income section. */
+export const INCOME_SECTION_NAME = 'Income';
+
 /** A kind of item Wingspan adds to Recurring: how it's edited, how its payments are found, and what it owes. */
 export interface RecurringItemKind {
 	readonly kind: string;
@@ -37,6 +43,7 @@ export interface RecurringItemKind {
 	readonly typeColumnLabel: string;
 	/** The section its rows go in when Recurring is grouped by type. */
 	readonly typeSectionName: string;
+	readonly moneyFlow: MoneyFlow;
 	readonly paymentWindow: PaymentWindow;
 	/** How many months an unpaid occurrence is carried over before it's dropped. */
 	readonly unpaidCarryMonths: number;
