@@ -12,11 +12,13 @@ import { Tooltip } from '../../../../monarch/ui/components/tooltip';
 import type { Formatter } from '../../../../monarch/ui/formatter';
 import { WingspanMark } from '../../../wingspanMark';
 import { ESTIMATED_MINIMUM_RULE, missesMinimum, type PlannedCardPayment, paysInFull } from '../../statements/models/cardPaymentPlans';
+import type { MoneyFlow } from '../kinds/recurringItemKind';
 import type { RecurringLine } from '../models/recurringLine';
 import type { RecurringItemServices } from '../services/recurringItemServices';
 
 const RING_CIRCUMFERENCE = 37.7;
 const COLUMNS_NEEDING_DATA = new Set(['status', 'history', 'amount', 'last date', 'next date']);
+const PAID_WORDS: Record<MoneyFlow, string> = { outflow: 'Paid', inflow: 'Received' };
 
 /** What one of Wingspan's rows shows in Monarch's columns. */
 export interface RowCellsProps {
@@ -175,7 +177,8 @@ function CellText({ children, tone = 'font-medium text-content-primary' }: CellT
 	return <span className={`text-base ${tone} min-w-0 truncate`}>{children}</span>;
 }
 
-function StatusCell({ line, services: { formatter } }: StatusCellProps) {
+function StatusCell({ line, services: { formatter, kinds, calendar } }: StatusCellProps) {
+	const paidWord = PAID_WORDS[kinds.of(line.item).moneyFlow];
 	const occurrenceCount = line.occurrences.length;
 	const paidCount = line.occurrences.filter(occurrence => occurrence.paid).length;
 	let content: ReactNode;
@@ -197,20 +200,23 @@ function StatusCell({ line, services: { formatter } }: StatusCellProps) {
 		content = (
 			<>
 				{line.paid ? <PaidMark /> : <ProgressRing paidCount={paidCount} totalCount={occurrenceCount} />}
-				<CellText>{`${paidCount} of ${occurrenceCount} paid`}</CellText>
+				<CellText>{`${paidCount} of ${occurrenceCount} ${paidWord.toLowerCase()}`}</CellText>
 			</>
 		);
 	} else if (line.paid) {
 		const matchedTransaction = line.occurrences[0]?.matchedTransaction;
 		let paidText = 'Nothing owed';
-		if (matchedTransaction) paidText = `Paid ${formatter.shortDate(matchedTransaction.date)}`;
-		else if (line.amount > 0) paidText = 'Paid';
+		if (matchedTransaction) paidText = `${paidWord} ${formatter.shortDate(matchedTransaction.date)}`;
+		else if (line.amount > 0) paidText = paidWord;
 		content = (
 			<>
 				<PaidMark />
 				<CellText>{paidText}</CellText>
 			</>
 		);
+	} else if (line.dueDate < calendar.today()) {
+		// Only income gets here: a bill past its due date is overdue.
+		content = <CellText tone="font-book text-content-secondary">{`Not received ${formatter.shortDate(line.dueDate)}`}</CellText>;
 	} else {
 		content = (
 			<>
@@ -299,7 +305,13 @@ function ColumnCell({ columnLabel, line, history, accountName, plannedPayment, s
 			else if (amountNote) note = <div className="mt-px text-xs font-medium text-content-secondary">{amountNote}</div>;
 			return (
 				<div data-external-id="recurring-amount-with-delta" className="text-right">
-					<span className="text-base font-medium text-content-primary">{line.amountUnknown && !line.paid ? 'Unknown' : formatter.money(line.amount)}</span>
+					{line.amountUnknown && !line.paid ? (
+						<span className="text-base font-medium text-content-primary">Unknown</span>
+					) : (
+						<span className={`text-base font-medium ${itemKind.moneyFlow === 'inflow' ? 'text-content-success' : 'text-content-primary'}`}>
+							{`${itemKind.moneyFlow === 'inflow' ? '+' : ''}${formatter.money(line.amount)}`}
+						</span>
+					)}
 					{note}
 				</div>
 			);
@@ -322,7 +334,7 @@ function ColumnCell({ columnLabel, line, history, accountName, plannedPayment, s
 					{line.lastPaidDate ? (
 						<>
 							<PaidMark />
-							<CellText>{`Paid ${formatter.nearDate(line.lastPaidDate)}`}</CellText>
+							<CellText>{`${PAID_WORDS[services.kinds.of(line.item).moneyFlow]} ${formatter.nearDate(line.lastPaidDate)}`}</CellText>
 						</>
 					) : (
 						<CellText tone="font-book text-content-secondary">–</CellText>

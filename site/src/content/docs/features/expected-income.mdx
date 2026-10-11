@@ -1,0 +1,28 @@
+---
+title: Expected income
+description: Income that changes week to week, like client payouts, counted at what you usually take in.
+introduced: 0.3.0
+saves: account
+---
+
+import Screenshot from "../../../components/Screenshot.astro";
+
+Some income doesn't come in one steady amount. Client payouts from a booking app might be $145 one day and $580 the next, a few times a week. Monarch's recurring income needs one fixed amount, so this kind of income either goes missing from your plan or gets the last deposit's amount, which is usually too low.
+
+Expected income is what you usually take in: say $430 a week. [Projected balances](/features/projected-balances/) adds it on each upcoming date, so checking doesn't look like it only goes down when money really is coming in.
+
+<Screenshot name="expected-income" alt="Expected income's details: weekly, $430 expected, the deposits it matched, and the next one." />
+
+## Using it
+
+1. On **Recurring**, choose **Add recurring → Add manually**, then **Income**.
+2. Pick the merchant and a few of its deposits. Wingspan fills in the name, schedule and account from them.
+3. Set **Expected amount** to what you usually take in each time, and save.
+
+Expected income sits in Monarch's **Income** table. Any deposit that matches counts as received, whatever its size.
+
+## How it's counted
+
+- Every upcoming date adds the full expected amount. A small deposit doesn't lower the next one, since the amount is an average.
+- Deposits already received are in your balance, so they aren't counted again.
+- Income that didn't arrive isn't carried over as owed. It shows as not received, and the next date carries on as normal.

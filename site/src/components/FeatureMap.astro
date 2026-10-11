@@ -19,6 +19,12 @@ const groups = [
 		features: [
 			{ name: "Projected balances", href: "/features/projected-balances/", where: "On Cash Flow", text: "Checking day by day ahead, so you see a low point before you hit it." },
 			{
+				name: "Expected income",
+				href: "/features/expected-income/",
+				where: "On Recurring",
+				text: "Income that changes week to week, like client payouts, counted at what you usually take in.",
+			},
+			{
 				name: "Free cash",
 				href: "/features/projected-balances/#free-cash-today",
 				where: "On Recurring and Cash Flow",
@@ -30,6 +36,17 @@ const groups = [
 		job: "Receipts",
 		features: [
 			{ name: "Retail receipt sync", href: "/features/receipt-sync/", where: "On Transactions", text: "Store purchases split into individual items, like Monarch already does for Amazon and Target." },
+		],
+	},
+	{
+		job: "Health savings",
+		features: [
+			{
+				name: "HSA reimbursements",
+				href: "/features/hsa-reimbursements/",
+				where: "On your HSA's account page",
+				text: "Medical expenses you paid yourself and can still pay back from your HSA, with any missing receipts flagged.",
+			},
 		],
 	},
 	{

@@ -32,7 +32,8 @@ interface RowsBuild {
 	key: string;
 	placements: RecurringV2WingspanRow[];
 	statementsFooterText: string | null;
-	statementsEmptyText: string | null;
+	statementsEmptyText: string;
+	isStatementsLoading: boolean;
 	entriesFor(rowEls: ReadonlyMap<string, HTMLElement>): RowEntry[];
 }
 
@@ -72,6 +73,8 @@ export class RecurringItemsFeature implements WingspanFeature {
 				void this.rowsData.ledgerService.ledger.value;
 				void this.monarchData.state.value;
 				void this.dataService.data.value;
+				void this.dataService.isLoaded.value;
+				void this.dataService.loadFailureMessage.value;
 				void this.cardPaymentPlans.byItemId.value;
 				void this.businessFilter.view.scope.value;
 				this.hasDataChanged = true;
@@ -107,7 +110,12 @@ export class RecurringItemsFeature implements WingspanFeature {
 			this.rowsBuild = this.buildRows(buildKey, view, month, isLoading, columnLabels);
 		}
 
-		const rowEls = this.page.showWingspanRows({ rows: this.rowsBuild.placements, statementsFooterText: this.rowsBuild.statementsFooterText, statementsEmptyText: this.rowsBuild.statementsEmptyText });
+		const rowEls = this.page.showWingspanRows({
+			rows: this.rowsBuild.placements,
+			statementsFooterText: this.rowsBuild.statementsFooterText,
+			statementsEmptyText: this.rowsBuild.statementsEmptyText,
+			isStatementsLoading: this.rowsBuild.isStatementsLoading
+		});
 		if (isRebuilt) this.ensureRowsIsland().render(<RecurringRows entries={this.rowsBuild.entriesFor(rowEls)} />);
 
 		if (this.openItemId) {
@@ -210,12 +218,14 @@ export class RecurringItemsFeature implements WingspanFeature {
 		else if (isStale) statementsFooterText = `${footerText}, as of ${formatter.asOf(snapshot.fetchedAt)}`;
 
 		const hasCardPayments = this.rowsData.itemRepository.data.value.recurringItems.some(item => kinds.of(item).showsInStatements && isShown(item));
-		const statementsEmptyText = this.statementsEmptyText(view, month, isWaitingForAccounts, hasCardPayments);
+		const statementsEmptyText = this.statementsEmptyText(view, month, hasCardPayments);
+		const isStatementsLoading = isWaitingForAccounts || (!this.dataService.isLoaded.value && this.dataService.loadFailureMessage.value === null);
 
 		return {
 			key,
 			statementsFooterText,
 			statementsEmptyText,
+			isStatementsLoading,
 			placements: lines.map(line => ({
 				key: line.key,
 				label: line.item.name,
@@ -277,8 +287,8 @@ export class RecurringItemsFeature implements WingspanFeature {
 		return owed ? `${owed}, plus ${unknown}` : `Unpaid, ${unknown}`;
 	}
 
-	private statementsEmptyText(view: RecurringView, month: string, isWaitingForAccounts: boolean, hasCardPayments: boolean): string | null {
-		if (!this.dataService.isLoaded.value || isWaitingForAccounts) return null;
+	private statementsEmptyText(view: RecurringView, month: string, hasCardPayments: boolean): string {
+		if (!this.dataService.isLoaded.value) return "Couldn't load your card payments. Reload the page to try again.";
 		if (!hasCardPayments) return 'No card payments yet. Add one with Add recurring.';
 		if (view === 'all') return 'No card payments yet.';
 		if (month === this.services.calendar.currentMonth()) return 'No card payments due this month.';

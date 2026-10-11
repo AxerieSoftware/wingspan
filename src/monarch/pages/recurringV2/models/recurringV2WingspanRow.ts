@@ -12,6 +12,8 @@ export interface RecurringV2WingspanRow {
 export interface RecurringV2WingspanRows {
 	rows: RecurringV2WingspanRow[];
 	statementsFooterText: string | null;
-	/** Shown in the Statements card when no row goes there; without it the card keeps Monarch's own content. */
-	statementsEmptyText: string | null;
+	/** Shown in the Statements card when no row goes there. */
+	statementsEmptyText: string;
+	/** True until Wingspan knows which card payments go in Statements, so the card shows a placeholder instead of Monarch's "Coming soon". */
+	isStatementsLoading: boolean;
 }

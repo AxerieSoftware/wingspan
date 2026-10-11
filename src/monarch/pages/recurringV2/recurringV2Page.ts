@@ -314,17 +314,15 @@ export class RecurringV2Page {
 
 	private showStatements(
 		statementsRows: { rowEl: HTMLElement; sortDate: string }[],
-		{ statementsFooterText, statementsEmptyText }: RecurringV2WingspanRows,
+		{ statementsFooterText, statementsEmptyText, isStatementsLoading }: RecurringV2WingspanRows,
 		monarchCards: RecurringV2SectionCard[]
 	): void {
-		if (!statementsRows.length && !statementsEmptyText) {
-			this.statementsCard.remove();
-			return;
-		}
-
 		const rowEls = statementsRows.sort((first, second) => first.sortDate.localeCompare(second.sortDate)).map(statementsRow => statementsRow.rowEl);
 		const columnLabels = this.sectionCards.columnLabels(monarchCards);
-		this.statementsCard.show({ columnLabels, rowEls, footerText: rowEls.length ? statementsFooterText : null, emptyText: statementsEmptyText ?? '' }, this.layoutModel(monarchCards) ?? null);
+		this.statementsCard.show(
+			{ columnLabels, rowEls, footerText: rowEls.length ? statementsFooterText : null, emptyText: statementsEmptyText, isLoading: isStatementsLoading },
+			this.layoutModel(monarchCards) ?? null
+		);
 	}
 
 	/** The card whose column layout Wingspan's cards copy. It must be one the business filter hasn't hidden, since Monarch still lays those out. */

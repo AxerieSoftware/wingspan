@@ -1,5 +1,6 @@
 import '@/src/common/safariPolyfills';
 import type { ContentScriptContext } from 'wxt/utils/content-script-context';
+import { addAccounts } from '@/src/features/accounts/addAccounts';
 import { addBusinessEntities } from '@/src/features/businessEntities/addBusinessEntities';
 import { addCashSettings } from '@/src/features/cashFlow/cashSettings/addCashSettings';
 import { addFreeCash } from '@/src/features/cashFlow/freeCash/addFreeCash';
@@ -26,6 +27,7 @@ export default defineContentScript({
 		const projectedBalances = addProjectedBalances(builder, recurring, cashSettings, businessFilter);
 		addRecurringPages(builder, recurring, cashSettings, projectedBalances, businessFilter);
 		addFreeCash(builder, recurring, cashSettings, projectedBalances);
+		addAccounts(builder);
 
 		const wingspan = builder.build();
 		wingspan.start();

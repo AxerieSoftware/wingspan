@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
-import { expect, itemRow, type OpenOptions, section, test, useTheme } from './fixtures';
+import { addRecurring, chooseMerchant, expect, itemRow, type OpenOptions, section, test, useTheme } from './fixtures';
 
 /*
  * The README's screenshots (assets/screenshots, at 2x), the site's feature pages' (site/src/assets/screenshots,
@@ -90,6 +90,22 @@ for (const theme of THEMES) {
 			await siteShot(page, 'manual-bills', theme, details);
 		});
 
+		test('expected income', async ({ page, open }) => {
+			await openAsReturning(page, open);
+			await useTheme(page, theme);
+			const dialog = await addRecurring(page, 'Income');
+			await chooseMerchant(page, dialog, 'Fabrikam Payouts');
+			const deposits = dialog.getByRole('checkbox', { name: /Fabrikam Payouts/ });
+			for (const index of [0, 1, 2, 3]) await deposits.nth(index).check();
+			await dialog.getByRole('textbox', { name: 'Expected amount' }).fill('430');
+			await dialog.getByRole('button', { name: 'Add recurring', exact: true }).last().click();
+			await expect(dialog).toBeHidden();
+			await itemRow(section(page, 'Income'), 'Fabrikam Payouts').click();
+			const details = page.getByRole('region', { name: 'Fabrikam Payouts details' });
+			await expect(details).toContainText('Transactions');
+			await siteShot(page, 'expected-income', theme, details);
+		});
+
 		test('card payments', async ({ page, open }) => {
 			await openAsReturning(page, open);
 			await useTheme(page, theme);
@@ -113,6 +129,17 @@ for (const theme of THEMES) {
 			await expect(card.getByRole('img', { name: /^Checking from / })).toBeVisible();
 			await card.scrollIntoViewIfNeeded();
 			await siteShot(page, 'projected-balances', theme, card);
+		});
+
+		test('HSA reimbursements', async ({ page, household, open }) => {
+			household.addHsaExpenses();
+			await openAsReturning(page, open, '/accounts/details/acct-hsa');
+			await useTheme(page, theme);
+			const card = page.getByRole('group', { name: 'HSA reimbursements' });
+			await card.getByRole('button', { name: /^Reimbursed/ }).click();
+			await expect(card.getByText('Contoso Pharmacy')).toBeVisible();
+			await card.scrollIntoViewIfNeeded();
+			await siteShot(page, 'hsa-reimbursements', theme, card);
 		});
 
 		test('cash and cards', async ({ page, open }) => {

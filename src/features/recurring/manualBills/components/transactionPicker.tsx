@@ -162,7 +162,7 @@ export function TransactionPicker({ transactions, status, accounts, pickedIds, m
 	return (
 		<div className="flex flex-col gap-md">
 			<div className="relative flex flex-col overflow-hidden rounded-md border border-border-primary h-[min(430px,calc(100dvh-18rem))]">
-				<div className="flex flex-wrap items-center gap-md border-b border-b-divider-secondary px-md py-xs">
+				<div className="flex flex-wrap items-center gap-md border-b border-divider-secondary px-md py-xs">
 					<span className="inline-flex shrink-0 items-center gap-xs">
 						<FilterIcon />
 						<span data-mds="text" className="text-sm font-medium text-content-secondary">

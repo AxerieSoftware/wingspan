@@ -1,6 +1,7 @@
 import type { Calendar } from '../../../../common/calendar';
 import { ENDED_OCCURRENCE_STATUSES, MonarchOccurrenceStatus, MonarchRecurringType } from '../../../../monarch/api/models/monarchValues';
 import { occurrenceAccountId, type RecurringFlow } from '../../../../monarch/api/models/recurringFlow';
+import type { ExpectedIncomeKind } from '../../../recurring/expectedIncome/expectedIncomeKind';
 import type { ManualBillKind } from '../../../recurring/manualBills/manualBillKind';
 import type { Occurrence } from '../../../recurring/recurringItems/models/occurrence';
 import type { RecurringItem } from '../../../recurring/recurringItems/models/recurringItem';
@@ -18,7 +19,7 @@ export interface ProjectedAccounts {
 }
 
 /**
- * Monarch's recurring income and expenses, and Wingspan's bills, from today to the end date.
+ * Monarch's recurring income and expenses, and Wingspan's bills and income, from today to the end date.
  * Flows through checking have no accountId; flows on a card keep the card's id. Flows on any other account are left out.
  */
 export class ScheduledFlowBuilder {
@@ -26,10 +27,11 @@ export class ScheduledFlowBuilder {
 		private readonly calendar: Calendar,
 		private readonly recurrence: RecurrenceCalculator,
 		private readonly payments: RecurringPaymentCalculator,
-		private readonly manualBills: ManualBillKind
+		private readonly manualBills: ManualBillKind,
+		private readonly expectedIncome: ExpectedIncomeKind
 	) {}
 
-	/** Monarch's flows, then Wingspan's bills, unsorted. dueDayByRecurrenceId moves an item that's due once in a month to the household's chosen day. */
+	/** Monarch's flows, then Wingspan's bills and income, unsorted. dueDayByRecurrenceId moves an item that's due once in a month to the household's chosen day. */
 	public flows(
 		recurringFlows: RecurringFlow[],
 		outstandingOccurrences: Occurrence[],
@@ -38,7 +40,11 @@ export class ScheduledFlowBuilder {
 		dueDayByRecurrenceId: Readonly<Record<string, number>>,
 		endDate: string
 	): ScheduledFlow[] {
-		return [...this.monarchFlows(recurringFlows, accounts, dueDayByRecurrenceId, endDate), ...this.billFlows(outstandingOccurrences, recurringItems, accounts, endDate)];
+		return [
+			...this.monarchFlows(recurringFlows, accounts, dueDayByRecurrenceId, endDate),
+			...this.billFlows(outstandingOccurrences, recurringItems, accounts, endDate),
+			...this.incomeFlows(outstandingOccurrences, recurringItems, accounts, endDate)
+		];
 	}
 
 	/**
@@ -101,6 +107,29 @@ export class ScheduledFlowBuilder {
 
 			for (const dueDate of this.recurrence.dueDates(item.recurrence, tomorrow, endDate)) {
 				if (!listedKeys.has(this.payments.occurrenceKey(item.id, dueDate))) flows.push({ date: dueDate, amount: -item.amount, label: item.name, kind: 'bill', accountId: projectedAccount });
+			}
+		}
+
+		return flows;
+	}
+
+	/**
+	 * Each income's expected amount on every due date after today, and today too if nothing has arrived yet. The amount
+	 * is an estimate, so a deposit already in the balance doesn't reduce later due dates. Income that missed an earlier
+	 * due date isn't coming.
+	 */
+	private incomeFlows(outstandingOccurrences: Occurrence[], recurringItems: RecurringItem[], accounts: ProjectedAccounts, endDate: string): ScheduledFlow[] {
+		const today = this.calendar.today();
+		const flows: ScheduledFlow[] = [];
+		const receivedTodayIds = new Set(outstandingOccurrences.filter(occurrence => occurrence.dueDate === today && occurrence.paid).map(occurrence => occurrence.item.id));
+
+		for (const item of recurringItems) {
+			const projectedAccount = this.projectedAccount(item.matchRule?.accountId, accounts);
+			if (!this.expectedIncome.owns(item) || !item.active || projectedAccount === null) continue;
+
+			const fromDate = receivedTodayIds.has(item.id) ? this.calendar.addDays(today, 1) : today;
+			for (const dueDate of this.recurrence.dueDates(item.recurrence, fromDate, endDate)) {
+				flows.push({ date: dueDate, amount: item.amount, label: item.name, kind: 'income', accountId: projectedAccount });
 			}
 		}
 

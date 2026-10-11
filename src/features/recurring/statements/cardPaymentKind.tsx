@@ -21,6 +21,7 @@ export class CardPaymentKind implements RecurringItemKind {
 	public readonly label = 'Card payment';
 	public readonly typeColumnLabel = 'Card payment';
 	public readonly typeSectionName = EXPENSES_SECTION_NAME;
+	public readonly moneyFlow = 'outflow';
 	public readonly paymentWindow = 'nearDueDate';
 	/** A statement due late last month that's still unpaid is carried over into this month. */
 	public readonly unpaidCarryMonths = 1;
@@ -42,7 +43,7 @@ export class CardPaymentKind implements RecurringItemKind {
 	public paymentRule(item: RecurringItem): TransactionPredicate | null {
 		const cardAccountId = this.owns(item) ? item.accountId : undefined;
 		if (cardAccountId) return transaction => this.isPaymentToCard(transaction, cardAccountId);
-		return this.matcher.predicateFor(item, false);
+		return this.matcher.predicateFor(item, false, this.moneyFlow);
 	}
 
 	/** A payment the bank returned within a few days (e.g. for insufficient funds) doesn't count as paid. */
@@ -138,7 +139,7 @@ export class CardPaymentKind implements RecurringItemKind {
 		const cardAccountId = this.owns(item) ? item.accountId : undefined;
 		return [
 			{ label: 'Card', value: cardAccountId ? (accountNames.get(cardAccountId) ?? 'Linked card') : 'Not in Monarch' },
-			{ label: 'Matches', value: cardAccountId ? 'Payments to the card' : this.matcher.describe(item, true) }
+			{ label: 'Matches', value: cardAccountId ? 'Payments to the card' : this.matcher.describe(item, 'always') }
 		];
 	}
 }

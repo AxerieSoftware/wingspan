@@ -21,7 +21,7 @@ export function addProjectedBalances(app: WingspanBuilder, recurring: Recurring,
 	const planner = new ProjectedBalancesPlanner(
 		calendar,
 		new SpendingPaceCalculator(calendar),
-		new ScheduledFlowBuilder(calendar, recurrence, payments, recurring.manualBills),
+		new ScheduledFlowBuilder(calendar, recurrence, payments, recurring.manualBills, recurring.expectedIncome),
 		new CardForecaster(calendar, recurrence, recurring.cardPayments),
 		new CardPaymentPlanner(balanceProjector),
 		balanceProjector
