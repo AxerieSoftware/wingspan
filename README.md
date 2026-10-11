@@ -7,7 +7,7 @@
 
 ### More features for your money in Monarch.
 
-Extended features inside the Monarch Money[^monarch] web app.
+Extended features inside the Monarch Money[^monarch] web app. Free and open source, forever.
 
 [Website](https://wingspan.axerie.com) · [Quick start](https://wingspan.axerie.com/quick-start/) · [Features](https://wingspan.axerie.com/features/) · [Roadmap](https://wingspan.axerie.com/roadmap/) · [Privacy](https://wingspan.axerie.com/privacy/)
 
@@ -27,6 +27,8 @@ Extended features inside the Monarch Money[^monarch] web app.
 ## Why Wingspan
 
 Wingspan adds features Monarch Money doesn't have yet, plus a few I wanted for my own money. Each one shows up on the Monarch page it belongs on, looks like Monarch, and carries a small Wingspan mark <img src="assets/mark.svg" alt="Wingspan mark" height="12"> so you can tell it apart from Monarch's own. When Monarch ships its own version of a feature, Wingspan's version is deprecated and removed.
+
+Wingspan is free and open source, and it'll stay that way. There's no subscription or paid tier, and it's MIT-licensed, so you can read every line, build it yourself or fork it.
 
 ## Features
 
