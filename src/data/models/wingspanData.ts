@@ -1,5 +1,6 @@
 import * as v from 'valibot';
 import { isSameValue } from '../../common/sameValue';
+import { emptyHsaReimbursementTags, type HsaReimbursementTags, HsaReimbursementTagsSchema, hasChosenHsaReimbursementTags } from '../../features/accounts/hsaReimbursements/models/hsaReimbursementTags';
 import { emptySavedCashSettings, hasChosenCashSettings, type SavedCashSettings, SavedCashSettingsSchema } from '../../features/cashFlow/cashSettings/models/savedCashSettings';
 import { emptyRecurringDueDatesData, type RecurringDueDatesData, RecurringDueDatesDataSchema } from '../../features/recurring/dueDates/models/dueDatesData';
 import { emptyRecurringData, type RecurringData, RecurringDataSchema } from '../../features/recurring/recurringItems/models/recurringData';
@@ -20,14 +21,17 @@ export interface WingspanData {
 	walmartSync?: RetailSyncData;
 	/** Absent in data saved before Costco was first synced. */
 	costcoSync?: RetailSyncData;
+	/** The tags that mark HSA expenses, when the household chose its own. */
+	hsaReimbursementTags: HsaReimbursementTags;
 }
 
 /** Saved data before defaults are filled in. */
-type SavedWingspanData = Omit<WingspanData, 'cashSettings' | 'businessCashSettings' | 'walmartSync' | 'costcoSync'> & {
+type SavedWingspanData = Omit<WingspanData, 'cashSettings' | 'businessCashSettings' | 'walmartSync' | 'costcoSync' | 'hsaReimbursementTags'> & {
 	cashSettings?: SavedCashSettings;
 	businessCashSettings?: Record<string, SavedCashSettings>;
 	walmartSync?: Partial<RetailSyncData>;
 	costcoSync?: Partial<RetailSyncData>;
+	hsaReimbursementTags?: Partial<HsaReimbursementTags>;
 };
 
 /** Parses saved data, filling in defaults for fields added later. Unknown fields are kept. */
@@ -41,7 +45,9 @@ export const WingspanDataSchema: v.GenericSchema<SavedWingspanData, WingspanData
 	/** Absent until Walmart is first synced. */
 	walmartSync: v.optional(RetailSyncDataSchema, emptyRetailSyncData),
 	/** Absent until Costco is first synced. */
-	costcoSync: v.optional(RetailSyncDataSchema, emptyRetailSyncData)
+	costcoSync: v.optional(RetailSyncDataSchema, emptyRetailSyncData),
+	/** Absent until HSA tags are first chosen. */
+	hsaReimbursementTags: v.optional(HsaReimbursementTagsSchema, emptyHsaReimbursementTags)
 });
 
 export const emptyWingspanData = (): WingspanData => ({
@@ -50,15 +56,17 @@ export const emptyWingspanData = (): WingspanData => ({
 	cashSettings: emptySavedCashSettings(),
 	businessCashSettings: {},
 	walmartSync: emptyRetailSyncData(),
-	costcoSync: emptyRetailSyncData()
+	costcoSync: emptyRetailSyncData(),
+	hsaReimbursementTags: emptyHsaReimbursementTags()
 });
 
-/** Whether the household saved anything worth keeping: recurring items, due dates or cash settings. Retail sync history alone doesn't count. */
+/** Whether the household saved anything worth keeping: recurring items, due dates, cash settings or HSA tags. Retail sync history alone doesn't count. */
 export const hasWingspanData = (data: WingspanData): boolean =>
 	data.recurring.recurringItems.length > 0 ||
 	Object.keys(data.recurringDueDates.dueDatesByRecurrenceId).length > 0 ||
 	hasChosenCashSettings(data.cashSettings) ||
-	Object.values(data.businessCashSettings).some(hasChosenCashSettings);
+	Object.values(data.businessCashSettings).some(hasChosenCashSettings) ||
+	hasChosenHsaReimbursementTags(data.hsaReimbursementTags);
 
 type PickValue = <TValue>(theirs: TValue | undefined, ours: TValue | undefined, base: TValue | undefined) => TValue | undefined;
 
@@ -82,6 +90,8 @@ function combine(theirs: WingspanData, ours: WingspanData, base: WingspanData | 
 	const businessSettings = (data: WingspanData | undefined) =>
 		new Map(Object.entries(data?.businessCashSettings ?? {}).flatMap(([businessId, settings]) => (hasChosenCashSettings(settings) ? [[businessId, settings] as const] : [])));
 	const businessCashSettings = Object.fromEntries(mergeEntries(businessSettings(theirs), businessSettings(ours), base && businessSettings(base), pick));
+	const chosenTags = (tags: HsaReimbursementTags) => (hasChosenHsaReimbursementTags(tags) ? tags : undefined);
+	const hsaReimbursementTags = pick(chosenTags(theirs.hsaReimbursementTags), chosenTags(ours.hsaReimbursementTags), base && chosenTags(base.hsaReimbursementTags));
 
 	return {
 		...mergeOtherFields(theirs, ours, base, pick),
@@ -89,6 +99,7 @@ function combine(theirs: WingspanData, ours: WingspanData, base: WingspanData | 
 		recurringDueDates: { ...mergeOtherFields(theirs.recurringDueDates, ours.recurringDueDates, base?.recurringDueDates, pick), dueDatesByRecurrenceId },
 		cashSettings: cashSettings ?? theirs.cashSettings ?? emptySavedCashSettings(),
 		businessCashSettings,
+		hsaReimbursementTags: hsaReimbursementTags ?? emptyHsaReimbursementTags(),
 		walmartSync: mergeRetailSyncData(theirs.walmartSync, ours.walmartSync),
 		costcoSync: mergeRetailSyncData(theirs.costcoSync, ours.costcoSync)
 	};

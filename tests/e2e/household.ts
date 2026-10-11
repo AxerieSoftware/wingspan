@@ -50,7 +50,8 @@ const CATEGORIES = {
 	cardPayment: { id: 'cat-card-payment', name: 'Credit Card Payment', icon: '💳', group: TRANSFERS },
 	coffee: { id: 'cat-coffee', name: 'Coffee Shops', icon: '☕', group: EXPENSES },
 	groceries: { id: 'cat-groceries', name: 'Groceries', icon: '🍎', group: EXPENSES },
-	gas: { id: 'cat-gas', name: 'Gas', icon: '⛽', group: EXPENSES }
+	gas: { id: 'cat-gas', name: 'Gas', icon: '⛽', group: EXPENSES },
+	medical: { id: 'cat-medical', name: 'Medical', icon: '💊', group: EXPENSES }
 } satisfies Record<string, Category>;
 
 const BASE_ACCOUNTS = [
@@ -70,6 +71,15 @@ const BASE_ACCOUNTS = [
 	},
 	{ id: 'acct-flex', displayName: 'Flex Card (...5678)', currentBalance: -150, isAsset: false, isHidden: false, type: { name: 'credit', display: 'Credit Cards' } },
 	{ id: 'acct-loan', displayName: 'Auto Loan', currentBalance: -9120, isAsset: false, isHidden: false, type: { name: 'loan', display: 'Loans' } },
+	{
+		id: 'acct-hsa',
+		displayName: 'Fabrikam HSA',
+		currentBalance: 1800,
+		isAsset: true,
+		isHidden: false,
+		type: { name: 'brokerage', display: 'Investments' },
+		subtype: { name: 'health_savings_account', display: 'Health Savings Account (HSA)' }
+	},
 	{ id: 'acct-closed', displayName: 'Closed Account', currentBalance: 5, isAsset: true, isHidden: true, type: { name: 'depository', display: 'Cash' } }
 ];
 
@@ -94,6 +104,30 @@ const MONARCH_RECURRING: MonarchRecurring[] = [
 	{ id: 'rg-pay-15', name: 'Paycheck', day: 15, amount: 3200, recurringType: 'income', accountId: 'acct-checking', category: CATEGORIES.paychecks }
 ];
 
+interface TransactionTag {
+	id: string;
+	name: string;
+	color: string;
+}
+
+/** A medical expense paid out of pocket and tagged to pay back from the HSA. */
+interface HsaExpense {
+	id: string;
+	monthsAgo: number;
+	amount: number;
+	merchant: string;
+	tag: 'toReimburse' | 'reimbursed';
+	notes: string | null;
+	hasReceipt: boolean;
+}
+
+const HSA_EXPENSES: HsaExpense[] = [
+	{ id: 'tx-clinic', monthsAgo: 3, amount: -185.25, merchant: 'Fabrikam Clinic', tag: 'toReimburse', notes: null, hasReceipt: false },
+	{ id: 'tx-dental', monthsAgo: 7, amount: -412.6, merchant: 'Contoso Dental', tag: 'toReimburse', notes: 'Crown, EOB claim 0001', hasReceipt: true },
+	// Older than the year of transactions Wingspan reads for its other features.
+	{ id: 'tx-pharmacy', monthsAgo: 20, amount: -42.1, merchant: 'Contoso Pharmacy', tag: 'reimbursed', notes: null, hasReceipt: true }
+];
+
 /** Monarch's data for one test, dated relative to today. Every name and amount is invented. */
 export class Household {
 	private receiptSyncCount = 0;
@@ -103,6 +137,7 @@ export class Household {
 	private readonly today: string;
 	private hasBusiness = false;
 	private hasPlus = false;
+	private hsaTags: Record<HsaExpense['tag'], TransactionTag> | null = null;
 
 	/** Today on the local calendar, as Wingspan and Monarch read it, not in UTC. */
 	public constructor(today = Household.localToday()) {
@@ -139,6 +174,14 @@ export class Household {
 	public addBusiness({ hasPlus = true } = {}): void {
 		this.hasBusiness = true;
 		this.hasPlus = hasPlus;
+	}
+
+	/** Tags medical expenses paid from checking to pay back from the HSA, with tags named as given in Monarch's settings. */
+	public addHsaExpenses({ toReimburseName = 'HSA – Reimburse', reimbursedName = 'HSA – Reimbursed' } = {}): void {
+		this.hsaTags = {
+			toReimburse: { id: 'tag-hsa-reimburse', name: toReimburseName, color: '#1baf7a' },
+			reimbursed: { id: 'tag-hsa-reimbursed', name: reimbursedName, color: '#8e4ec6' }
+		};
 	}
 
 	private get baseAccounts() {
@@ -191,8 +234,11 @@ export class Household {
 				const stored = this.storedAccounts.find(account => account.id === id);
 				return stored ? this.toMonarchAccount(stored) : (this.baseAccounts.find(account => account.id === id) ?? null);
 			},
-			allTransactions: () => {
-				const results = this.transactions();
+			getTransaction: ({ id }) => this.transactions().find(transaction => transaction.id === id) ?? null,
+			householdTransactionTags: () => (this.hsaTags ? [{ id: 'tag-retail', name: 'Retail Sync', color: '#f86713' }, ...Object.values(this.hsaTags)] : []),
+			allTransactions: ({ filters }) => {
+				const tagIds = (filters as { tags?: string[] } | null)?.tags;
+				const results = tagIds?.length ? this.transactions().filter(transaction => transaction.tags.some(tag => tagIds.includes(tag.id))) : this.transactions();
 				return { totalCount: results.length, results };
 			},
 			budgetData: ({ startMonth }) => ({
@@ -344,9 +390,22 @@ export class Household {
 			plaidName,
 			merchant: { id: `merchant-${merchant}`, name: merchant, logoUrl: MERCHANT_LOGOS[merchant] ?? null },
 			category,
-			account: BASE_ACCOUNTS.find(account => account.id === accountId)
+			account: BASE_ACCOUNTS.find(account => account.id === accountId),
+			tags: [] as TransactionTag[],
+			notes: null as string | null,
+			attachments: [] as { id: string }[]
 		});
+		const hsaTags = this.hsaTags;
+		const hsaExpenses = hsaTags
+			? HSA_EXPENSES.map(expense => ({
+					...transaction(expense.id, this.monthDay(expense.monthsAgo, 10), expense.amount, expense.merchant.toUpperCase(), expense.merchant, 'acct-checking', CATEGORIES.medical),
+					tags: [hsaTags[expense.tag]],
+					notes: expense.notes,
+					attachments: expense.hasReceipt ? [{ id: `attachment-${expense.id}` }] : []
+				}))
+			: [];
 		return [
+			...hsaExpenses,
 			// The rewards card paid in full around the 17th; each payment is posted to the card's own account. None is dated after today.
 			...[0, 1, 2, 3, 4, 5]
 				.filter(monthsAgo => this.monthDay(monthsAgo, 17) <= this.today)

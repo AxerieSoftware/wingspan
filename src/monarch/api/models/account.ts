@@ -14,6 +14,8 @@ export interface Account {
 	isAsset: boolean;
 	isHidden: boolean;
 	type: { name: string; display: string };
+	/** Monarch's finer kind of account, like "health_savings_account". */
+	subtype?: { name: string } | null;
 	apr?: number | null;
 	interestRate?: number | null;
 	/** As entered in Monarch; dataProviderCreditLimit is what the bank reports. */

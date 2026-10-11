@@ -1,7 +1,8 @@
 import type { MonarchNavigator } from '../monarchNavigator';
 
 const ACCOUNTS_PATH = '/accounts';
-const FILTER_BUTTON_SELECTOR = 'button:has([class*="BusinessEntityFilterButton__ButtonText"])';
+/** Scoped to Accounts' header, since the page Monarch is leaving, like Transactions, can still show its own filter. */
+const FILTER_BUTTON_SELECTOR = '[data-external-id="accounts-header-controls"] button:has([class*="BusinessEntityFilterButton__ButtonText"])';
 const FILTER_POPOVER_SELECTOR = '[class*="BusinessEntityFilterButton__PopoverContent"]';
 /** Monarch's popper wrapper around the menu, hidden while Wingspan picks so the menu never shows. */
 const HIDDEN_POPOVER_CSS = `[data-popper-placement]:has(${FILTER_POPOVER_SELECTOR}) { visibility: hidden !important; }`;

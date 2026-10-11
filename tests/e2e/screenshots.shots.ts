@@ -115,6 +115,17 @@ for (const theme of THEMES) {
 			await siteShot(page, 'projected-balances', theme, card);
 		});
 
+		test('HSA reimbursements', async ({ page, household, open }) => {
+			household.addHsaExpenses();
+			await openAsReturning(page, open, '/accounts/details/acct-hsa');
+			await useTheme(page, theme);
+			const card = page.getByRole('group', { name: 'HSA reimbursements' });
+			await card.getByRole('button', { name: /^Reimbursed/ }).click();
+			await expect(card.getByText('Contoso Pharmacy')).toBeVisible();
+			await card.scrollIntoViewIfNeeded();
+			await siteShot(page, 'hsa-reimbursements', theme, card);
+		});
+
 		test('cash and cards', async ({ page, open }) => {
 			await openCashFlow(page, open);
 			await useTheme(page, theme);

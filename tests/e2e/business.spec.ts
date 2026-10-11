@@ -80,6 +80,17 @@ test.describe("with Monarch's Plus plan", () => {
 		await expect(monarchFilter(page)).toContainText('Household only');
 	});
 
+	test('Accounts gets Household picked when opened from Transactions, whose filter shows a moment longer', async ({ page, open, api }) => {
+		await open();
+		await page.locator('a[data-external-id="nav-bar-link"][href="/transactions"]').click();
+		await expect(monarchFilter(page)).toContainText('Household only');
+		api.monarchDelayMs = 800;
+		await page.locator('a[data-external-id="nav-bar-link"][href="/accounts"]').click();
+		const accountsFilter = page.locator('[data-external-id="accounts-header-controls"]').locator(monarchFilter(page));
+		await expect(accountsFilter).toBeVisible();
+		await expect(accountsFilter).toContainText('Household only');
+	});
+
 	test("Cash Flow's projection starts from only the workspace's checking, and follows Monarch's filter while it's changed there", async ({ page, open }) => {
 		await open({ path: '/cash-flow', waitForRows: false });
 		const netChange = page.getByRole('button', { name: /minus checking now/ });

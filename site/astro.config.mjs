@@ -27,6 +27,7 @@ export default defineConfig({
 						{ label: "Card payments", slug: "features/card-payments" },
 						{ label: "Projected balances", slug: "features/projected-balances" },
 						{ label: "Retail receipt sync", slug: "features/receipt-sync" },
+						{ label: "HSA reimbursements", slug: "features/hsa-reimbursements" },
 						{ label: "Workspaces", slug: "features/workspaces" },
 						{ label: "Sidebar items", slug: "features/sidebar-items" },
 					],

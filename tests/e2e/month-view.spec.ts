@@ -56,6 +56,25 @@ test('without card payments, Statements says how to add one instead of Coming so
 	await expect(page.locator('[data-external-id="recurring-coming-soon-content"]')).toBeHidden();
 });
 
+test('Statements shows a placeholder while card payments load, never Coming soon', async ({ page, api }) => {
+	api.delayMs = 1500;
+	// Intersection is measured after each frame's sync, right before paint, so it sees what's actually drawn.
+	await page.addInitScript(() => {
+		const visibility = new IntersectionObserver(entries => {
+			if (entries.some(entry => entry.isIntersecting)) document.documentElement.dataset.comingSoonShown = '';
+		});
+		new MutationObserver(() => {
+			for (const comingSoonEl of document.querySelectorAll('[data-external-id="recurring-coming-soon-content"]')) visibility.observe(comingSoonEl);
+		}).observe(document, { childList: true, subtree: true });
+	});
+	await page.goto(`${APP}/recurring-v2/monthly`);
+
+	const statements = page.locator('[data-wingspan-statements]');
+	await expect(statements.locator('[aria-busy="true"]')).toBeVisible();
+	await expect(statements).toContainText('No card payments yet. Add one with Add recurring.');
+	await expect(page.locator('html')).not.toHaveAttribute('data-coming-soon-shown');
+});
+
 test("screen readers announce a row's schedule, status and amount after its name, and which row a menu belongs to", async ({ page, open }) => {
 	await open();
 	const row = itemRow(section(page, 'Expenses'), 'Piano Lessons');

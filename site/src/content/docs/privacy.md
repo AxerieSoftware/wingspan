@@ -1,7 +1,7 @@
 ---
 title: Privacy policy
 description: What Wingspan collects (nothing) and where your data stays.
-lastUpdated: 2026-10-07
+lastUpdated: 2026-10-09
 ---
 
 Wingspan is a browser extension for Monarch Money's web app, made by Axerie Software.
@@ -12,7 +12,7 @@ Nothing. Wingspan has no server, no analytics and no tracking. It doesn't send y
 
 ## What Wingspan reads
 
-While you're on Monarch's web app, Wingspan reads your accounts, transactions, recurring items, budget and goals from Monarch, using the session you're already signed into, along with any businesses you've set up and whether your plan includes them. It also reads text on Monarch's pages, like row names and dates, to place its additions beside Monarch's, which household is signed in, to keep each household's data apart, Monarch's own business filter on the page, to follow it, and how you've grouped Recurring, to place its rows in the right sections. It uses all of this only to draw its features on the page.
+While you're on Monarch's web app, Wingspan reads your accounts, transactions with their tags and notes and whether they have attachments, recurring items, budget and goals from Monarch, using the session you're already signed into, along with any businesses you've set up and whether your plan includes them. It also reads text on Monarch's pages, like row names and dates, to place its additions beside Monarch's, which household is signed in, to keep each household's data apart, Monarch's own business filter on the page, to follow it, and how you've grouped Recurring, to place its rows in the right sections. It uses all of this only to draw its features on the page.
 
 To make its requests, Wingspan reads Monarch's security cookie and sends it back only to Monarch, as Monarch's own web app does. During a retail sync, if the store's own page sends a sign-in token with its requests, Wingspan reuses it in that tab only and sends it only back to that store. It never stores either or sends them anywhere else.
 

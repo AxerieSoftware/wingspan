@@ -13,7 +13,7 @@ const GET_ACCOUNT_SUMMARIES_QUERY = `
 
 const GET_ACCOUNTS_QUERY = `
 	query wingspan_GetAccounts {
-		accounts { id displayName logoUrl currentBalance isAsset isHidden apr interestRate limit dataProviderCreditLimit minimumPayment type { name display } businessEntity { id } }
+		accounts { id displayName logoUrl currentBalance isAsset isHidden apr interestRate limit dataProviderCreditLimit minimumPayment type { name display } subtype { name } businessEntity { id } }
 	}
 `;
 
@@ -69,6 +69,7 @@ const AccountSchema = v.object({
 	isAsset: v.boolean(),
 	isHidden: v.boolean(),
 	type: v.object({ name: v.string(), display: v.string() }),
+	subtype: v.nullish(v.object({ name: v.string() })),
 	apr: v.nullish(v.number()),
 	interestRate: v.nullish(v.number()),
 	limit: v.nullish(v.number()),

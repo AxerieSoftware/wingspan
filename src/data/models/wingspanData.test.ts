@@ -35,7 +35,8 @@ describe('merging two copies', () => {
 		recurring: { trackingSince: '2026-01', recurringItems: items },
 		recurringDueDates: { dueDatesByRecurrenceId: dueDays },
 		cashSettings: { cushion },
-		businessCashSettings: {}
+		businessCashSettings: {},
+		hsaReimbursementTags: { toReimburseTagId: '', reimbursedTagId: '' }
 	});
 	const names = (data: WingspanData) => data.recurring.recurringItems.map(each => each.name);
 
@@ -74,7 +75,8 @@ describe('merging two copies', () => {
 });
 
 describe("merging each business's cash and card settings", () => {
-	const data = (businessCashSettings: WingspanData['businessCashSettings']) => ({ recurring, recurringDueDates, cashSettings: { cushion: 0 }, businessCashSettings }) as WingspanData;
+	const data = (businessCashSettings: WingspanData['businessCashSettings']) =>
+		({ recurring, recurringDueDates, cashSettings: { cushion: 0 }, businessCashSettings, hsaReimbursementTags: { toReimburseTagId: '', reimbursedTagId: '' } }) as WingspanData;
 
 	it("takes each business's from whichever side changed it", () => {
 		const base = data({ studio: { cushion: 100 }, shop: { cushion: 200 } });
@@ -95,9 +97,22 @@ describe("merging each business's cash and card settings", () => {
 	});
 });
 
+describe('merging the chosen HSA tags', () => {
+	const withTags = (toReimburseTagId: string): WingspanData => ({ ...emptyWingspanData(), hsaReimbursementTags: { toReimburseTagId, reimbursedTagId: '' } });
+
+	it("keeps another browser's choice when this browser never chose", () => {
+		expect(mergeWingspanData(withTags('hsa'), emptyWingspanData()).hsaReimbursementTags.toReimburseTagId).toBe('hsa');
+		expect(mergeWingspanData(withTags('hsa'), emptyWingspanData(), emptyWingspanData()).hsaReimbursementTags.toReimburseTagId).toBe('hsa');
+	});
+
+	it('takes the choice from whichever side changed it', () => {
+		expect(mergeWingspanData(withTags('hsa'), withTags('medical'), withTags('hsa')).hsaReimbursementTags.toReimburseTagId).toBe('medical');
+	});
+});
+
 describe('merging fields added by a newer version of Wingspan', () => {
 	it('takes each from whichever side changed it', () => {
-		const data = (futureFeature: number) => ({ recurring, recurringDueDates, cashSettings: { cushion: 0 }, futureFeature }) as unknown as WingspanData;
+		const data = (futureFeature: number) => ({ ...emptyWingspanData(), recurring, recurringDueDates, futureFeature }) as unknown as WingspanData;
 
 		expect(mergeWingspanData(data(2), data(1), data(1))).toMatchObject({ futureFeature: 2 });
 		expect(mergeWingspanData(data(1), data(3), data(1))).toMatchObject({ futureFeature: 3 });

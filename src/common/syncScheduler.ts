@@ -1,4 +1,8 @@
-/** Coalesces sync requests into one sync on the next task; requests made while detached do nothing. */
+/**
+ * Coalesces sync requests into one sync before the browser next paints, so Monarch's changes never show for a frame
+ * before Wingspan's. Hidden tabs don't paint, so their syncs wait until the tab is shown. Requests made while detached
+ * do nothing.
+ */
 export class SyncScheduler {
 	private syncHandler: (() => void) | null = null;
 	private isQueued = false;
@@ -15,14 +19,14 @@ export class SyncScheduler {
 		this.syncHandler = null;
 	}
 
-	/** Queues one sync for the next task, unless one is queued already. */
+	/** Queues one sync for the next frame, unless one is queued already. */
 	public request(): void {
 		if (this.isQueued || !this.syncHandler) return;
 
 		this.isQueued = true;
-		this.window.setTimeout(() => {
+		this.window.requestAnimationFrame(() => {
 			this.isQueued = false;
 			this.syncHandler?.();
-		}, 0);
+		});
 	}
 }

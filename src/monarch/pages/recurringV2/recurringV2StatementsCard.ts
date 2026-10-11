@@ -1,4 +1,5 @@
 import { StyleOverrides } from '../../ui/styleOverrides';
+import { skeletonStyles } from '../../ui/styles';
 import { WingspanAttribute } from '../wingspanAttributes';
 import type { RecurringV2LayoutCopier } from './recurringV2LayoutCopier';
 import type { RecurringV2SectionCard } from './recurringV2SectionCards';
@@ -13,6 +14,8 @@ export interface RecurringV2StatementsContent {
 	rowEls: HTMLElement[];
 	footerText: string | null;
 	emptyText: string;
+	/** Shows a placeholder in place of the empty text. */
+	isLoading: boolean;
 }
 
 interface StatementsParts {
@@ -23,6 +26,7 @@ interface StatementsParts {
 	footerEl: HTMLElement;
 	footerTextEl: HTMLElement;
 	emptyEl: HTMLElement;
+	loadingEl: HTMLElement;
 	columnLabelsKey: string;
 }
 
@@ -50,7 +54,7 @@ export class RecurringV2StatementsCard {
 
 		const columnLabelsKey = content.columnLabels.join('|');
 		if (this.parts?.columnLabelsKey !== columnLabelsKey) this.parts = this.build(content.columnLabels, layoutSection);
-		const { panelEl, rowsEl, headerEl, counterEl, footerEl, footerTextEl, emptyEl } = this.parts;
+		const { panelEl, rowsEl, headerEl, counterEl, footerEl, footerTextEl, emptyEl, loadingEl } = this.parts;
 
 		if (panelEl.nextElementSibling !== comingSoonEl) comingSoonEl.before(panelEl);
 		this.styles.set(comingSoonEl, 'display', 'none');
@@ -61,13 +65,14 @@ export class RecurringV2StatementsCard {
 			if (counterEl.parentElement !== headingEl) headingEl.append(counterEl);
 			this.putHeadingInHeader(cardEl, headingEl, headerEl, layoutSection);
 		}
-		const rowCount = String(content.rowEls.length);
+		const rowCount = content.isLoading && !content.rowEls.length ? '' : String(content.rowEls.length);
 		if (counterEl.textContent !== rowCount) counterEl.textContent = rowCount;
 
 		const footerText = content.footerText ?? '';
 		if (footerTextEl.textContent !== footerText) footerTextEl.textContent = footerText;
 		if (emptyEl.textContent !== content.emptyText) emptyEl.textContent = content.emptyText;
-		const wantedEls = [headerEl, ...(content.rowEls.length ? content.rowEls : [emptyEl]), ...(footerText ? [footerEl] : [])];
+		const placeholderEl = content.isLoading ? loadingEl : emptyEl;
+		const wantedEls = [headerEl, ...(content.rowEls.length ? content.rowEls : [placeholderEl]), ...(footerText ? [footerEl] : [])];
 		const isInOrder = wantedEls.length === rowsEl.children.length && wantedEls.every((wantedEl, index) => rowsEl.children[index] === wantedEl);
 		if (!isInOrder) rowsEl.replaceChildren(...wantedEls);
 
@@ -111,7 +116,16 @@ export class RecurringV2StatementsCard {
 		const emptyEl = this.document.createElement('p');
 		emptyEl.className = 'my-0 px-default py-lg text-sm font-book text-content-secondary';
 
-		return { panelEl, rowsEl, headerEl, counterEl, footerEl, footerTextEl, emptyEl, columnLabelsKey: columnLabels.join('|') };
+		const loadingEl = this.document.createElement('div');
+		loadingEl.className = 'px-default py-lg text-sm';
+		loadingEl.setAttribute('aria-busy', 'true');
+		const loadingLineEl = this.document.createElement('div');
+		loadingLineEl.className = skeletonStyles({ className: 'inline-block h-[1em] rounded-sm align-middle' });
+		loadingLineEl.setAttribute('aria-hidden', 'true');
+		loadingLineEl.style.width = '240px';
+		loadingEl.append(loadingLineEl);
+
+		return { panelEl, rowsEl, headerEl, counterEl, footerEl, footerTextEl, emptyEl, loadingEl, columnLabelsKey: columnLabels.join('|') };
 	}
 
 	/**
