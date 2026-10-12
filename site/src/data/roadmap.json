@@ -1,22 +1,24 @@
 {
-	"checkedOn": "2026-10-06",
+	"checkedOn": "2026-10-12",
 	"roadmapUrl": "https://app.monarch.com/roadmap",
 	"principles": [
 		"Wingspan only adds what Monarch doesn't do yet. Most features add to a Monarch page you already use.",
 		"If Monarch has only planned or started a feature, Wingspan can still build it, since plans can change.",
-		"When Monarch releases a feature that matches one of Wingspan's, Wingspan's version is deprecated and removed.",
-		"A full match means Wingspan's feature is removed once Monarch's ships. A partial match means Monarch's covers some of it, so it gets another look when Monarch's ships.",
+		"When Monarch releases a matching feature, Wingspan deprecates and removes its own.",
+		"A full match means Wingspan's version goes once Monarch's ships. A partial match means Monarch's covers some of it, so Wingspan's gets another look then.",
 		"Wingspan never rebuilds or unlocks what Monarch already has, paid plans included."
 	],
 	"sections": [
 		{
 			"id": "built",
 			"title": "Built",
+			"summary": "In Wingspan today. Each links to its guide.",
 			"items": [
 				{
 					"name": "Due dates",
 					"where": "Adds to Recurring",
 					"description": "A due date on every bill and subscription, sorted by date, with a due day you can set yourself",
+					"page": "/features/due-dates/",
 					"cards": [
 						{
 							"card": "recurring",
@@ -27,7 +29,8 @@
 				{
 					"name": "Manual bills",
 					"where": "Adds to Recurring",
-					"description": "Bills without a regular schedule, like a check that gets cashed late, stay unpaid until the payment clears",
+					"description": "Bills without a regular schedule, like a check cashed late, stay unpaid until the payment clears",
+					"page": "/features/manual-bills/",
 					"cards": [
 						{
 							"card": "recurring",
@@ -39,15 +42,20 @@
 					"name": "Card payments",
 					"where": "Adds to Recurring",
 					"description": "Each card's statement balance, due date and whether checking can cover it, in Monarch's Statements card",
-					"cards": [],
-					"monarch": "Recurring 2.0's Statements card says \"Coming soon\"",
-					"boardStatus": "Not on the roadmap",
-					"match": "Full, once Statements ships"
+					"page": "/features/card-payments/",
+					"cards": [
+						{
+							"card": "statements",
+							"match": "Full"
+						}
+					]
 				},
 				{
 					"name": "Projected balances",
 					"where": "Adds to Cash Flow",
-					"description": "Checking day by day ahead, so you see a low point before you hit it, plus your monthly surplus",
+					"description": "Your checking balance day by day, so you see a low point coming, plus your monthly surplus",
+					"asked": "Projected account balances",
+					"page": "/features/projected-balances/",
 					"cards": [
 						{
 							"card": "projected",
@@ -57,15 +65,15 @@
 						{
 							"card": "forecasting",
 							"match": "Partial",
-							"note": "Monarch's forecasting looks years ahead. Projected balances covers the next few days and weeks."
+							"note": "Monarch's forecasting looks years ahead. Projected balances looks up to a year ahead, day by day."
 						}
-					],
-					"asked": "Projected account balances"
+					]
 				},
 				{
 					"name": "Free cash",
 					"where": "Adds to Recurring and Cash Flow",
-					"description": "How much you can safely spend or move out of checking today, through your next paycheck, with bills, card minimums and goals covered",
+					"description": "What you can safely spend or move out of checking today while still covering bills, card minimums and goals through your next paycheck",
+					"page": "/features/projected-balances/#free-cash-today",
 					"cards": [
 						{
 							"card": "projected",
@@ -77,51 +85,62 @@
 					"name": "Expected income",
 					"where": "Adds to Recurring",
 					"description": "Income that changes week to week, like client payouts, counted at what you usually take in",
+					"page": "/features/expected-income/",
 					"cards": []
 				},
 				{
 					"name": "Loans paid down",
 					"where": "Adds to Cash Flow and Reports",
-					"description": "How much your loans went down, and its share of your income, beside Monarch's savings rate",
+					"description": "How much your loans went down and what share of income that is, beside Monarch's savings rate",
+					"page": "/features/loans-paid-down/",
 					"cards": []
 				},
 				{
 					"name": "Interest cost",
 					"where": "Adds to Cash Flow, Reports and Accounts",
 					"description": "What your loans and carried card balances cost in interest a day, a month and a year",
+					"page": "/features/interest-cost/",
 					"cards": []
 				},
 				{
 					"name": "Loan payments",
 					"where": "Adds to Recurring and each loan's page",
-					"description": "A loan's monthly payment, and an estimated new balance for a manual loan to save after it posts",
+					"description": "A loan's monthly payment, plus an estimated new balance to save on a manual loan after the payment posts",
+					"page": "/features/interest-cost/#keeping-a-manual-loan-current",
 					"cards": []
 				},
 				{
 					"name": "HSA reimbursements",
 					"where": "Adds to your HSA's account page",
 					"description": "Medical expenses you paid yourself and can still pay back from your HSA, with any missing receipts flagged",
+					"page": "/features/hsa-reimbursements/",
 					"cards": []
 				},
 				{
 					"name": "Retail receipt sync",
 					"where": "Adds to Transactions",
-					"description": "Store purchases sent to Monarch as receipts, so they're split into individual items like Amazon and Target orders. Currently Walmart and Costco.",
+					"description": "Walmart and Costco purchases sent to Monarch as receipts, so they split into items like Amazon and Target orders",
+					"page": "/features/receipt-sync/",
 					"cards": []
 				},
 				{
 					"name": "Workspaces",
 					"where": "Adds to the sidebar",
 					"description": "One switch for the household or a business that every supported page follows, for Monarch Plus households with a business",
-					"cards": [],
-					"monarch": "Monarch filters by business one page at a time, and the choice resets in a new tab",
-					"boardStatus": "Not on the roadmap",
-					"match": "Partial: Monarch's per-page business filter"
+					"page": "/features/workspaces/",
+					"cards": [
+						{
+							"card": "business-filter",
+							"match": "Partial",
+							"note": "Monarch filters by business one page at a time, and the choice resets in a new tab."
+						}
+					]
 				},
 				{
 					"name": "Sidebar items",
 					"where": "Adds to Settings",
 					"description": "Hide any item in Monarch's sidebar you don't use",
+					"page": "/features/sidebar-items/",
 					"cards": []
 				}
 			]
@@ -129,20 +148,21 @@
 		{
 			"id": "next",
 			"title": "Next",
+			"summary": "What gets built next.",
 			"items": [
 				{
 					"name": "Pay periods",
 					"where": "Adds to Cash Flow",
 					"description": "Your month split by paycheck: the bills due before each one and what's left to spend until the next",
-					"cards": [],
-					"asked": "Pay-period budgeting"
+					"asked": "Pay-period budgeting",
+					"cards": []
 				},
 				{
 					"name": "Running balance",
 					"where": "Adds to Transactions",
 					"description": "An account's balance after each transaction, like a checkbook register",
-					"cards": [],
-					"asked": "Running balance"
+					"asked": "Running balance",
+					"cards": []
 				},
 				{
 					"name": "Custom recurring frequency",
@@ -165,29 +185,18 @@
 					"name": "Refunds owed",
 					"where": "Adds to Transactions",
 					"description": "Mark a purchase as expecting money back, and get flagged when the refund is late",
+					"asked": "Refund and reimbursement matching",
 					"cards": [
 						{
 							"card": "associate",
 							"match": "Partial"
 						}
-					],
-					"asked": "Refund and reimbursement matching"
+					]
 				},
 				{
 					"name": "Free cash on the Dashboard",
 					"where": "Adds to the Dashboard",
 					"description": "A small Free cash today card, linking to Projected balances",
-					"cards": [
-						{
-							"card": "dashboard-widgets",
-							"match": "Partial"
-						}
-					]
-				},
-				{
-					"name": "Account groups",
-					"where": "Adds to the Dashboard",
-					"description": "Your own groups of accounts with their totals, such as retirement apart from taxable investments",
 					"cards": [
 						{
 							"card": "dashboard-widgets",
@@ -200,48 +209,28 @@
 		{
 			"id": "later",
 			"title": "Later",
+			"summary": "Planned, after Next.",
 			"items": [
-				{
-					"name": "Trends",
-					"where": "Adds to Reports",
-					"description": "Spending by month, quarter and year side by side, compared to your budget",
-					"cards": [],
-					"asked": "Year over year and month over month tables"
-				},
-				{
-					"name": "Year-to-date budget",
-					"where": "Adds to Budget",
-					"description": "Budget and actual spending for the year so far, not just this month",
-					"cards": [],
-					"asked": "Annual or YTD budget view"
-				},
 				{
 					"name": "Remember filters and views",
 					"where": "Adds to Transactions and Reports",
 					"description": "Keep the filters, date ranges and views you last used",
-					"cards": [],
-					"asked": "Remember filters and default views"
+					"asked": "Remember filters and default views",
+					"cards": []
 				},
 				{
 					"name": "Budget undo",
 					"where": "Adds to Budget",
 					"description": "Save your budget before making changes and restore it in one click",
-					"cards": [],
-					"asked": "Undo"
+					"asked": "Undo",
+					"cards": []
 				},
 				{
 					"name": "Cents in the budget",
 					"where": "Adds to Budget",
 					"description": "Show budget amounts to the cent",
-					"cards": [],
-					"asked": "Cents in budget"
-				},
-				{
-					"name": "Compact layout",
-					"where": "Everywhere in Monarch",
-					"description": "Denser rows throughout Monarch",
-					"cards": [],
-					"asked": "Compact layout"
+					"asked": "Cents in budget",
+					"cards": []
 				},
 				{
 					"name": "Easier bill setup",
@@ -264,7 +253,7 @@
 				{
 					"name": "Cleanup checklist",
 					"where": "New in Wingspan",
-					"description": "Find merchants without logos, near-duplicate merchants, rules that never run, likely duplicate charges and price increases, and fix them with Monarch's own rules and merges",
+					"description": "Find merchants without logos, near-duplicate merchants, rules that never run and price increases, and fix them with Monarch's own rules and merges",
 					"cards": []
 				},
 				{
@@ -277,7 +266,13 @@
 					"name": "If something happens",
 					"where": "New in Wingspan",
 					"description": "A printable list of accounts, bills, due dates and owners for your partner",
-					"cards": []
+					"cards": [
+						{
+							"card": "documents",
+							"match": "Partial",
+							"note": "Monarch would store the documents. Wingspan would list the accounts and bills."
+						}
+					]
 				},
 				{
 					"name": "Safari and iOS",
@@ -290,58 +285,65 @@
 		{
 			"id": "maybe",
 			"title": "Maybe",
+			"summary": "Possible, if enough people ask for it.",
 			"items": [
 				{
 					"name": "Shared expenses",
 					"where": "Adds to Transactions",
 					"description": "Track who owes whom for shared purchases with a partner, since Monarch ended its Bill Split beta",
-					"cards": [],
-					"asked": "Who owes whom with a partner"
+					"asked": "Who owes whom with a partner",
+					"cards": []
 				},
 				{
 					"name": "And/or filters",
 					"where": "Adds to Transactions",
-					"description": "Combine filters with and/or. Monarch is building exclude filters, so Wingspan would only add the and/or part.",
+					"description": "Combine filters with and/or. Monarch is building exclude filters, so Wingspan would add only and/or.",
+					"asked": "Exclude filters, and/or logic",
 					"cards": [
 						{
 							"card": "exclusion",
 							"match": "Partial"
 						}
-					],
-					"asked": "Exclude filters, and/or logic"
+					]
 				},
 				{
 					"name": "Spread an expense",
 					"where": "Adds to Budget",
 					"description": "Spread a big purchase across several months in your budget",
-					"cards": [],
-					"asked": "Spread an expense across months"
+					"asked": "Spread an expense across months",
+					"cards": []
 				},
 				{
 					"name": "Zero-based check",
 					"where": "Adds to Budget",
 					"description": "How much income is still unassigned in your budget",
-					"cards": [],
-					"asked": "Zero-based budgeting"
+					"asked": "Zero-based budgeting",
+					"cards": []
 				},
 				{
 					"name": "Linked transfers",
 					"where": "Adds to Transactions",
 					"description": "Pair both sides of a transfer between your accounts",
-					"cards": [],
-					"asked": "Linked transfers"
+					"asked": "Linked transfers",
+					"cards": [
+						{
+							"card": "associate",
+							"match": "Partial",
+							"note": "Monarch's card covers transfers as well as refunds."
+						}
+					]
 				},
 				{
 					"name": "Exchange rates",
 					"where": "Adds to Accounts",
 					"description": "Current rates for manual accounts in other currencies",
+					"asked": "Multi-currency",
 					"cards": [
 						{
 							"card": "currency",
 							"match": "Partial"
 						}
-					],
-					"asked": "Multi-currency"
+					]
 				},
 				{
 					"name": "Watchlists",
@@ -401,6 +403,9 @@
 		},
 		{
 			"text": "Recurring detection and matching for anything Monarch can already match itself"
+		},
+		{
+			"text": "Spending trends, year-to-date budget pacing, account groups, compact Transactions and Budget screens and duplicate-transaction review, which the MM-Tweaks extension already handles"
 		}
 	],
 	"cards": {
@@ -428,10 +433,6 @@
 			"title": "Foreign Currencies",
 			"status": "Under consideration"
 		},
-		"investments": {
-			"title": "Investment Improvements",
-			"status": "Released April 2026"
-		},
 		"forecasting": {
 			"title": "Advanced Forecasting & Scenarios",
 			"status": "Released April 2026"
@@ -447,6 +448,18 @@
 		"hidden": {
 			"title": "Hidden transactions",
 			"status": "Released October 2025"
+		},
+		"statements": {
+			"title": "Statements card in Recurring 2.0, not on the roadmap",
+			"status": "Coming soon"
+		},
+		"business-filter": {
+			"title": "Business filter on each page",
+			"status": "Released with Plus"
+		},
+		"documents": {
+			"title": "Secure Document Storage",
+			"status": "Under consideration"
 		}
 	}
 }

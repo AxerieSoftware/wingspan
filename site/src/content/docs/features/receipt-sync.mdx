@@ -7,15 +7,15 @@ saves: account
 
 import Screenshot from "../../../components/Screenshot.astro";
 
-A trip to the store usually shows up in Monarch as one lump sum. Monarch already splits Amazon and Target orders into what you bought. Retail receipt sync does the same for more stores, currently Walmart and Costco, by sending each purchase's receipt to Monarch, which matches it to the transaction and splits it.
+A store trip usually shows up in Monarch as one lump sum. Monarch already splits Amazon and Target orders into what you bought. Retail receipt sync does the same for Walmart and Costco: it sends each purchase's receipt to Monarch, which matches it to the transaction and splits it.
 
 <Screenshot name="receipt-sync" alt="The Sync retailer menu on Monarch's Transactions page, offering Walmart and Costco." />
 
 ## Using it
 
 1. On **Transactions → Receipts**, click **Sync retailer** and choose a store.
-2. The first time, Wingspan opens a page asking to read that store's site. Choose **Allow** for the store's site, then confirm in your browser's prompt. The sync then starts on its own.
-3. A tab opens at the store's purchase history. Sign in there if you need to. Keep the tab open while it reads; it closes when it's done.
+2. The first time, Wingspan opens a page asking to read that store's site. Choose **Allow** for the store's site, then confirm in your browser's prompt. The sync starts on its own.
+3. A tab opens at the store's purchase history. Sign in there if you need to. Keep it open while it reads. It closes when it's done.
 4. Next to **Sync retailer**, Monarch's tab shows how many purchases it has read and sent so far.
 5. When it's done, a summary says how many receipts were sent. Choose **View receipts** to see them. Each one shows under **Receipts** once Monarch has matched it to its transaction and split it.
 
@@ -40,8 +40,8 @@ The summary says why, with **Try again**:
 - **The tab closed** or **took too long to load**: sync again.
 - **The purchase history changed** in a way Wingspan can't read yet: Wingspan needs an update for that store.
 
-Receipts that were already sent won't be sent again, so it's always safe to sync again.
+Syncing again never resends a receipt, so it's always safe to retry.
 
 :::note
-Monarch plans to sync more stores itself. When Monarch supports a store Wingspan already syncs, Wingspan's sync for that store is deprecated and removed.
+Monarch plans to sync more stores itself. Once Monarch supports a store Wingspan syncs, Wingspan deprecates and then removes its own sync for that store.
 :::

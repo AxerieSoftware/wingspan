@@ -7,7 +7,7 @@ saves: account
 
 import Screenshot from "../../../components/Screenshot.astro";
 
-Interest is easy to lose track of, because on a loan you track by hand it never shows up as a transaction. Interest cost puts a number on it: what your debts cost each day, month and year at today's balances.
+On a loan you track by hand, interest never shows up as a transaction, so it's easy to lose track of. Interest cost shows what your debts cost each day, month and year at today's balances.
 
 ## Where it shows
 
@@ -22,7 +22,7 @@ Interest is easy to lose track of, because on a loan you track by hand it never 
 ## How it's counted
 
 - A loan counts when Monarch has an interest rate for it. Set it in the loan's account settings in Monarch. Without one, the loan's Interest card says so.
-- A card counts only when it was charged interest in about the last two statements. A card you pay in full each month costs no interest, so it isn't counted.
+- A card counts only when it was charged interest in about the last two statements, so one you pay in full each month isn't counted.
 - A card with no APR in Monarch gets the rate its last interest charge works out to, at most 36%.
 - A year's interest is the balance times the rate, a day's is a 365th of that and a month's a 12th. Most loans and carried card balances add interest daily, so this is close to what you're charged.
 - It counts the debts of whatever the page shows: Household, a business, or both. Hidden accounts aren't counted.
@@ -43,7 +43,7 @@ Open the loan's page. The **Interest** card shows the balance you last entered a
 
 ### 3. Update the balance
 
-Choose **Update balance**. It starts at the estimate. Save it, or enter your servicer's amount if it's different. Monarch's page reloads to show the new balance.
+Choose **Update balance**, which starts at the estimate. Save it, or enter your servicer's amount if it differs. Monarch's page reloads to show the new balance.
 
 <Screenshot name="update-balance" alt="The Update balance dialog, starting at Wingspan's estimate of $8,788.12." />
 

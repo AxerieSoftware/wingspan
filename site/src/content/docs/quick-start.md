@@ -3,11 +3,11 @@ title: Quick start
 description: Install Wingspan and add your first card payment or bill.
 ---
 
-Wingspan works in Chrome and Edge on Monarch's web app. Firefox and Safari builds are experimental, and the [README](https://github.com/AxerieSoftware/wingspan#install) explains how to load each.
+Wingspan works in Chrome and Edge on Monarch's web app. Firefox and Safari builds are experimental; the [README](https://github.com/AxerieSoftware/wingspan#install) explains how to load them.
 
 ## Install
 
-Store listings for the Chrome Web Store and Edge Add-ons are on the way. Until then, build it from source:
+Chrome Web Store and Edge Add-ons listings are on the way. Until then, build from source:
 
 ```bash
 git clone https://github.com/AxerieSoftware/wingspan.git
@@ -37,4 +37,4 @@ On Cash Flow, open **Edit cash and cards** and choose your checking accounts, wh
 
 ## If something looks off
 
-Open DevTools → **Network** and filter by `client=wingspan` to see every request Wingspan sends to Monarch, and whether Monarch rejected any. If it did, [open an issue](https://github.com/AxerieSoftware/wingspan/issues/new/choose).
+Open DevTools → **Network** and filter by `client=wingspan` to see every request Wingspan sends to Monarch and whether any were rejected. If one was, [open an issue](https://github.com/AxerieSoftware/wingspan/issues/new/choose).

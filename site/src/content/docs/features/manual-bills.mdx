@@ -9,7 +9,7 @@ import Screenshot from "../../../components/Screenshot.astro";
 
 Some bills don't follow a pattern Monarch can spot, like rent paid by check that the landlord cashes whenever they get to it. Monarch only sees each payment once it clears, so a late check can look like two bills one month and none the next.
 
-A manual bill has the due date you set and stays unpaid until its payment clears, however late that is. Until then it counts as money that's going to leave checking, so [free cash](/features/projected-balances/#free-cash-today) never treats it as yours to spend.
+A manual bill keeps the due date you set and stays unpaid until its payment clears, however late. Until then it counts as money leaving checking, so [free cash](/features/projected-balances/#free-cash-today) never treats it as yours to spend.
 
 <Screenshot name="manual-bills" alt="A manual bill's details: its due day, amount, the payee it matches, and this month's payment still owed." />
 
@@ -17,7 +17,7 @@ A manual bill has the due date you set and stays unpaid until its payment clears
 
 1. On **Recurring**, choose **Add recurring → Add manually**, then set **Type** to **Bill**.
 2. Choose the **Merchant**, then tick a few of its past payments. Wingspan fills in the rest from them.
-3. Check the fields below, and choose **Add recurring**.
+3. Check the fields below and choose **Add recurring**.
 
 <Screenshot name="manual-bill-editor" alt="Add recurring with Bill chosen: the merchant, a picked payment, and Match found: monthly, $140, around the 20th." />
 
@@ -28,7 +28,7 @@ A manual bill has the due date you set and stays unpaid until its payment clears
 - **Amount**: what the bill usually costs. A payment counts if it's within 10% or $5 of this, whichever is more.
 - **Any amount**: for a bill that changes every time, like a utility.
 - **Frequency** and **Next due**: weekly up to yearly, twice a month on two set days, or **Custom** for every so many weeks, months or years.
-- **Transaction contains**: text from the payment's description, like the landlord's name. This is how Wingspan finds the payment.
+- **Transaction contains**: text from the payment's description, like the landlord's name. Wingspan uses it to find the payment.
 - **Paid from**: the account it comes out of. Leave it on **Any account** unless the same text shows up in payments from other accounts.
 
 To change or stop a bill, use **Edit** or **Remove** in its menu on Recurring.
@@ -37,7 +37,7 @@ To change or stop a bill, use **Edit** or **Remove** in its menu on Recurring.
 
 - **Due Oct 20** under the name, or **Next Oct 20** for a bill due more than once a month.
 - **Paid Oct 18** once a payment matches. A bill due more than once a month shows **2 of 4 paid**.
-- **Overdue Oct 20** when the due date has passed with no payment. An unpaid bill from an earlier month shows **Owed since** that date, and keeps showing as owed for up to six months.
+- **Overdue Oct 20** when the due date has passed with no payment. An unpaid bill from an earlier month shows **Owed since** that date for up to six months.
 - Its details show each payment, and **No payment found** for any due date it missed.
 
 ## Good to know

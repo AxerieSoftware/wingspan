@@ -1,0 +1,42 @@
+---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+import { getCollection } from "astro:content";
+
+const releasesUrl = "https://github.com/AxerieSoftware/wingspan/releases";
+
+// Feature pages are the ones with `saves`; the rest of the features folder explains Wingspan as a whole.
+const features = await getCollection("docs", (entry) => entry.id.startsWith("features/") && entry.data.saves !== undefined && entry.data.introduced !== undefined);
+const versionParts = (version: string) => version.split(".").map(Number);
+const newestFirst = (left: string, right: string) => {
+	const [leftParts, rightParts] = [versionParts(left), versionParts(right)];
+	const differingIndex = leftParts.findIndex((part, index) => part !== rightParts[index]);
+	return differingIndex === -1 ? 0 : rightParts[differingIndex] - leftParts[differingIndex];
+};
+const versions = [...new Set(features.map((feature) => feature.data.introduced as string))].sort(newestFirst);
+const releases = versions.map((version) => ({
+	version,
+	slug: `v${version.replaceAll(".", "-")}`,
+	features: features.filter((feature) => feature.data.introduced === version).sort((left, right) => left.data.title.localeCompare(right.data.title)),
+}));
+const headings = releases.map((release) => ({ depth: 2, slug: release.slug, text: release.version }));
+---
+
+<StarlightPage frontmatter={{ title: "What's new", description: "The features each Wingspan version added." }} headings={headings}>
+	<p>The features each version of Wingspan added, newest first. For fixes and the full notes on each version, see <a href={releasesUrl}>releases on GitHub</a>.</p>
+
+	{
+		releases.map((release) => (
+			<>
+				<h2 id={release.slug}>{release.version}</h2>
+				<ul>
+					{release.features.map((feature) => (
+						<li>
+							<a href={`/${feature.id}/`}>{feature.data.title}</a>
+							{feature.data.plus && " (Monarch Plus)"}: {feature.data.description}
+						</li>
+					))}
+				</ul>
+			</>
+		))
+	}
+</StarlightPage>
