@@ -6,6 +6,11 @@ import reddit from "../data/reddit.json";
 type CardKey = keyof typeof data.cards;
 
 const mentions = new Map(reddit.topRequests.map((request) => [request.request, request.mentions]));
+const mentionsOf = (request: string) => {
+	const count = mentions.get(request);
+	if (count === undefined) throw new Error(`roadmap.json asks for "${request}", which isn't in reddit.json's top requests.`);
+	return count;
+};
 const format = new Intl.NumberFormat("en-US");
 const checkedOn = new Date(`${data.checkedOn}T12:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 const headings = [
@@ -18,7 +23,7 @@ const headings = [
 const stageOf = (status: string) => {
 	if (status.startsWith("Released")) return "released";
 	if (status === "In progress") return "in-progress";
-	if (status === "Up next") return "up-next";
+	if (status === "Up next" || status === "Coming soon") return "up-next";
 	return "considering";
 };
 ---
@@ -55,7 +60,11 @@ const stageOf = (status: string) => {
 									<div class="text-xs text-gray-500 dark:text-gray-400">{item.where}</div>
 								</td>
 								<td class="asked text-sm" data-label="Asked">
-									{"asked" in item ? <a href="/reddit/#top-requests" title={item.asked}>{format.format(mentions.get(item.asked) ?? 0)}</a> : <span class="none">–</span>}
+									{"asked" in item ? <a href="/reddit/#top-requests" title={item.asked}>{format.format(mentionsOf(item.asked))}</a> : (
+										<span class="none">
+											–<span class="sr-only">Not among the top requests</span>
+										</span>
+									)}
 								</td>
 								<td class="monarch text-sm" data-label="On Monarch's roadmap">
 									{item.cards.map((match) => {
@@ -149,15 +158,15 @@ const stageOf = (status: string) => {
 	}
 
 	.status.up-next::before {
-		background: #3b82f6;
+		background: var(--sl-color-blue);
 	}
 
 	.status.in-progress::before {
-		background: #f59e0b;
+		background: var(--sl-color-orange);
 	}
 
 	.status.released::before {
-		background: #22c55e;
+		background: var(--sl-color-green);
 	}
 
 	/* Too narrow for three columns, so each feature stacks with labeled lines. */
