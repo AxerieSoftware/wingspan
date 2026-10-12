@@ -46,9 +46,9 @@ export class Formatter {
 		return this.moneyFormat.format(this.withoutNegativeZero(roundToCents(amount)));
 	}
 
-	/** Rounded to the dollar, as "$1,235". */
+	/** Rounded to the dollar, as "$1,235". Half a dollar rounds away from zero, like cents do. */
 	public wholeMoney(amount: number): string {
-		return this.wholeMoneyFormat.format(this.withoutNegativeZero(Math.round(amount)));
+		return this.wholeMoneyFormat.format(this.withoutNegativeZero(Math.sign(amount) * Math.round(Math.abs(roundToCents(amount)))));
 	}
 
 	/** "$1.5K", "-$6K", as on Monarch's chart axes. */

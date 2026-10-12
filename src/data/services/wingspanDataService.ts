@@ -56,6 +56,8 @@ export class WingspanDataService {
 	private hasUnsavedChanges = false;
 	private browserEnvelope: Envelope<WingspanData> | undefined;
 	private accountEnvelope: Envelope<WingspanData> | undefined;
+	/** Changes shown but not saved yet, kept on top of whatever an operation shows meanwhile so they don't flicker away. */
+	private readonly queuedChanges: DataChange[] = [];
 	private operationQueue: Promise<void> = Promise.resolve();
 	private pendingOperationCount = 0;
 	private loading: Promise<void> | undefined;
@@ -99,7 +101,7 @@ export class WingspanDataService {
 	public load(): Promise<void> {
 		this.loading ??= this.enqueue('load', async () => {
 			if (this.browserEnvelope) {
-				this.current.value = this.browserEnvelope.value;
+				this.show(this.browserEnvelope.value);
 				this.hasLoaded.value = true;
 			}
 			await this.syncWithMonarch();
@@ -118,10 +120,14 @@ export class WingspanDataService {
 		await this.enqueue('load', () => this.syncWithMonarch());
 	}
 
-	/** Shows the change immediately, then saves it. If it can't be saved to Monarch, it's kept in this browser and marked unsaved, so the next sync saves it to Monarch. */
+	/**
+	 * Shows the change immediately, then saves it. If it can't be saved to Monarch, it's kept in this browser and marked
+	 * unsaved, so the next sync saves it to Monarch. The change must give the same result when applied twice.
+	 */
 	public async update(change: DataChange): Promise<void> {
 		void this.load();
 		this.current.value = change(this.current.value);
+		this.queuedChanges.push(change);
 		await this.enqueue('save', async () => {
 			try {
 				await this.saveInMonarch(change);
@@ -131,6 +137,11 @@ export class WingspanDataService {
 				throw error;
 			}
 		});
+		this.queuedChanges.splice(this.queuedChanges.indexOf(change), 1);
+	}
+
+	private show(data: WingspanData): void {
+		this.current.value = this.queuedChanges.reduce((shown, change) => change(shown), data);
 	}
 
 	/**
@@ -230,7 +241,7 @@ export class WingspanDataService {
 		// Nothing to add from this browser, so skip the write; it would only make every other browser re-read it.
 		if (merged && !isSameValue(merged, monarchEnvelope.value)) return this.storeInMonarch(merged, monarchEnvelope);
 
-		this.current.value = monarchEnvelope.value;
+		this.show(monarchEnvelope.value);
 		await this.saveInBrowser(() => monarchEnvelope.value);
 		await this.saveSyncedCopy(monarchEnvelope.value, monarchEnvelope.etag);
 		if (this.hasUnsavedChanges) await this.setUnsavedChanges(false);
@@ -257,7 +268,7 @@ export class WingspanDataService {
 	private async storeInMonarch(data: WingspanData, baseEnvelope: Envelope<WingspanData> | undefined): Promise<void> {
 		const isCreatingAccount = !this.accountStore.linkedAccountId;
 		this.accountEnvelope = await this.accountStore.store({ version: CURRENT_SCHEMA_VERSION, wingspanVersion: this.appVersion, etag: baseEnvelope?.etag ?? '', value: data });
-		this.current.value = data;
+		this.show(data);
 		await this.saveInBrowser(() => data);
 		await this.saveSyncedCopy(data, this.accountEnvelope.etag);
 		if (this.hasUnsavedChanges) await this.setUnsavedChanges(false);
@@ -270,7 +281,7 @@ export class WingspanDataService {
 			const changedData = change(this.browserEnvelope?.value ?? emptyWingspanData());
 			try {
 				this.browserEnvelope = await this.browserStore.store({ version: CURRENT_SCHEMA_VERSION, wingspanVersion: this.appVersion, etag: this.browserEnvelope?.etag ?? '', value: changedData });
-				this.current.value = changedData;
+				this.show(changedData);
 				this.hasBrowserCopy = true;
 				return;
 			} catch (error) {

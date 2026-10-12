@@ -1,4 +1,5 @@
 import * as v from 'valibot';
+import { logError } from '../../common/log';
 import { MonarchApiError } from './monarchApiError';
 import type { MonarchClient } from './monarchClient';
 import { ensureMutationSucceeded, MutationPayloadSchema, type MutationRejection } from './mutationPayload';
@@ -102,6 +103,7 @@ export class MonarchReceiptsClient {
 			if (!retailOrdersConnection?.pageInfo.hasNextPage || !retailOrdersConnection.pageInfo.endCursor) return receipts;
 			afterCursor = retailOrdersConnection.pageInfo.endCursor;
 		}
+		logError(new Error(`Read only the first ${MAX_EXISTING_PAGES * EXISTING_PAGE_SIZE} receipts since ${startDate}.`));
 		return receipts;
 	}
 
