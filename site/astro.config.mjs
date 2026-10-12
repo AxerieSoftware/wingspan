@@ -38,6 +38,7 @@ export default defineConfig({
 				{
 					label: "Plans",
 					items: [
+						{ label: "What's new", link: "/whats-new/" },
 						{ label: "Roadmap", link: "/roadmap/" },
 						{ label: "Feature requests", link: "https://github.com/AxerieSoftware/wingspan/discussions/categories/ideas", attrs: { target: "_blank" } },
 					],
