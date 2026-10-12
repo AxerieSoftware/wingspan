@@ -1,7 +1,9 @@
 import type { StorageScope } from '../../data/stores/storageScope';
 import { MonarchAccountsClient } from './monarchAccountsClient';
 import { MonarchBudgetClient } from './monarchBudgetClient';
+import { MonarchCashFlowClient } from './monarchCashFlowClient';
 import { MonarchClient } from './monarchClient';
+import { MonarchLoansClient } from './monarchLoansClient';
 import { MonarchReceiptsClient } from './monarchReceiptsClient';
 import { MonarchRecurringClient } from './monarchRecurringClient';
 import { MonarchRequestHook } from './monarchRequestHook';
@@ -10,6 +12,8 @@ import { MonarchTransactionsClient } from './monarchTransactionsClient';
 export interface MonarchApi {
 	accounts: MonarchAccountsClient;
 	budget: MonarchBudgetClient;
+	cashFlow: MonarchCashFlowClient;
+	loans: MonarchLoansClient;
 	receipts: MonarchReceiptsClient;
 	recurring: MonarchRecurringClient;
 	transactions: MonarchTransactionsClient;
@@ -21,6 +25,8 @@ export function createMonarchApi(window: Window, version: string, scope: Storage
 	return {
 		accounts: new MonarchAccountsClient(client),
 		budget: new MonarchBudgetClient(client),
+		cashFlow: new MonarchCashFlowClient(client),
+		loans: new MonarchLoansClient(client),
 		receipts: new MonarchReceiptsClient(client),
 		recurring: new MonarchRecurringClient(client),
 		transactions: new MonarchTransactionsClient(client)

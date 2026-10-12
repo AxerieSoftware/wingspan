@@ -124,3 +124,23 @@ test("when Monarch can't be reached, the card shows an error and Try again loads
 	await expect(card(page).getByRole('img', { name: /^Checking from / })).toBeVisible();
 	await expect(card(page)).not.toContainText("Couldn't load");
 });
+
+test("loans paid down shows after Monarch's Savings rate as how much the loans went down this month and its share of income", async ({ page, open }) => {
+	await open({ path: '/cash-flow', waitForRows: false });
+	const paydown = page.getByTestId('loans-paid-down-card');
+	const savingsRate = page.locator('[style*="grid-area: summary"] [data-external-id="deprecated-statistic-card"]').filter({ hasText: 'Savings rate' });
+
+	await expect(savingsRate.locator('xpath=following-sibling::*[1]')).toContainText('Loans paid down');
+	// The auto loan's balance drops $340 each month.
+	await expect(paydown).toContainText('$340');
+	await expect(paydown).toContainText(/\$340 \(\d+%\)Loans paid down/);
+});
+
+test('loans paid down covers each month of a past quarter', async ({ page, open }) => {
+	const quarterAgo = Temporal.Now.plainDateISO().subtract({ months: 3 });
+	const quarterStart = `${quarterAgo.year}-${String(Math.floor((quarterAgo.month - 1) / 3) * 3 + 1).padStart(2, '0')}-01`;
+
+	await open({ path: `/cash-flow?timeframe=quarter&date=${quarterStart}`, waitForRows: false });
+
+	await expect(page.getByTestId('loans-paid-down-card')).toContainText('$1,020');
+});

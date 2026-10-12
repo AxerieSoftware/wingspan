@@ -74,6 +74,12 @@
 					]
 				},
 				{
+					"name": "Loans paid down",
+					"where": "Adds to Cash Flow and Reports",
+					"description": "How much your loans went down, and its share of your income, beside Monarch's savings rate",
+					"cards": []
+				},
+				{
 					"name": "Retail receipt sync",
 					"where": "Adds to Transactions",
 					"description": "Store purchases sent to Monarch as receipts, so they're split into individual items like Amazon and Target orders. Currently Walmart and Costco.",

@@ -7,7 +7,7 @@ const SAVES = {
 	account: { label: "Saved to your Monarch account", title: "Every browser and everyone in the household sees the same" },
 	browser: { label: "Saved in this browser", title: "Each browser keeps its own, so each person can set it their way" },
 };
-const saved = saves ? SAVES[saves] : null;
+const saved = saves && saves !== "none" ? SAVES[saves] : null;
 ---
 
 <Default />

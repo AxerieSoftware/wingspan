@@ -5,11 +5,13 @@ import { addBusinessEntities } from '@/src/features/businessEntities/addBusiness
 import { addCashSettings } from '@/src/features/cashFlow/cashSettings/addCashSettings';
 import { addFreeCash } from '@/src/features/cashFlow/freeCash/addFreeCash';
 import { addProjectedBalances } from '@/src/features/cashFlow/projectedBalances/addProjectedBalances';
+import { addLoansPaidDown } from '@/src/features/loansPaidDown/addLoansPaidDown';
 import { addRecurringPages } from '@/src/features/recurring/addRecurringPages';
 import { createRecurring } from '@/src/features/recurring/createRecurring';
 import { addRetailSync } from '@/src/features/retailSync/addRetailSync';
 import { addSettings } from '@/src/features/settings/addSettings';
 import { addSidebar } from '@/src/features/sidebar/addSidebar';
+import { createSummaryScreens } from '@/src/features/summaryScreens/createSummaryScreens';
 import { WingspanBuilder } from '@/src/wingspanBuilder';
 
 export default defineContentScript({
@@ -25,6 +27,8 @@ export default defineContentScript({
 		addRetailSync(builder);
 		const cashSettings = addCashSettings(builder, businessFilter);
 		const projectedBalances = addProjectedBalances(builder, recurring, cashSettings, businessFilter);
+		const summaryScreens = createSummaryScreens(builder, businessFilter);
+		addLoansPaidDown(builder, summaryScreens);
 		addRecurringPages(builder, recurring, cashSettings, projectedBalances, businessFilter);
 		addFreeCash(builder, recurring, cashSettings, projectedBalances);
 		addAccounts(builder);
