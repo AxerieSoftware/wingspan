@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { RecurringFlow } from '../../../../monarch/api/models/recurringFlow';
-import { account, CARD, CHECKING, cardItem, input, plannerFor, recurringFlow, SIX_MONTHS, spent, TODAY } from './projectedBalancesPlanner.fixtures';
+import type { LoanPaymentItem } from '../../../recurring/loanPayments/models/loanPaymentItem';
+import { account, CARD, CHECKING, cardItem, input, monthly, plannerFor, recurringFlow, SIX_MONTHS, spent, TODAY } from './projectedBalancesPlanner.fixtures';
 
 describe('projected balances', () => {
 	it("finds the lowest point, takes a day's outflows before its inflows, and leaves the cushion", () => {
@@ -135,5 +136,57 @@ describe('projected balances', () => {
 
 		expect(projection.freeCash).toBe(0);
 		expect(projection.shortfall).toBe(300);
+	});
+
+	describe('loan payments', () => {
+		const LOAN = 'auto-loan';
+		const loanPayment: LoanPaymentItem = {
+			id: 'loan-payment',
+			kind: 'loan',
+			name: 'Auto loan',
+			recurrence: monthly(20),
+			amount: 340,
+			active: true,
+			since: '2026-01',
+			loanAccountId: LOAN,
+			matchRule: { matchText: 'Fabrikam Auto', accountId: CHECKING }
+		};
+		const accounts = [account(CHECKING, 'depository', 5000), account(LOAN, 'loan', -9000)];
+		const loanFlows = (projection: ReturnType<ReturnType<typeof plannerFor>['plan']>) =>
+			projection.days.flatMap(day => day.flows.filter(flow => flow.amount === -340).map(flow => `${day.date} ${flow.label}`));
+		// The loan's payments belong to Monarch's recurring item for it.
+		const paidToMonarchsLoan = new Map([[loanPayment.id, new Set(['Fabrikam Auto'])]]);
+
+		it('takes each payment out of checking on its due date, like a bill', () => {
+			const projection = plannerFor().plan(input({ accounts, recurringItems: [loanPayment] }));
+
+			expect(loanFlows(projection).slice(0, 2)).toEqual(['2026-10-20 Auto loan', '2026-11-20 Auto loan']);
+			expect(projection.days.find(day => day.date === '2026-10-20')?.checking).toBe(5000 - 340);
+		});
+
+		it("counts a payment once when its payments belong to a recurring bill Monarch also projects, using Monarch's", () => {
+			const monarchLoan = recurringFlow('Fabrikam Auto', 'expense', '2026-10-20', -340, CHECKING, 'fabrikam-auto');
+
+			const projection = plannerFor().plan(input({ accounts, recurringItems: [loanPayment], recurringFlows: [monarchLoan], paidRecurrenceIdsByItemId: paidToMonarchsLoan }));
+
+			expect(loanFlows(projection)).toEqual(['2026-10-20 Fabrikam Auto']);
+		});
+
+		it("still counts it when Monarch's recurring bill is on an account the projection doesn't follow", () => {
+			const onTheLoan = recurringFlow('Fabrikam Auto', 'expense', '2026-10-20', -340, LOAN, 'fabrikam-auto');
+
+			const projection = plannerFor().plan(input({ accounts, recurringItems: [loanPayment], recurringFlows: [onTheLoan], paidRecurrenceIdsByItemId: paidToMonarchsLoan }));
+
+			expect(loanFlows(projection).slice(0, 1)).toEqual(['2026-10-20 Auto loan']);
+		});
+
+		it('still counts a second loan at the same servicer when Monarch projects only the first, since its payments belong to another recurring item', () => {
+			const monarchSedan = recurringFlow('Fabrikam Auto – Sedan', 'expense', '2026-10-12', -280, CHECKING, 'fabrikam-auto');
+			const paidToOtherLoan = new Map([[loanPayment.id, new Set(['Fabrikam Auto – Truck'])]]);
+
+			const projection = plannerFor().plan(input({ accounts, recurringItems: [loanPayment], recurringFlows: [monarchSedan], paidRecurrenceIdsByItemId: paidToOtherLoan }));
+
+			expect(loanFlows(projection).slice(0, 1)).toEqual(['2026-10-20 Auto loan']);
+		});
 	});
 });

@@ -36,7 +36,15 @@ export class ProjectedBalancesPlanner {
 		const checkingBalance = input.accounts.filter(account => checkingAccountIds.has(account.id)).reduce((total, account) => total + (account.currentBalance ?? 0), 0) - pendingOut;
 
 		const pace = this.paceCalculator.pace(input.transactions, new Set([...checkingAccountIds, ...cardAccountIds]), input.itemTransactionIds, input.recurringFlows, input.unassignedAccountIds);
-		const flows = this.flowBuilder.flows(input.recurringFlows, input.outstandingOccurrences, input.recurringItems, { checkingAccountIds, cardAccountIds }, input.dueDayByRecurrenceId, endDate);
+		const flows = this.flowBuilder.flows(
+			input.recurringFlows,
+			input.outstandingOccurrences,
+			input.recurringItems,
+			input.paidRecurrenceIdsByItemId,
+			{ checkingAccountIds, cardAccountIds },
+			input.dueDayByRecurrenceId,
+			endDate
+		);
 		const reversibleEnd = this.reversibleEnd(flows, input.safetyDays);
 
 		const monthlySpendingByAccountId = this.monthlySpendingByProjectedAccount(pace, checkingAccountIds);

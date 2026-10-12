@@ -4,6 +4,7 @@ import type { RecurringFlow } from '../../../../monarch/api/models/recurringFlow
 import type { Transaction } from '../../../../monarch/api/models/transaction';
 import { Formatter } from '../../../../monarch/ui/formatter';
 import { ExpectedIncomeKind } from '../../../recurring/expectedIncome/expectedIncomeKind';
+import { LoanPaymentKind } from '../../../recurring/loanPayments/loanPaymentKind';
 import { ManualBillKind } from '../../../recurring/manualBills/manualBillKind';
 import { RecurringItemInferrer } from '../../../recurring/manualBills/services/recurringItemInferrer';
 import { RecurringItemKindRegistry } from '../../../recurring/recurringItems/kinds/recurringItemKindRegistry';
@@ -32,13 +33,14 @@ export function plannerFor(today = TODAY) {
 	const inferrer = new RecurringItemInferrer(recurrence);
 	const manualBills = new ManualBillKind(matcher, inferrer, new Formatter(calendar));
 	const expectedIncome = new ExpectedIncomeKind(matcher, inferrer, new Formatter(calendar));
+	const loanPayments = new LoanPaymentKind(manualBills, inferrer);
 	const cardPayments = new CardPaymentKind(matcher);
-	const payments = new RecurringPaymentCalculator(calendar, recurrence, new RecurringItemKindRegistry([manualBills, expectedIncome, cardPayments]));
+	const payments = new RecurringPaymentCalculator(calendar, recurrence, new RecurringItemKindRegistry([manualBills, loanPayments, expectedIncome, cardPayments]));
 	const balanceProjector = new BalanceProjector(calendar, new MinimumPaymentEstimator());
 	return new ProjectedBalancesPlanner(
 		calendar,
 		new SpendingPaceCalculator(calendar),
-		new ScheduledFlowBuilder(calendar, recurrence, payments, manualBills, expectedIncome),
+		new ScheduledFlowBuilder(calendar, recurrence, payments, manualBills, loanPayments, expectedIncome),
 		new CardForecaster(calendar, recurrence, cardPayments),
 		new CardPaymentPlanner(balanceProjector),
 		balanceProjector
@@ -97,6 +99,7 @@ export function input(overrides: Partial<ProjectionInput> = {}): ProjectionInput
 		recurringItems: [],
 		outstandingOccurrences: [],
 		itemTransactionIds: new Set(),
+		paidRecurrenceIdsByItemId: new Map(),
 		owedByAccountId: Object.fromEntries(accounts.filter(each => !each.isAsset).map(each => [each.id, -(each.currentBalance ?? 0)])),
 		unassignedAccountIds: new Set(accounts.map(each => each.id)),
 		cushion: 0,

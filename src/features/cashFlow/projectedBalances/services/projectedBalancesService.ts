@@ -76,6 +76,7 @@ export class ProjectedBalancesService implements CardPaymentPlans {
 						outstandingOccurrences: ledger.outstandingOccurrences.filter(isWithin),
 						settledOccurrences: ledger.settledOccurrences.filter(isWithin),
 						itemTransactionIds,
+						paidRecurrenceIdsByItemId: new Map([...ledger.historiesByItemId].map(([itemId, points]) => [itemId, new Set(points.flatMap(point => point.transaction?.recurrenceGroupId ?? []))])),
 						owedByAccountId: snapshot.owedByAccountId,
 						cushion: cashSettings.cushion,
 						safetyDays: cashSettings.safetyDays,

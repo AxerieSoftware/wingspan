@@ -28,10 +28,12 @@ export class SpendingPaceCalculator {
 	): SpendingPace {
 		const months = this.completedMonths(transactions);
 		const monarchRecurringIds = this.monarchRecurringPayments(transactions, recurringFlows, unassignedAccountIds);
+		// A payment Monarch ties to a recurring item that's still projected. One tied to an ended item stays everyday spending.
+		const projectedRecurrenceIds = new Set(recurringFlows.filter(flow => flow.recurrenceGroup.recurringType === MonarchRecurringType.expense).map(flow => flow.recurrenceGroup.id));
 		const isEveryday = (transaction: Transaction) =>
 			!!transaction.accountId &&
 			spendingAccountIds.has(transaction.accountId) &&
-			!transaction.isRecurring &&
+			!projectedRecurrenceIds.has(transaction.recurrenceGroupId ?? '') &&
 			!transaction.hideFromReports &&
 			!recurringTransactionIds.has(transaction.id) &&
 			!monarchRecurringIds.has(transaction.id) &&
@@ -50,7 +52,7 @@ export class SpendingPaceCalculator {
 	}
 
 	/**
-	 * Payments to Monarch's recurring expenses that Monarch didn't flag as recurring: they're projected on their own days.
+	 * Payments to Monarch's recurring expenses that Monarch didn't tie to them, or tied to an item it has since replaced: they're projected on their own days.
 	 * Each expected occurrence matches at most one payment, at its merchant from the account it's paid from, near its
 	 * date and amount, so other purchases at the same merchant (like groceries at a store where a membership renews)
 	 * still count. An occurrence with no account could be paid from any of the household's accounts.

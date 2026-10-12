@@ -9,7 +9,8 @@ export interface Transaction {
 	logoUrl?: string;
 	category?: TransactionCategory;
 	accountId?: string;
-	isRecurring?: boolean;
+	/** The Monarch recurring item the payment belongs to, if Monarch tied it to one. */
+	recurrenceGroupId?: string;
 	hideFromReports?: boolean;
 	/** Not yet posted. Banks differ on whether a pending one is in the account's balance yet. */
 	pending?: boolean;
