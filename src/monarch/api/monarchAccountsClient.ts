@@ -13,7 +13,7 @@ const GET_ACCOUNT_SUMMARIES_QUERY = `
 
 const GET_ACCOUNTS_QUERY = `
 	query wingspan_GetAccounts {
-		accounts { id displayName logoUrl currentBalance isAsset isHidden apr interestRate limit dataProviderCreditLimit minimumPayment type { name display } subtype { name } businessEntity { id } }
+		accounts { id displayName logoUrl currentBalance isAsset isHidden isManual apr interestRate limit dataProviderCreditLimit minimumPayment type { name display } subtype { name } businessEntity { id } }
 	}
 `;
 
@@ -75,7 +75,8 @@ const AccountSchema = v.object({
 	limit: v.nullish(v.number()),
 	dataProviderCreditLimit: v.nullish(v.number()),
 	minimumPayment: v.nullish(v.number()),
-	businessEntity: v.nullish(v.object({ id: v.string() }))
+	businessEntity: v.nullish(v.object({ id: v.string() })),
+	isManual: v.nullish(v.boolean(), false)
 });
 
 // Strict: skipping an entry could hide Wingspan's own account, making it look deleted.

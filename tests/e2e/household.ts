@@ -52,11 +52,16 @@ const CATEGORIES = {
 	coffee: { id: 'cat-coffee', name: 'Coffee Shops', icon: '☕', group: EXPENSES },
 	groceries: { id: 'cat-groceries', name: 'Groceries', icon: '🍎', group: EXPENSES },
 	gas: { id: 'cat-gas', name: 'Gas', icon: '⛽', group: EXPENSES },
-	medical: { id: 'cat-medical', name: 'Medical', icon: '💊', group: EXPENSES }
+	medical: { id: 'cat-medical', name: 'Medical', icon: '💊', group: EXPENSES },
+	loanPayment: { id: 'cat-loan-payment', name: 'Loan Repayment', icon: '🚗', group: EXPENSES }
 } satisfies Record<string, Category>;
 
 /** The auto loan's monthly payment, which all goes to its balance. */
 const LOAN_PAYMENT = 340;
+/** How many days ago the auto loan's balance was last entered. */
+const LOAN_ENTERED_DAYS_AGO = 5;
+/** How many days of balances Monarch has for the auto loan, for when it was last entered. */
+const LOAN_SNAPSHOT_DAYS = 40;
 
 const BASE_ACCOUNTS = [
 	{ id: 'acct-checking', displayName: 'Everyday Checking', currentBalance: 4210.55, isAsset: true, isHidden: false, type: { name: 'depository', display: 'Cash' } },
@@ -74,7 +79,8 @@ const BASE_ACCOUNTS = [
 		type: { name: 'credit', display: 'Credit Cards' }
 	},
 	{ id: 'acct-flex', displayName: 'Flex Card (...5678)', currentBalance: -150, isAsset: false, isHidden: false, type: { name: 'credit', display: 'Credit Cards' } },
-	{ id: 'acct-loan', displayName: 'Auto Loan', currentBalance: -9120, isAsset: false, isHidden: false, type: { name: 'loan', display: 'Loans' } },
+	// Entered by hand: its balance was last entered five days ago.
+	{ id: 'acct-loan', displayName: 'Auto Loan', currentBalance: -9120, interestRate: 6.5, isManual: true, isAsset: false, isHidden: false, type: { name: 'loan', display: 'Loans' } },
 	{
 		id: 'acct-hsa',
 		displayName: 'Fabrikam HSA',
@@ -142,6 +148,10 @@ export class Household {
 	private hasBusiness = false;
 	private hasPlus = false;
 	private hsaTags: Record<HsaExpense['tag'], TransactionTag> | null = null;
+	private hasLoanPayment = false;
+	private hasCardInterest = false;
+	/** Loan balances entered through Monarch's account edit, by account id, as amounts owed. */
+	private readonly enteredLoanBalances = new Map<string, number>();
 
 	/** Today on the local calendar, as Wingspan and Monarch read it, not in UTC. */
 	public constructor(today = Household.localToday()) {
@@ -156,7 +166,22 @@ export class Household {
 			{ id: 'rewards', kind: 'card', name: 'Rewards Card', recurrence: monthly(17), amount: 0, active: true, since, accountId: 'acct-rewards' },
 			{ id: 'store', kind: 'card', name: 'Store Card', recurrence: monthly(26), amount: 88.4, active: true, since, matchRule: { matchText: '4410', anyAmount: true } },
 			{ id: 'travel', kind: 'card', name: 'Travel Card', recurrence: monthly(26), amount: 64.15, active: true, since, matchRule: { matchText: '8823', anyAmount: true } },
-			{ id: 'piano', kind: 'bill', name: 'Piano Lessons', recurrence: monthly(1), amount: 140, active: true, since, matchRule: { matchText: 'Maple Music' } }
+			{ id: 'piano', kind: 'bill', name: 'Piano Lessons', recurrence: monthly(1), amount: 140, active: true, since, matchRule: { matchText: 'Maple Music' } },
+			...(this.hasLoanPayment
+				? [
+						{
+							id: 'auto-loan',
+							kind: 'loan',
+							name: 'Auto Loan',
+							recurrence: monthly(this.dayOfMonth(this.loanPaymentDate)),
+							amount: LOAN_PAYMENT,
+							active: true,
+							since,
+							matchRule: { matchText: 'Fabrikam Auto' },
+							loanAccountId: 'acct-loan'
+						}
+					]
+				: [])
 		];
 		return { recurring: { trackingSince: since, recurringItems }, recurringDueDates: { dueDatesByRecurrenceId: {} }, cashSettings: { cushion: 0 } };
 	}
@@ -178,6 +203,16 @@ export class Household {
 	public addBusiness({ hasPlus = true } = {}): void {
 		this.hasBusiness = true;
 		this.hasPlus = hasPlus;
+	}
+
+	/** Pays the auto loan from checking two days ago, after its balance was last entered, and tracks the payment on Recurring as a Loan payment. */
+	public addLoanPayment(): void {
+		this.hasLoanPayment = true;
+	}
+
+	/** Charges the rewards card interest ten days ago, as when a statement wasn't paid in full. */
+	public addCardInterest(): void {
+		this.hasCardInterest = true;
 	}
 
 	/** Tags medical expenses paid from checking to pay back from the HSA, with tags named as given in Monarch's settings. */
@@ -236,8 +271,35 @@ export class Household {
 			accounts: () =>
 				[...this.baseAccounts, ...this.wingspanAccounts.map(account => this.toMonarchAccount(account))].map(account => ({
 					businessEntity: null,
+					includeInNetWorth: !account.isHidden,
+					includeBalanceInNetWorth: !account.isHidden,
 					...account,
+					...(this.enteredLoanBalances.has(account.id) ? { currentBalance: -(this.enteredLoanBalances.get(account.id) ?? 0) } : {}),
 					...(account.type.name === 'loan' ? { signedBalance: ({ date }: { date: string }) => this.loanBalanceOn(date, account.currentBalance) } : {})
+				})),
+			snapshotsForAccount: ({ accountId }) => this.balanceSnapshots(String(accountId)),
+			// Accounts groups its accounts by type, like Cash, Credit Cards and Loans.
+			accountTypeSummaries: () =>
+				[
+					...Map.groupBy(
+						this.baseAccounts.filter(account => !account.isHidden),
+						account => account.type.name
+					).values()
+				].map(accounts => ({
+					type: { ...accounts[0]?.type, group: accounts[0]?.isAsset ? 'asset' : 'liability' },
+					accounts: accounts.map(account => ({
+						businessEntity: null,
+						credential: null,
+						connectionStatus: null,
+						includeInNetWorth: true,
+						includeBalanceInNetWorth: true,
+						displayLastUpdatedAt: this.now(),
+						...account,
+						displayBalance: Math.abs(account.currentBalance)
+					})),
+					isAsset: accounts[0]?.isAsset ?? true,
+					isLiability: !accounts[0]?.isAsset,
+					totalDisplayBalance: accounts.reduce((total, account) => total + Math.abs(account.currentBalance), 0)
 				})),
 			account: ({ id }) => {
 				const stored = this.storedAccounts.find(account => account.id === id);
@@ -287,7 +349,12 @@ export class Household {
 				return { account: this.toMonarchAccount(account), errors: null };
 			},
 			updateAccount: ({ input }) => {
-				const { id, notes, hideFromList, name } = input as { id: string; notes?: string; hideFromList?: boolean; name?: string };
+				const { id, notes, hideFromList, name, displayBalance } = input as { id: string; notes?: string; hideFromList?: boolean; name?: string; displayBalance?: number };
+				const baseAccount = this.baseAccounts.find(candidate => candidate.id === id);
+				if (baseAccount && displayBalance !== undefined) {
+					this.enteredLoanBalances.set(id, displayBalance);
+					return { account: baseAccount, errors: null };
+				}
 				const account = this.storedAccounts.find(candidate => candidate.id === id);
 				if (!account) return { account: null, errors: { message: 'Account not found' } };
 				if (notes !== undefined) account.notes = notes;
@@ -306,7 +373,14 @@ export class Household {
 
 	private seenProfile() {
 		const seenAt = new Date().toISOString();
-		return { id: 'profile-1', dismissedRecurringV2WalkthroughAt: seenAt, dismissedRecurringWalkthroughAt: seenAt, hasSeenCategoriesManagementTour: true, hasDismissedWhatsNewAt: seenAt };
+		return {
+			id: 'profile-1',
+			dismissedRecurringV2WalkthroughAt: seenAt,
+			dismissedRecurringWalkthroughAt: seenAt,
+			dismissedOwnershipWalkthroughAt: seenAt,
+			hasSeenCategoriesManagementTour: true,
+			hasDismissedWhatsNewAt: seenAt
+		};
 	}
 
 	private toMonarchAccount(account: StoredAccount) {
@@ -428,6 +502,8 @@ export class Household {
 			transaction('tx-check-1', this.monthDay(1, 20), -140, 'CHECK # 0000002031', 'Maple Music', 'acct-checking', CATEGORIES.lessons),
 			transaction('tx-check-2', this.monthDay(3, 9), -140, 'CHECK # 0000002024', 'Maple Music', 'acct-checking', CATEGORIES.lessons),
 			transaction('tx-coffee', this.dayOffset(-2), -5.25, 'CORNER CAFE', 'Corner Cafe', 'acct-rewards', CATEGORIES.coffee),
+			...(this.hasCardInterest ? [transaction('tx-rewards-interest', this.dayOffset(-10), -7.88, 'INTEREST CHARGE ON PURCHASES', 'Rewards Bank', 'acct-rewards', CATEGORIES.groceries)] : []),
+			...(this.hasLoanPayment ? [transaction('tx-auto-loan', this.loanPaymentDate, -LOAN_PAYMENT, 'FABRIKAM AUTO LOAN PMT', 'Fabrikam Auto Finance', 'acct-checking', CATEGORIES.loanPayment)] : []),
 			// Everyday spending: groceries on the rewards card, gas from checking.
 			...[1, 2, 3, 4, 5, 6].map(monthsAgo =>
 				transaction(`tx-grocer-${monthsAgo}`, this.monthDay(monthsAgo, 8), -(300 + monthsAgo * 10), 'GREEN GROCER', 'Green Grocer', 'acct-rewards', CATEGORIES.groceries)
@@ -446,6 +522,26 @@ export class Household {
 				}))
 			)
 		];
+	}
+
+	/** A manual loan's balance for each of the last 40 days, as Monarch keeps it: last entered five days ago, or today once entered again. */
+	private balanceSnapshots(accountId: string) {
+		const account = this.baseAccounts.find(candidate => candidate.id === accountId);
+		if (!account || account.currentBalance === null) return [];
+		const entered = this.enteredLoanBalances.get(accountId);
+		return Array.from({ length: LOAN_SNAPSHOT_DAYS + 1 }, (_, index) => {
+			const date = this.dayOffset(index - LOAN_SNAPSHOT_DAYS);
+			if (entered !== undefined && date === this.today) return { date, signedBalance: -entered };
+			return { date, signedBalance: date < this.dayOffset(-LOAN_ENTERED_DAYS_AGO) ? account.currentBalance - LOAN_PAYMENT : account.currentBalance };
+		});
+	}
+
+	private get loanPaymentDate(): string {
+		return this.dayOffset(-2);
+	}
+
+	private dayOfMonth(date: string): number {
+		return Number(date.slice(8, 10));
 	}
 
 	/** The auto loan's month-end balances, for Loans paid down: $340 lower each month, so it owed that much more for each month before this one. */

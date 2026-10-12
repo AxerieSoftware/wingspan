@@ -24,6 +24,10 @@ Its own items, due days and settings, and which store purchases it has sent, in 
 
 The workspace you choose, and whether workspaces are on, stay in the browser's storage for Monarch's site, for each household, until you change them. To open pages in that workspace, Wingspan sets Monarch's own business filter on the page. The sidebar items you hide are kept there too, for every household that signs in to that browser. These stay after Wingspan is uninstalled, until you clear Monarch's site data in the browser. The browser also keeps a cached copy so Wingspan starts fast, kept separately for each Monarch household that signs in, and uninstalling the extension removes it. To remove what's in Monarch too, uninstall Wingspan first, then delete the "wingspan" account: while it's installed, Wingspan makes the account again from its copy. Monarch may keep a deleted account, its notes included, for a time under its own policy.
 
+## What Wingspan changes in Monarch
+
+Only what you ask it to. Retail receipt sync sends the receipts you choose. **Update balance** on a manual loan's page enters the balance you save as that loan's balance. Wingspan never changes any other account or transaction.
+
 ## Permissions
 
 Wingspan runs on `app.monarch.com` with two permissions: `storage`, for the extension's own storage, and `scripting`, to read store purchases in a tab it opens.

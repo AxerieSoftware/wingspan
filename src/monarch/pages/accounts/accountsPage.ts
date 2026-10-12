@@ -1,4 +1,6 @@
 import type { MonarchNavigator } from '../monarchNavigator';
+import { MountedSlot, type SlotContent } from '../mountedSlot';
+import { WingspanAttribute } from '../wingspanAttributes';
 
 const ACCOUNTS_PATH = '/accounts';
 /** Scoped to Accounts' header, since the page Monarch is leaving, like Transactions, can still show its own filter. */
@@ -11,6 +13,8 @@ const HOUSEHOLD_OPTION = 'Household';
 const UNFILTERED_LABEL = 'Business';
 /** If the menu hasn't opened by then, Monarch changed it; give up and leave the page as Monarch shows it. */
 const OPEN_TIMEOUT_MS = 2000;
+/** One card per group of accounts, like Loans or Credit Cards, titled with the group's name. */
+const GROUP_TITLE_SELECTOR = '[data-external-id="account-group-card"] span[class*="CardTitle"]';
 
 export type HouseholdPick = 'waiting' | 'done';
 
@@ -25,6 +29,7 @@ export type HouseholdPick = 'waiting' | 'done';
  *         +------------------+
  */
 export class AccountsPage {
+	private readonly groupNotes = new Map<string, MountedSlot>();
 	private openedAt: number | null = null;
 	private hidingStyleEl: HTMLStyleElement | null = null;
 
@@ -77,11 +82,46 @@ export class AccountsPage {
 		return 'done';
 	}
 
+	/** Puts Wingspan's note in each named group's header, after Monarch's change over time. Removes the notes of other groups. */
+	public showGroupNotes(contentByGroupName: ReadonlyMap<string, SlotContent>): void {
+		this.showGroupNotesCore(contentByGroupName);
+	}
+
+	public removeGroupNotes(): void {
+		this.showGroupNotesCore(new Map());
+	}
+
 	/** Stops a pick in progress and stops hiding Monarch's menu. */
 	public cancel(): void {
 		this.openedAt = null;
 		this.hidingStyleEl?.remove();
 		this.hidingStyleEl = null;
+	}
+
+	private showGroupNotesCore(contentByGroupName: ReadonlyMap<string, SlotContent>): void {
+		const headerElsByGroupName = new Map<string, HTMLElement>();
+		if (this.isActive) {
+			for (const titleEl of this.window.document.querySelectorAll<HTMLElement>(GROUP_TITLE_SELECTOR)) {
+				if (titleEl.parentElement) headerElsByGroupName.set(titleEl.textContent?.trim() ?? '', titleEl.parentElement);
+			}
+		}
+
+		for (const [groupName, note] of this.groupNotes) {
+			if (contentByGroupName.has(groupName) && headerElsByGroupName.has(groupName)) continue;
+			note.remove();
+			this.groupNotes.delete(groupName);
+		}
+
+		for (const [groupName, content] of contentByGroupName) {
+			const headerEl = headerElsByGroupName.get(groupName);
+			if (!headerEl) continue;
+			let note = this.groupNotes.get(groupName);
+			if (!note) {
+				note = MountedSlot.mount(this.window.document, content, WingspanAttribute.accountGroupNote, { tagName: 'span', className: 'flex items-center gap-2xs' });
+				this.groupNotes.set(groupName, note);
+			}
+			if (note.hostEl !== headerEl.lastElementChild) headerEl.append(note.hostEl);
+		}
 	}
 }
 

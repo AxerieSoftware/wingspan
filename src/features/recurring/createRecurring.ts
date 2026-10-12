@@ -1,5 +1,6 @@
 import type { WingspanBuilder } from '../../wingspanBuilder';
 import { ExpectedIncomeKind } from './expectedIncome/expectedIncomeKind';
+import { LoanPaymentKind } from './loanPayments/loanPaymentKind';
 import { ManualBillKind } from './manualBills/manualBillKind';
 import { RecurringItemInferrer } from './manualBills/services/recurringItemInferrer';
 import { RecurringItemKindRegistry } from './recurringItems/kinds/recurringItemKindRegistry';
@@ -18,6 +19,7 @@ import { StatementsTotals } from './statements/services/statementsTotals';
 export interface Recurring {
 	kinds: RecurringItemKindRegistry;
 	manualBills: ManualBillKind;
+	loanPayments: LoanPaymentKind;
 	expectedIncome: ExpectedIncomeKind;
 	cardPayments: CardPaymentKind;
 	recurrence: RecurrenceCalculator;
@@ -35,14 +37,16 @@ export function createRecurring(app: WingspanBuilder): Recurring {
 	const matcher = new TransactionMatcher();
 	const inferrer = new RecurringItemInferrer(recurrence);
 	const manualBills = new ManualBillKind(matcher, inferrer, formatter);
+	const loanPayments = new LoanPaymentKind(manualBills, inferrer);
 	const expectedIncome = new ExpectedIncomeKind(matcher, inferrer, formatter);
 	const cardPayments = new CardPaymentKind(matcher);
-	const kinds = new RecurringItemKindRegistry([manualBills, expectedIncome, cardPayments]);
+	const kinds = new RecurringItemKindRegistry([manualBills, loanPayments, expectedIncome, cardPayments]);
 	const payments = new RecurringPaymentCalculator(calendar, recurrence, kinds);
 	const itemRepository = new RecurringItemRepository(dataService, calendar, kinds);
 	return {
 		kinds,
 		manualBills,
+		loanPayments,
 		expectedIncome,
 		cardPayments,
 		recurrence,

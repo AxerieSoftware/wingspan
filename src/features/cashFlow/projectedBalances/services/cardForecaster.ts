@@ -1,5 +1,4 @@
 import type { Calendar } from '../../../../common/calendar';
-import { MONTHS_PER_YEAR, PERCENT } from '../../../../common/money';
 import type { BalancesByAccountId } from '../../../../data/models/balancesByAccountId';
 import type { Account } from '../../../../monarch/api/models/account';
 import { MonarchOccurrenceStatus, MonarchRecurringType } from '../../../../monarch/api/models/monarchValues';
@@ -9,12 +8,9 @@ import type { Occurrence } from '../../../recurring/recurringItems/models/occurr
 import type { RecurringItem } from '../../../recurring/recurringItems/models/recurringItem';
 import type { RecurrenceCalculator } from '../../../recurring/recurringItems/services/recurrenceCalculator';
 import type { CardPaymentKind } from '../../../recurring/statements/cardPaymentKind';
-import { aprOf, creditLimitOf, isInterestCharge, minimumPaymentOf } from '../models/cardTerms';
+import { aprOf, creditLimitOf, impliedAprOf, lastInterestChargesByAccountId, minimumPaymentOf } from '../models/cardTerms';
 import { OVERDUE_CARRY_MONTHS, UNKNOWN_DUE_DAYS } from '../models/projectionHorizon';
 
-const INTEREST_LOOKBACK_DAYS = 62;
-/** About the highest APR card issuers charge. */
-const MAX_IMPLIED_APR = 36;
 const PAYMENT_LOOKBACK_DAYS = 45;
 
 /** A posted card transaction. amount is always positive, whichever direction the money moved. */
@@ -106,7 +102,7 @@ export class CardForecaster {
 	}: CardScheduleInput): CardSchedule[] {
 		const countedAccountIds = new Set(cardAccountIds);
 		const accountsById = new Map(accounts.map(account => [account.id, account]));
-		const lastInterestByAccountId = this.lastInterestByAccountId(transactions);
+		const lastInterestByAccountId = lastInterestChargesByAccountId(transactions, this.calendar);
 		// One schedule per Monarch card, so if two items track the same card, its balance is only counted once.
 		const trackedAccountIds = new Set<string>();
 		const cardItems = recurringItems.filter(item => {
@@ -268,8 +264,7 @@ export class CardForecaster {
 	): Pick<CardSchedule, 'chargesInterest' | 'apr' | 'limit' | 'minimumPayment'> {
 		const lastInterest = account ? lastInterestByAccountId.get(account.id) : undefined;
 		const owed = account ? (owedByAccountId[account.id] ?? 0) : 0;
-		// Interest charged on an older, higher balance would imply an unrealistic rate on a paid-down card, so it's capped.
-		const impliedApr = lastInterest !== undefined && owed > 0 ? Math.min(MAX_IMPLIED_APR, (lastInterest / owed) * MONTHS_PER_YEAR * PERCENT) : null;
+		const impliedApr = lastInterest !== undefined && owed > 0 ? impliedAprOf(lastInterest, owed) : null;
 		return {
 			chargesInterest: lastInterest !== undefined,
 			apr: (account ? aprOf(account) : null) ?? impliedApr,
@@ -302,17 +297,5 @@ export class CardForecaster {
 
 	private pendingCharges(accountId: string, transactions: Transaction[]): number {
 		return transactions.filter(transaction => transaction.pending && transaction.accountId === accountId && transaction.amount < 0).reduce((total, transaction) => total - transaction.amount, 0);
-	}
-
-	/** Each card's most recent interest charge, as a positive amount. */
-	private lastInterestByAccountId(transactions: Transaction[]): ReadonlyMap<string, number> {
-		const sinceDate = this.calendar.addDays(this.calendar.today(), -INTEREST_LOOKBACK_DAYS);
-		const latest = new Map<string, Transaction>();
-		for (const transaction of transactions) {
-			if (!transaction.accountId || transaction.date < sinceDate || !isInterestCharge(transaction)) continue;
-			const current = latest.get(transaction.accountId);
-			if (!current || transaction.date > current.date) latest.set(transaction.accountId, transaction);
-		}
-		return new Map([...latest].map(([accountId, transaction]) => [accountId, Math.abs(transaction.amount)]));
 	}
 }
