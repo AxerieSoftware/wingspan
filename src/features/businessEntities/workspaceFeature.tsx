@@ -1,5 +1,6 @@
 import { effect } from '@preact/signals-core';
 import type { Calendar } from '../../common/calendar';
+import { isSameValue } from '../../common/sameValue';
 import type { QueryResult, SyncedQueries } from '../../common/syncedQueries';
 import type { SyncScheduler } from '../../common/syncScheduler';
 import type { MonarchDataService } from '../../data/services/monarchDataService';
@@ -172,7 +173,7 @@ export class WorkspaceFeature implements WingspanFeature {
 			return;
 		}
 		// Monarch's classes change with its theme, so the switcher is rendered again when they do.
-		if (this.switcherStyles && !isSameStyles(this.switcherStyles, styles)) this.sidebar.removeRow();
+		if (this.switcherStyles && !isSameValue(this.switcherStyles, styles)) this.sidebar.removeRow();
 		this.switcherStyles = styles;
 		this.sidebar.showRow({ render: hostEl => this.renderSwitcher(hostEl, styles) });
 	}
@@ -250,8 +251,4 @@ export class WorkspaceFeature implements WingspanFeature {
 		const sortedIds = accountIds?.toSorted();
 		return this.queries.read([SUMMARY_QUERY, month, sortedIds?.join(',') ?? 'all'], () => this.recurringClient.getRecurringSummary(`${month}-01`, this.calendar.lastOfMonth(month), sortedIds));
 	}
-}
-
-function isSameStyles(styles: SidebarStyles, other: SidebarStyles): boolean {
-	return styles.linkClassName === other.linkClassName && styles.iconClassName === other.iconClassName;
 }

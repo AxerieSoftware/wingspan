@@ -32,22 +32,7 @@ export class MonarchClient {
 
 	/** The response's data, checked against `schema`: if Monarch changes its response format, this throws instead of guessing. */
 	public async request<TData>(operationName: string, query: string, schema: v.GenericSchema<unknown, TData>, variables: Record<string, unknown> = {}): Promise<TData> {
-		this.checkSession();
-		let httpResponse: Response;
-		try {
-			httpResponse = await fetch(this.url, {
-				method: 'POST',
-				credentials: 'include',
-				headers: { 'Content-Type': 'application/json', 'Client-Platform': 'web', ...this.requestHook.headers() },
-				body: JSON.stringify({ operationName, query, variables }),
-				signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-			});
-		} catch (error) {
-			throw new MonarchApiError("Monarch couldn't be reached.", true, { cause: error });
-		}
-		this.checkSession();
-		if (!httpResponse.ok) throw this.httpError(httpResponse.status);
-
+		const httpResponse = await this.postCore(this.url, JSON.stringify({ operationName, query, variables }), { 'Content-Type': 'application/json' });
 		let response: GraphQlResponse;
 		try {
 			response = (await httpResponse.json()) as GraphQlResponse;
@@ -72,14 +57,19 @@ export class MonarchClient {
 
 	/** A file upload to one of Monarch's REST endpoints, as its web app sends them. */
 	public async postForm(path: string, form: FormData): Promise<void> {
+		await this.postCore(`${API_URL}${path}${this.clientQuery}`, form, {});
+	}
+
+	/** Posts with Monarch's session, checking before and after that it's still this page's, and throws for an HTTP error. */
+	private async postCore(url: string, body: BodyInit, headers: Record<string, string>): Promise<Response> {
 		this.checkSession();
 		let httpResponse: Response;
 		try {
-			httpResponse = await fetch(`${API_URL}${path}${this.clientQuery}`, {
+			httpResponse = await fetch(url, {
 				method: 'POST',
 				credentials: 'include',
-				headers: { 'Client-Platform': 'web', ...this.requestHook.headers() },
-				body: form,
+				headers: { ...headers, 'Client-Platform': 'web', ...this.requestHook.headers() },
+				body,
 				signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
 			});
 		} catch (error) {
@@ -87,6 +77,7 @@ export class MonarchClient {
 		}
 		this.checkSession();
 		if (!httpResponse.ok) throw this.httpError(httpResponse.status);
+		return httpResponse;
 	}
 
 	private httpError(status: number): MonarchApiError {

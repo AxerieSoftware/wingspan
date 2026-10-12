@@ -17,8 +17,9 @@ export interface HsaExpenses {
 export function toHsaExpenses(transactions: TaggedTransaction[], tags: HsaReimbursementTags): HsaExpenses {
 	const uniqueTransactions = [...new Map(transactions.map(transaction => [transaction.id, transaction])).values()];
 	const reimbursed = uniqueTransactions.filter(transaction => tags.reimbursedTagId !== '' && transaction.tagIds.includes(tags.reimbursedTagId)).sort((a, b) => b.date.localeCompare(a.date));
+	const reimbursedIds = new Set(reimbursed.map(transaction => transaction.id));
 	const toReimburse = uniqueTransactions
-		.filter(transaction => tags.toReimburseTagId !== '' && transaction.tagIds.includes(tags.toReimburseTagId) && !reimbursed.includes(transaction))
+		.filter(transaction => tags.toReimburseTagId !== '' && transaction.tagIds.includes(tags.toReimburseTagId) && !reimbursedIds.has(transaction.id))
 		.sort((a, b) => a.date.localeCompare(b.date));
 	return { toReimburse, toReimburseTotal: spentIn(toReimburse), reimbursed, reimbursedTotal: spentIn(reimbursed) };
 }

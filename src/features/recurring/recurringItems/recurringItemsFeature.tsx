@@ -154,6 +154,7 @@ export class RecurringItemsFeature implements WingspanFeature {
 		const ledger = this.rowsData.ledgerService.ledger.value;
 		const snapshot = this.monarchData.snapshot.value;
 		const accounts = snapshot?.accounts ?? [];
+		const owedByAccountId = snapshot?.owedByAccountId ?? {};
 		const accountNames = new Map(accounts.map(account => [account.id, account.displayName]));
 		const defaultPayingAccountName = accountNames.get(this.defaultPayingAccount.accountId(accounts) ?? '') ?? '';
 		const paidFromName = (item: RecurringItem) => (item.matchRule?.accountId ? (accountNames.get(item.matchRule.accountId) ?? '') : defaultPayingAccountName);
@@ -165,12 +166,9 @@ export class RecurringItemsFeature implements WingspanFeature {
 		const isWaitingForAccounts = !snapshot && isLoading && !scope.isEverything;
 		const within = snapshot ? this.businessFilter.membership.within(scope, accounts) : null;
 		const isShown = (item: RecurringItem) => !isWaitingForAccounts && (!within || within.includesItem(item));
-		const builtLines = this.rowsData.lineBuilder
-			.linesFor(view, month, this.rowsData.itemRepository.data.value, ledger, snapshot?.owedByAccountId ?? {}, !isPaymentDataMissing)
-			.filter(line => isShown(line.item));
+		const builtLines = this.rowsData.lineBuilder.linesFor(view, month, this.rowsData.itemRepository.data.value, ledger, owedByAccountId, !isPaymentDataMissing).filter(line => isShown(line.item));
 		const menuClassName = this.page.rowMenuClassName;
 		const plansByItemId = this.cardPaymentPlans.byItemId.value;
-		const owedByAccountId = snapshot?.owedByAccountId ?? {};
 		const linesWithAmounts = builtLines.map(line => (kinds.of(line.item).isAmountUnknown?.(line.item, owedByAccountId) ? { ...line, amountUnknown: true } : line));
 		const lines = this.rowsData.statementLines.reconcile({ lines: linesWithAmounts, view, month, plansByItemId, owedByAccountId });
 		const earliestOverdueKeys = new Set(
@@ -206,7 +204,7 @@ export class RecurringItemsFeature implements WingspanFeature {
 		};
 
 		const statementsLines = lines.filter(line => kinds.of(line.item).showsInStatements);
-		const owedInStatements = this.unpaidTotal(statementsLines, snapshot?.owedByAccountId ?? {});
+		const owedInStatements = this.unpaidTotal(statementsLines, owedByAccountId);
 		const monarch = this.monarchData.state.value;
 		const isStale = monarch.status === 'ready' && monarch.isStale;
 		const footerText = this.owedText(owedInStatements);

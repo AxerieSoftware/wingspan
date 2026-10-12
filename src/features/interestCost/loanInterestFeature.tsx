@@ -115,9 +115,7 @@ export class LoanInterestFeature implements WingspanFeature {
 			.filter(transaction => !transaction.pending && transaction.date > entered.date)
 			.map(transaction => ({ date: transaction.date, amount: Math.abs(transaction.amount) }));
 		const hasLoanPayment = loanPayments.length > 0;
-		if (rate === null) return { status: 'ready', entered, paymentsSince, estimate: null, hasLoanPayment };
-
-		const estimate = this.estimator.estimate({ owed: entered.owed, rate, balanceDate: entered.date, payments: paymentsSince.map(payment => payment.amount) });
+		const estimate = rate === null ? null : this.estimator.estimate({ owed: entered.owed, rate, balanceDate: entered.date, payments: paymentsSince.map(payment => payment.amount) });
 		return { status: 'ready', entered, paymentsSince, estimate, hasLoanPayment };
 	}
 

@@ -61,11 +61,14 @@ export class SpendingPaceCalculator {
 			transaction => merchantAccountKey(transaction.merchantId as string, transaction.accountId as string)
 		);
 		const claimedIds = new Set<string>();
+		// Later occurrences can't have a posted payment yet.
+		const latestMatchableDate = this.calendar.addDays(this.calendar.today(), RECURRING_DATE_TOLERANCE_DAYS);
 		for (const flow of recurringFlows) {
 			const { recurrenceGroup } = flow;
 			const merchantId = recurrenceGroup.merchant?.id;
 			if (!merchantId || recurrenceGroup.recurringType !== MonarchRecurringType.expense) continue;
 			for (const occurrence of flow.occurrences) {
+				if (occurrence.date > latestMatchableDate) continue;
 				const expected = Math.abs(occurrence.amount ?? recurrenceGroup.amount ?? 0);
 				if (!expected) continue;
 				const accountId = occurrenceAccountId(flow, occurrence);

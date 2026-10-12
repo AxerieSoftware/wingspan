@@ -141,7 +141,8 @@ export class BalanceProjector {
 			const beforeDeposits = day.checking;
 			// Draws were added to checking as they were made.
 			day.checking += this.sumOf(day.flows.filter(flow => isCheckingFlow(flow) && flow.amount > 0 && flow.kind !== 'draw'));
-			day.checking += this.sumOf(day.flows.filter(flow => isCheckingFlow(flow) && flow.kind === 'cardPayment'));
+			const cardsPaid = -this.sumOf(day.flows.filter(flow => isCheckingFlow(flow) && flow.kind === 'cardPayment'));
+			day.checking -= cardsPaid;
 			const lowestChecking = Math.min(beforeDeposits, day.checking);
 			if (lowestChecking < -CENT_TOLERANCE && !isOutOfCash) {
 				isOutOfCash = true;
@@ -152,7 +153,6 @@ export class BalanceProjector {
 			events.push(...day.events);
 			// A card's credit balance offsets what the other cards owe, so borrowing against it doesn't count as money gained.
 			const cardsOwed = cards.reduce((total, card) => total + card.owed, 0);
-			const cardsPaid = -this.sumOf(day.flows.filter(flow => isCheckingFlow(flow) && flow.kind === 'cardPayment'));
 			const reservesDrawn = startingReserves - reserves.reduce((total, reserve) => total + reserve.balance, 0);
 			days.push({
 				date,
@@ -271,6 +271,8 @@ export class BalanceProjector {
 	}
 
 	private postedSince(posted: readonly PostedAmount[] | undefined, closeDate: string, throughDate: string): number {
+		// A statement closing after today has nothing posted since; most of a projection's statements are like this.
+		if (closeDate >= throughDate) return 0;
 		return (posted ?? []).filter(entry => entry.date > closeDate && entry.date <= throughDate).reduce((total, entry) => total + entry.amount, 0);
 	}
 

@@ -35,7 +35,6 @@ const lineOn = (dueDate: string, paid: boolean, amount = 400): RecurringLine => 
 	dueDate,
 	paid,
 	overdue: !paid && dueDate < TODAY,
-	carried: dueDate < '2026-10-01',
 	amount,
 	lastPaidDate: null,
 	nextDueDate: null
