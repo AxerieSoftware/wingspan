@@ -4,6 +4,7 @@ import { CashFlowPage } from './cashFlow/cashFlowPage';
 import { PageHeader } from './header/pageHeader';
 import { MonarchNavigator } from './monarchNavigator';
 import { RecurringV2Page } from './recurringV2/recurringV2Page';
+import { ReportsPage } from './reports/reportsPage';
 import { SettingsPage } from './settings/settingsPage';
 import { SidebarPage } from './sidebar/sidebarPage';
 import { ReceiptsPage } from './transactions/receiptsPage';
@@ -15,6 +16,7 @@ export interface MonarchPages {
 	header: PageHeader;
 	receipts: ReceiptsPage;
 	recurring: RecurringV2Page;
+	reports: ReportsPage;
 	settings: SettingsPage;
 	sidebar: SidebarPage;
 }
@@ -28,6 +30,7 @@ export function createMonarchPages(window: Window): MonarchPages {
 		header: new PageHeader(window.document, navigator),
 		receipts: new ReceiptsPage(window.document, navigator),
 		recurring: new RecurringV2Page(window),
+		reports: new ReportsPage(window, navigator),
 		settings: new SettingsPage(window, navigator),
 		sidebar: new SidebarPage(window.document)
 	};

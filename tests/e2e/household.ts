@@ -55,6 +55,9 @@ const CATEGORIES = {
 	medical: { id: 'cat-medical', name: 'Medical', icon: '💊', group: EXPENSES }
 } satisfies Record<string, Category>;
 
+/** The auto loan's monthly payment, which all goes to its balance. */
+const LOAN_PAYMENT = 340;
+
 const BASE_ACCOUNTS = [
 	{ id: 'acct-checking', displayName: 'Everyday Checking', currentBalance: 4210.55, isAsset: true, isHidden: false, type: { name: 'depository', display: 'Cash' } },
 	{ id: 'acct-savings', displayName: 'High-Yield Savings', currentBalance: 12000, isAsset: true, isHidden: false, type: { name: 'depository', display: 'Cash' } },
@@ -230,7 +233,12 @@ export class Household {
 			subscription: () => ({ id: 'subscription-1', entitlements: this.hasPlus ? ['premium_plus'] : [], plusTrialEndsAt: null, canceledPlusTrialAt: null }),
 			businessEntities: () => (this.hasBusiness ? [{ ...BUSINESS, icon: 'briefcase', structure: 'llc', accounts: BUSINESS_ACCOUNTS, accountsCount: 1, transactionsCount: 0 }] : []),
 			// None belong to a business; otherwise the mock would fill the field with an empty business.
-			accounts: () => [...this.baseAccounts, ...this.wingspanAccounts.map(account => this.toMonarchAccount(account))].map(account => ({ businessEntity: null, ...account })),
+			accounts: () =>
+				[...this.baseAccounts, ...this.wingspanAccounts.map(account => this.toMonarchAccount(account))].map(account => ({
+					businessEntity: null,
+					...account,
+					...(account.type.name === 'loan' ? { signedBalance: ({ date }: { date: string }) => this.loanBalanceOn(date, account.currentBalance) } : {})
+				})),
 			account: ({ id }) => {
 				const stored = this.storedAccounts.find(account => account.id === id);
 				return stored ? this.toMonarchAccount(stored) : (this.baseAccounts.find(account => account.id === id) ?? null);
@@ -438,6 +446,11 @@ export class Household {
 				}))
 			)
 		];
+	}
+
+	/** The auto loan's month-end balances, for Loans paid down: $340 lower each month, so it owed that much more for each month before this one. */
+	private loanBalanceOn(date: string, currentBalance: number): number {
+		return currentBalance - LOAN_PAYMENT * (this.monthsBetween(date, this.today).length - 1);
 	}
 
 	private monthsBetween(startDate: string, endDate: string): string[] {

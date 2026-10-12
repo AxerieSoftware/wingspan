@@ -42,6 +42,8 @@ export class GraphqlMock {
 			return root ? root(args) : this.emptyValue(info.returnType);
 		}
 		const value = (source as Record<string, unknown> | null)?.[info.path.key as string] ?? (source as Record<string, unknown> | null)?.[info.fieldName];
+		// A field with arguments, like a balance on a given date, can be a function of them.
+		if (typeof value === 'function') return (value as RootResolver)(args);
 		return value !== undefined ? value : this.emptyValue(info.returnType);
 	};
 
