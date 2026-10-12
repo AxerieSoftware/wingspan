@@ -74,6 +74,12 @@
 					]
 				},
 				{
+					"name": "Expected income",
+					"where": "Adds to Recurring",
+					"description": "Income that changes week to week, like client payouts, counted at what you usually take in",
+					"cards": []
+				},
+				{
 					"name": "Loans paid down",
 					"where": "Adds to Cash Flow and Reports",
 					"description": "How much your loans went down, and its share of your income, beside Monarch's savings rate",
@@ -89,6 +95,12 @@
 					"name": "Loan payments",
 					"where": "Adds to Recurring and each loan's page",
 					"description": "A loan's monthly payment, and an estimated new balance for a manual loan to save after it posts",
+					"cards": []
+				},
+				{
+					"name": "HSA reimbursements",
+					"where": "Adds to your HSA's account page",
+					"description": "Medical expenses you paid yourself and can still pay back from your HSA, with any missing receipts flagged",
 					"cards": []
 				},
 				{

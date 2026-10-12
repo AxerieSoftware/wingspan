@@ -1,6 +1,6 @@
 ---
 title: Due dates
-description: When every recurring bill is due, sorted by date.
+description: When every recurring bill is due, sorted by date, with a due day you can set yourself.
 introduced: 0.1.0
 saves: account
 ---
@@ -11,8 +11,27 @@ Monarch's Recurring page shows what your bills and subscriptions cost, but not a
 
 <Screenshot name="due-dates" alt="Monarch's Recurring Expenses table with a due date under each bill, sorted soonest first." />
 
-## Using it
+## Reading it
 
-Open **Recurring** in Monarch. Each row shows its due date, soonest first.
+Open **Recurring** in Monarch. Under each name:
 
-Monarch works out a bill's timing from when money left last time, so a bill paid early or late can look like it's due on the wrong day. Open the item and set its due day yourself. Wingspan uses your day from then on, in Recurring and in [Projected balances](/features/projected-balances/).
+- **Due Oct 20** for a bill due once this month.
+- **Next Oct 14** for one due more than once a month, like a weekly subscription, or **All paid** once this month's are done.
+- In the **All** view, **Due the 20th** or **Due the last day** for a monthly bill.
+
+Each table is sorted by due date, soonest first, with Wingspan's own items mixed in by their dates.
+
+## Setting the due day yourself
+
+Monarch works out a bill's timing from when money left last time, so a bill paid early or late can look like it's due on the wrong day.
+
+1. Open the item on **Recurring**.
+2. In its details, set **Due day** to the day of the month it's really due. Days 29 to 31 fall on the last day in shorter months.
+3. To go back to Monarch's date, choose **Automatic**.
+
+Your day is used on Recurring and in [Projected balances](/features/projected-balances/), for everyone in your household.
+
+## Good to know
+
+- **Due day** shows for items due once a month or less often.
+- It only moves the date. The amount and whether it's paid still come from Monarch.

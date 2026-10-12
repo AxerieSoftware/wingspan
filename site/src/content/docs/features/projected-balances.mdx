@@ -9,7 +9,7 @@ import Screenshot from "../../../components/Screenshot.astro";
 
 Monarch's Cash Flow shows where your money went. Projected balances shows what's coming: checking day by day ahead, with the paychecks, bills, card payments and everyday spending you can expect. You see a low point before you get there, not after.
 
-It sits on **Cash Flow**, under Monarch's chart, and looks as far ahead as the month, quarter or year you're viewing.
+It sits on **Cash Flow**, under Monarch's chart. Pick **Monthly**, **Quarterly** or **Yearly** at the top of Cash Flow to look about a month, 90 days or a year ahead.
 
 <Screenshot name="projected-balances" alt="Projected balances on Cash Flow: checking day by day ahead, free cash today and the monthly surplus." />
 
@@ -17,34 +17,55 @@ It sits on **Cash Flow**, under Monarch's chart, and looks as far ahead as the m
 
 How much you could move out of checking today, to spend, save or pay a card down early, and still have every bill paid, every card's minimum met, and the amount you keep in checking untouched for the weeks ahead and through the next payday.
 
-If you budget toward goals in Monarch, free cash shows how much of it is already promised to them and how much is truly free. It also appears in Recurring's month summary, so it's there when you check your bills.
+If you budget toward goals in Monarch, free cash shows how much of it is already promised to them, as **to goals**, and how much is **truly free**. It also appears in Recurring's month summary, so it's there when you check your bills.
 
 <Screenshot name="free-cash" alt="Recurring's month summary with the Statements line and Free cash today, linking to Projected balances." />
 
-## When money runs short
+## Reading the card
 
-If checking would dip below what you keep, Projected balances shows where the money would come from: your cards first, in the order you choose, then any reserve accounts. It marks the day a card would max out, or checking would run out, so you can move money or shift a payment before it happens.
+- **Free cash today**: what's safe to move out of checking. Hover it for what it covers.
+- **Short from Oct 14**, in red, replaces it when checking would drop below what you keep, by how much at its lowest. There's no free cash until that's covered.
+- **Monthly surplus**: what an average month leaves after income, bills and everyday spending. Below $0, you fall behind a little each month.
+- **Credit left**: the lowest your available credit gets, and when a card would max out.
+- **Checking runs out**: the first day checking would go below $0, or **Not by Nov 10** if it doesn't.
+- **+$1,782.64 net by Nov 10**, next to the title: how much checking grows or shrinks over the range.
 
-## Monthly surplus
+### The chart
 
-What an average month ahead leaves after income, bills and everyday spending. Below $0, you're falling behind a little each month.
+- The solid line is **Checking**, red where it's below what you keep. The dashed line, **After cards**, is checking minus what the cards owe.
+- Green marks are paydays, orange marks are card payments, and red or yellow marks flag a problem, like a card maxing out.
+- Hover a day for its balance and what came in or went out.
+
+## Setting it up
+
+On **Cash Flow**, open **Edit cash and cards**. You can also open it from the pencil next to Free cash today on Recurring.
+
+<Screenshot name="cash-and-cards" alt="The Cash and cards dialog, choosing checking accounts, reserves, cards and how much to keep in checking." />
+
+- **Cash accounts**: mark each as **Checking**, where bills and card payments come from, a **Reserve** you'd draw on if checking ran low, or **Not counted**.
+- **Always keep**: a cushion that stays in checking. Free cash never counts it.
+- **Keep free cash safe for**: 30, 60 or 90 days ahead, or until the next paycheck if that's later.
+- **Cards counted as debt**: the cards to count. When checking runs low, the plan borrows on them from the top of the list, then draws on reserves.
+
+A warning next to a card means Monarch is missing its credit limit, APR or minimum payment. Add it in the card's details in Monarch.
+
+With Monarch's businesses, the household and each business have their own settings. Choose which under **Settings for**.
 
 ## What it counts
 
 - Monarch's recurring income and bills, on the due days you've set
-- Wingspan's bills and card payments
+- Wingspan's [bills](/features/manual-bills/), [card payments](/features/card-payments/) and [loan payments](/features/interest-cost/#keeping-a-manual-loan-current)
 - [Expected income](/features/expected-income/), at what you usually take in
-- Everyday spending, at your recent pace
+- Everyday spending, at your usual pace from recent months
 - Each card's statement, paid as far as checking allows, with anything left over carrying interest
 - Bills that are already late
 
 Money going out counts as soon as it's pending, and money coming in once it lands, so free cash never runs ahead of what's really there.
 
-## Setting it up
+## Good to know
 
-On **Cash Flow**, open **Edit cash and cards** and choose which accounts are checking, which savings accounts are reserves, which cards to count and in what order, and how much to keep in checking. With Monarch's businesses, the household and each business have their own settings.
-
-<Screenshot name="cash-and-cards" alt="The Cash and cards dialog, choosing checking accounts, reserves, cards and how much to keep in checking." />
+- A card with no due date is assumed due in 30 days. Add a [card payment](/features/card-payments/) to set it.
+- **Couldn't refresh from Monarch** means you're seeing the last numbers that loaded. Choose **Try again**.
 
 :::note
 Monarch Plus has long-range forecasting. Projected balances covers the next few days and weeks. If Monarch's forecasting adds that, Projected balances will be deprecated and removed.

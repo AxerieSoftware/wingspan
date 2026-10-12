@@ -5,6 +5,8 @@ introduced: 0.4.0
 saves: account
 ---
 
+import Screenshot from "../../../components/Screenshot.astro";
+
 Interest is easy to lose track of, because on a loan you track by hand it never shows up as a transaction. Interest cost puts a number on it: what your debts cost each day, month and year at today's balances.
 
 ## Where it shows
@@ -12,6 +14,10 @@ Interest is easy to lose track of, because on a loan you track by hand it never 
 - **Cash Flow** and **Reports**: **Interest a month**, after [Loans paid down](/features/loans-paid-down/), so you can see what you paid down next to what interest adds back. Hover it for the cost a day and a year, and each debt's rate and share.
 - **Accounts**: the **Loans** and **Credit Cards** groups say what their debts cost a month.
 - **Each loan's page**: an **Interest** card with the cost a day, a month and a year.
+
+<Screenshot name="interest-cost-accounts" alt="Accounts' Loans group, with $49 a month in interest next to the group's total." />
+
+<Screenshot name="loan-interest" alt="A loan's Interest card: $1.62 a day, $49 a month and $593 a year at 6.5%, the balance last entered, and about $8,788.12 today after a $340 payment." />
 
 ## How it's counted
 
@@ -29,6 +35,8 @@ For a loan you track by hand in Monarch, Wingspan works out the new balance afte
 
 On **Recurring**, choose **Add recurring → Add manually**, then set **Type** to **Loan payment**. Choose the **Loan**, then the **Merchant** and a few of its payments, like a [manual bill](/features/manual-bills/#adding-a-bill). It shows with your bills, owing its monthly amount.
 
+<Screenshot name="loan-payment-editor" alt="Add recurring with Loan payment chosen: the Auto Loan, the merchant Fabrikam Auto Finance, and its $340 payment picked." />
+
 ### 2. Check the estimate after a payment
 
 Open the loan's page. The **Interest** card shows the balance you last entered and an estimate for today: that balance, plus daily interest since, minus payments since. Without a Loan payment, it adds interest only.
@@ -36,6 +44,8 @@ Open the loan's page. The **Interest** card shows the balance you last entered a
 ### 3. Update the balance
 
 Choose **Update balance**. It starts at the estimate. Save it, or enter your servicer's amount if it's different. Monarch's page reloads to show the new balance.
+
+<Screenshot name="update-balance" alt="The Update balance dialog, starting at Wingspan's estimate of $8,788.12." />
 
 Wingspan changes the balance only when you save. Your servicer's amount can be a little lower, since most charge interest on the principal only.
 
