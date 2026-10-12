@@ -20,11 +20,21 @@ Up to 132 characters, the same as `description` in `wxt.config.ts`.
 > • Card payments in Monarch's Statements card, showing how much checking can cover on each due date, marked paid once the statement balance is paid off.
 > • Manual bills for payments without a fixed date, like a check that gets cashed late. They stay unpaid until the payment clears.
 > • A due date on every row, Monarch's included, with each table in date order.
+> • Expected income for pay that varies, like client payouts, counted at what you usually take in.
+> • Loan payments, tied to the loan so its balance can be estimated after each one.
 >
 > CASH FLOW
 > • Projected balances: checking day by day, with recurring income and expenses, bills, everyday spending and card payments.
 > • Free cash: how much you can spend from checking today and still keep a minimum balance, split into money set aside for goals and money that's actually free.
 > • Credit left: when checking runs low, which cards you'd use (in the order you choose), then your reserves.
+>
+> LOANS AND DEBT
+> • Loans paid down: how much your loans went down, and its share of your income, beside Monarch's savings rate on Cash Flow and Reports.
+> • Interest cost: what your loans and carried card balances cost in interest a day, a month and a year.
+> • Update balance: for a loan you track by hand, an estimated new balance after each payment, saved only when you choose to.
+>
+> ACCOUNTS
+> • HSA reimbursements: medical expenses you paid yourself and can still pay back from your HSA, with missing receipts flagged.
 >
 > TRANSACTIONS
 > • Retail receipt sync: your purchases are sent to Monarch as receipts, which Monarch matches and splits like its Amazon and Target receipts.
@@ -34,7 +44,7 @@ Up to 132 characters, the same as `description` in `wxt.config.ts`.
 > • Sidebar items: hide the pages you don't use from Monarch's sidebar.
 >
 > YOUR DATA
-> Wingspan has no server, analytics or tracking. It talks to Monarch with the session you're already signed into, and to a retailer's site only when you sync receipts from it. It saves its own items in a hidden manual account named "wingspan" in your Monarch account. It never unlocks Monarch's paid features.
+> Wingspan has no server, analytics or tracking. It talks to Monarch with the session you're already signed into, and to a retailer's site only when you sync receipts from it. It saves its own items in a hidden manual account named "wingspan" in your Monarch account, and changes nothing else unless you ask, like saving a loan's new balance. It never unlocks Monarch's paid features.
 >
 > Made by Axerie Software. Not affiliated with or endorsed by Monarch Money.
 
@@ -73,7 +83,7 @@ Up to 132 characters, the same as `description` in `wxt.config.ts`.
 **Remote code:** No. All code ships in the package.
 
 **Data usage** (boxes to check):
-- **Financial and payment information:** accounts, transactions, recurring items, budgets, goals and the household's businesses, read from Monarch to show Wingspan's features. With retail receipt sync, each purchase's items, prices, totals and payment method, sent only to Monarch as receipts.
+- **Financial and payment information:** accounts, transactions, recurring items, budgets, goals and the household's businesses, read from Monarch to show Wingspan's features. With retail receipt sync, each purchase's items, prices, totals and payment method, sent only to Monarch as receipts. With Update balance, the loan balance you save, sent only to Monarch.
 - **Website content:** text on Monarch's pages, like row names, dates and the month shown, so Wingspan can place its additions next to Monarch's. Also Monarch's business filter on the page and how Recurring is grouped, so Wingspan can follow them.
 - **Authentication information:** Monarch's CSRF cookie, sent only back to Monarch's API with Wingspan's requests, the same way Monarch's web app does. During a Costco sync, the sign-in token Costco's own page sends with its receipts request, kept only in that tab's memory and sent only back to Costco with the same request. Neither is stored or sent anywhere else.
 - **Personally identifiable information:** the signed-in household's ID from Monarch's saved session, used only to keep each household's data apart in this browser. Nothing else from the session is kept, and the ID is never sent anywhere.
