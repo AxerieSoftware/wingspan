@@ -24,7 +24,7 @@ Up to 132 characters, the same as `description` in `wxt.config.ts`.
 > • Loan payments, tied to the loan so its balance can be estimated after each one.
 >
 > CASH FLOW
-> • Projected balances: checking day by day, with recurring income and expenses, bills, everyday spending and card payments.
+> • Projected balances: checking day by day, with recurring income and expenses, bills, loan payments, everyday spending and card payments.
 > • Free cash: how much you can spend from checking today and still keep a minimum balance, split into money set aside for goals and money that's actually free.
 > • Credit left: when checking runs low, which cards you'd use (in the order you choose), then your reserves.
 >
