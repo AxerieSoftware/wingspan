@@ -14,10 +14,11 @@ const GET_TRANSACTIONS_QUERY = `
 		allTransactions(filters: $filters) {
 			totalCount
 			results(offset: $offset, limit: $limit, orderBy: date) {
-				id date amount plaidName isRecurring hideFromReports pending
+				id date amount plaidName hideFromReports pending
 				merchant { id name logoUrl }
 				category { id name icon group { type } }
 				account { id }
+				recurrenceGroup { id }
 			}
 		}
 	}
@@ -50,11 +51,11 @@ const MonarchTransactionSchema = v.object({
 	amount: v.number(),
 	plaidName: v.nullish(v.string()),
 	merchant: v.nullish(v.object({ id: v.string(), name: v.string(), logoUrl: v.nullish(v.string()) })),
-	isRecurring: v.nullish(v.boolean()),
 	hideFromReports: v.nullish(v.boolean()),
 	pending: v.nullish(v.boolean()),
 	category: v.nullish(v.object({ id: v.string(), name: v.string(), icon: v.nullish(v.string()), group: v.nullish(v.object({ type: v.string() })) })),
-	account: v.nullish(v.object({ id: v.string() }))
+	account: v.nullish(v.object({ id: v.string() })),
+	recurrenceGroup: v.nullish(v.object({ id: v.string() }))
 });
 
 const MonarchTaggedTransactionSchema = v.object({
@@ -139,7 +140,7 @@ export class MonarchTransactionsClient {
 			logoUrl: result.merchant?.logoUrl ?? undefined,
 			category: result.category ? { id: result.category.id, name: result.category.name, icon: result.category.icon ?? null, groupType: result.category.group?.type } : undefined,
 			accountId: result.account?.id,
-			isRecurring: result.isRecurring ?? false,
+			recurrenceGroupId: result.recurrenceGroup?.id,
 			hideFromReports: result.hideFromReports ?? false,
 			pending: result.pending ?? false
 		};

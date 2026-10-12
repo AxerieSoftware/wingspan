@@ -16,16 +16,26 @@ describe('spending pace', () => {
 		const transactions = SIX_MONTHS.flatMap(month => [
 			spent(`${month}-05`, 100),
 			spent(`${month}-06`, -20),
-			spent(`${month}-07`, 1450, CHECKING, { isRecurring: true }),
+			spent(`${month}-07`, 1450, CHECKING, { recurrenceGroupId: 'Rent' }),
 			spent(`${month}-08`, -3200, CHECKING, { category: { id: 'pay', name: 'Paychecks', icon: null, groupType: 'income' } }),
 			spent(`${month}-09`, 500, CHECKING, { category: { id: 'card', name: 'Credit Card Payment', icon: null, groupType: 'transfer' } }),
 			spent(`${month}-10`, 70, CHECKING, { hideFromReports: true }),
 			spent(`${month}-11`, 140, CHECKING, { id: `lesson-${month}` })
 		]);
 
-		const { pace } = plannerFor().plan(input({ transactions, itemTransactionIds: new Set(SIX_MONTHS.map(month => `lesson-${month}`)) }));
+		const recurringFlows = [recurringFlow('Rent', 'expense', '2026-10-07', -1450)];
+
+		const { pace } = plannerFor().plan(input({ transactions, recurringFlows, itemTransactionIds: new Set(SIX_MONTHS.map(month => `lesson-${month}`)) }));
 
 		expect(pace.monthlyByAccountId.get(CHECKING)).toBe(80);
+	});
+
+	it('keeps payments Monarch tied to a recurring item it no longer projects, since nothing else counts them', () => {
+		const transactions = SIX_MONTHS.map(month => spent(`${month}-07`, 30, CHECKING, { recurrenceGroupId: 'Old gym' }));
+
+		const { pace } = plannerFor().plan(input({ transactions }));
+
+		expect(pace.monthlyByAccountId.get(CHECKING)).toBe(30);
 	});
 
 	it("doesn't use one large purchase on a long-unused card as its pace when the household has full months", () => {

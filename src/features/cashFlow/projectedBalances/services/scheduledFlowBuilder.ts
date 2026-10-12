@@ -2,6 +2,7 @@ import type { Calendar } from '../../../../common/calendar';
 import { ENDED_OCCURRENCE_STATUSES, MonarchOccurrenceStatus, MonarchRecurringType } from '../../../../monarch/api/models/monarchValues';
 import { occurrenceAccountId, type RecurringFlow } from '../../../../monarch/api/models/recurringFlow';
 import type { ExpectedIncomeKind } from '../../../recurring/expectedIncome/expectedIncomeKind';
+import type { LoanPaymentKind } from '../../../recurring/loanPayments/loanPaymentKind';
 import type { ManualBillKind } from '../../../recurring/manualBills/manualBillKind';
 import type { Occurrence } from '../../../recurring/recurringItems/models/occurrence';
 import type { RecurringItem } from '../../../recurring/recurringItems/models/recurringItem';
@@ -19,7 +20,7 @@ export interface ProjectedAccounts {
 }
 
 /**
- * Monarch's recurring income and expenses, and Wingspan's bills and income, from today to the end date.
+ * Monarch's recurring income and expenses, and Wingspan's bills, loan payments and income, from today to the end date.
  * Flows through checking have no accountId; flows on a card keep the card's id. Flows on any other account are left out.
  */
 export class ScheduledFlowBuilder {
@@ -28,23 +29,48 @@ export class ScheduledFlowBuilder {
 		private readonly recurrence: RecurrenceCalculator,
 		private readonly payments: RecurringPaymentCalculator,
 		private readonly manualBills: ManualBillKind,
+		private readonly loanPayments: LoanPaymentKind,
 		private readonly expectedIncome: ExpectedIncomeKind
 	) {}
 
-	/** Monarch's flows, then Wingspan's bills and income, unsorted. dueDayByRecurrenceId moves an item that's due once in a month to the household's chosen day. */
+	/**
+	 * Monarch's flows, then Wingspan's bills and income, unsorted. dueDayByRecurrenceId moves an item that's due once in a
+	 * month to the household's chosen day. `paidRecurrenceIdsByItemId` holds the Monarch recurring items each Wingspan item's payments belong to.
+	 */
 	public flows(
 		recurringFlows: RecurringFlow[],
 		outstandingOccurrences: Occurrence[],
 		recurringItems: RecurringItem[],
+		paidRecurrenceIdsByItemId: ReadonlyMap<string, ReadonlySet<string>>,
 		accounts: ProjectedAccounts,
 		dueDayByRecurrenceId: Readonly<Record<string, number>>,
 		endDate: string
 	): ScheduledFlow[] {
+		const monarchRecurrenceIds = this.projectedExpenseRecurrenceIds(recurringFlows, accounts);
+		// A bill Monarch already projects, such as a loan payment it found on its own, is counted once, from Monarch's flow.
+		const isProjectedByMonarch = (item: RecurringItem) => [...(paidRecurrenceIdsByItemId.get(item.id) ?? [])].some(recurrenceId => monarchRecurrenceIds.has(recurrenceId));
+		const bills = recurringItems.filter(item => this.isBill(item) && !isProjectedByMonarch(item));
 		return [
 			...this.monarchFlows(recurringFlows, accounts, dueDayByRecurrenceId, endDate),
-			...this.billFlows(outstandingOccurrences, recurringItems, accounts, endDate),
+			...this.billFlows(bills, outstandingOccurrences, accounts, endDate),
 			...this.incomeFlows(outstandingOccurrences, recurringItems, accounts, endDate)
 		];
+	}
+
+	/** Manual bills and loan payments are owed the same way. */
+	private isBill(item: RecurringItem): boolean {
+		return this.manualBills.owns(item) || this.loanPayments.owns(item);
+	}
+
+	/** Monarch's recurring expenses with an occurrence from today on an account the projection follows. */
+	private projectedExpenseRecurrenceIds(recurringFlows: RecurringFlow[], accounts: ProjectedAccounts): Set<string> {
+		const today = this.calendar.today();
+		return new Set(
+			recurringFlows.flatMap(flow => {
+				const isProjected = flow.occurrences.some(occurrence => occurrence.date >= today && this.projectedAccount(occurrenceAccountId(flow, occurrence), accounts) !== null);
+				return flow.recurrenceGroup.recurringType === MonarchRecurringType.expense && isProjected ? [flow.recurrenceGroup.id] : [];
+			})
+		);
 	}
 
 	/**
@@ -89,21 +115,22 @@ export class ScheduledFlowBuilder {
 	}
 
 	/** Bills still owed, due today at the latest, and each bill's further due dates. A bill with no account is paid from checking. */
-	private billFlows(outstandingOccurrences: Occurrence[], recurringItems: RecurringItem[], accounts: ProjectedAccounts, endDate: string): ScheduledFlow[] {
+	private billFlows(bills: RecurringItem[], outstandingOccurrences: Occurrence[], accounts: ProjectedAccounts, endDate: string): ScheduledFlow[] {
+		const billIds = new Set(bills.map(item => item.id));
 		const today = this.calendar.today();
 		const flows: ScheduledFlow[] = [];
 
 		for (const occurrence of outstandingOccurrences) {
 			const projectedAccount = this.projectedAccount(occurrence.item.matchRule?.accountId, accounts);
-			if (!this.manualBills.owns(occurrence.item) || occurrence.paid || projectedAccount === null) continue;
+			if (!billIds.has(occurrence.item.id) || occurrence.paid || projectedAccount === null) continue;
 			flows.push({ date: occurrence.dueDate < today ? today : occurrence.dueDate, amount: -occurrence.amount, label: occurrence.item.name, kind: 'bill', accountId: projectedAccount });
 		}
 
 		const listedKeys = new Set(outstandingOccurrences.map(occurrence => occurrence.key));
 		const tomorrow = this.calendar.addDays(today, 1);
-		for (const item of recurringItems) {
+		for (const item of bills) {
 			const projectedAccount = this.projectedAccount(item.matchRule?.accountId, accounts);
-			if (!this.manualBills.owns(item) || !item.active || projectedAccount === null) continue;
+			if (!item.active || projectedAccount === null) continue;
 
 			for (const dueDate of this.recurrence.dueDates(item.recurrence, tomorrow, endDate)) {
 				if (!listedKeys.has(this.payments.occurrenceKey(item.id, dueDate))) flows.push({ date: dueDate, amount: -item.amount, label: item.name, kind: 'bill', accountId: projectedAccount });

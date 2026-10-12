@@ -21,6 +21,8 @@ interface MonarchRecurring {
 	accountId: string | null;
 	category: Category;
 	isActive?: boolean;
+	/** The merchant its payments go to, when it isn't named after the item. */
+	merchant?: string;
 }
 
 interface Category {
@@ -149,6 +151,7 @@ export class Household {
 	private hasPlus = false;
 	private hsaTags: Record<HsaExpense['tag'], TransactionTag> | null = null;
 	private hasLoanPayment = false;
+	private isLoanInMonarchRecurring = false;
 	private hasCardInterest = false;
 	/** Loan balances entered through Monarch's account edit, by account id, as amounts owed. */
 	private readonly enteredLoanBalances = new Map<string, number>();
@@ -210,6 +213,11 @@ export class Household {
 		this.hasLoanPayment = true;
 	}
 
+	/** Has Monarch track the auto loan's payment as a recurring bill of its own, with the payment tied to it. */
+	public addLoanPaymentToMonarchRecurring(): void {
+		this.isLoanInMonarchRecurring = true;
+	}
+
 	/** Charges the rewards card interest ten days ago, as when a statement wasn't paid in full. */
 	public addCardInterest(): void {
 		this.hasCardInterest = true;
@@ -228,7 +236,17 @@ export class Household {
 	}
 
 	private get monarchRecurring(): MonarchRecurring[] {
-		return this.hasBusiness ? [...MONARCH_RECURRING, ...BUSINESS_RECURRING] : MONARCH_RECURRING;
+		const autoLoan: MonarchRecurring = {
+			id: 'rg-auto-loan',
+			name: 'Auto Loan',
+			day: this.dayOfMonth(this.loanPaymentDate),
+			amount: -LOAN_PAYMENT,
+			recurringType: 'expense',
+			accountId: 'acct-checking',
+			category: CATEGORIES.loanPayment,
+			merchant: 'Fabrikam Auto Finance'
+		};
+		return [...MONARCH_RECURRING, ...(this.hasBusiness ? BUSINESS_RECURRING : []), ...(this.isLoanInMonarchRecurring ? [autoLoan] : [])];
 	}
 
 	public get wingspanAccounts(): readonly StoredAccount[] {
@@ -420,7 +438,7 @@ export class Household {
 						status,
 						account,
 						category: recurring.category,
-						merchant: { id: `merchant-${recurring.id}`, name: recurring.name, logoUrl: null }
+						merchant: { id: `merchant-${recurring.merchant ?? recurring.id}`, name: recurring.merchant ?? recurring.name, logoUrl: null }
 					}
 				};
 			})
@@ -503,7 +521,14 @@ export class Household {
 			transaction('tx-check-2', this.monthDay(3, 9), -140, 'CHECK # 0000002024', 'Maple Music', 'acct-checking', CATEGORIES.lessons),
 			transaction('tx-coffee', this.dayOffset(-2), -5.25, 'CORNER CAFE', 'Corner Cafe', 'acct-rewards', CATEGORIES.coffee),
 			...(this.hasCardInterest ? [transaction('tx-rewards-interest', this.dayOffset(-10), -7.88, 'INTEREST CHARGE ON PURCHASES', 'Rewards Bank', 'acct-rewards', CATEGORIES.groceries)] : []),
-			...(this.hasLoanPayment ? [transaction('tx-auto-loan', this.loanPaymentDate, -LOAN_PAYMENT, 'FABRIKAM AUTO LOAN PMT', 'Fabrikam Auto Finance', 'acct-checking', CATEGORIES.loanPayment)] : []),
+			...(this.hasLoanPayment
+				? [
+						{
+							...transaction('tx-auto-loan', this.loanPaymentDate, -LOAN_PAYMENT, 'FABRIKAM AUTO LOAN PMT', 'Fabrikam Auto Finance', 'acct-checking', CATEGORIES.loanPayment),
+							recurrenceGroup: this.isLoanInMonarchRecurring ? { id: 'rg-auto-loan' } : null
+						}
+					]
+				: []),
 			// Everyday spending: groceries on the rewards card, gas from checking.
 			...[1, 2, 3, 4, 5, 6].map(monthsAgo =>
 				transaction(`tx-grocer-${monthsAgo}`, this.monthDay(monthsAgo, 8), -(300 + monthsAgo * 10), 'GREEN GROCER', 'Green Grocer', 'acct-rewards', CATEGORIES.groceries)
@@ -514,11 +539,11 @@ export class Household {
 			...Array.from({ length: 12 }, (_, weeksAgo) =>
 				transaction(`tx-payout-${weeksAgo}`, this.dayOffset(-7 * weeksAgo - 1), 145 + (weeksAgo % 3) * 145, 'FABRIKAM TRANSFER', 'Fabrikam Payouts', 'acct-checking', CATEGORIES.clientPayments)
 			),
-			// Paychecks are deposited to checking; Monarch's recurring items cover them, so they're marked recurring.
+			// Paychecks are deposited to checking; Monarch ties each to its recurring item.
 			...[1, 2, 3, 4, 5, 6].flatMap(monthsAgo =>
 				[1, 15].map(day => ({
 					...transaction(`tx-pay-${monthsAgo}-${day}`, this.monthDay(monthsAgo, day), 3200, 'EMPLOYER PAYROLL', 'Employer', 'acct-checking', CATEGORIES.paychecks),
-					isRecurring: true
+					recurrenceGroup: { id: `rg-pay-${day}` }
 				}))
 			)
 		];

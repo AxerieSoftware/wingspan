@@ -101,6 +101,8 @@ export interface ProjectionInput {
 	settledOccurrences?: Occurrence[];
 	/** Payments matched to Wingspan's items, kept out of everyday spending. */
 	itemTransactionIds: ReadonlySet<string>;
+	/** The Monarch recurring items each Wingspan item's matched payments belong to, so a bill Monarch also projects isn't counted twice. */
+	paidRecurrenceIdsByItemId: ReadonlyMap<string, ReadonlySet<string>>;
 	owedByAccountId: BalancesByAccountId;
 	cushion: number;
 	/** Free cash keeps the cushion covered for this many days, or until the next payday if that's later. */
