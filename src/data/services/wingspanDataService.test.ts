@@ -186,6 +186,22 @@ describe('saving in Monarch across browsers', () => {
 		expect(monarch.savedData()?.cashSettings.cushion).toBe(500);
 	});
 
+	it('keeps showing a change while an earlier change is still saving', async () => {
+		const monarch = new FakeMonarch();
+		const a = serviceFor(monarch);
+		await a.load();
+
+		const firstSave = a.update(addDueDay('rent', 1));
+		const secondSave = a.update(addDueDay('gym', 5));
+		const shownDueDays: Record<string, number>[] = [];
+		const unsubscribe = a.data.subscribe(data => shownDueDays.push(data.recurringDueDates.dueDatesByRecurrenceId));
+		await Promise.all([firstSave, secondSave]);
+		unsubscribe();
+
+		expect(shownDueDays.every(dueDays => dueDays.gym === 5)).toBe(true);
+		expect(monarch.savedData()?.recurringDueDates.dueDatesByRecurrenceId).toEqual({ rent: 1, gym: 5 });
+	});
+
 	it('ends up with one account when two tabs save for the first time', async () => {
 		const monarch = new FakeMonarch();
 		const [first, second] = [serviceFor(monarch), serviceFor(monarch)];

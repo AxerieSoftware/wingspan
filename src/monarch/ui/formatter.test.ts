@@ -15,4 +15,9 @@ describe('money', () => {
 		expect(formatter.money(1234.565)).toBe('$1,234.57');
 		expect(formatter.money(-12.5)).toBe('-$12.50');
 	});
+
+	it('rounds half a dollar away from zero, whatever the sign', () => {
+		expect(formatter.wholeMoney(384.5)).toBe('$385');
+		expect(formatter.wholeMoney(-384.5)).toBe('-$385');
+	});
 });

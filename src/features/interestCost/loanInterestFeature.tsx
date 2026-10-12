@@ -109,8 +109,9 @@ export class LoanInterestFeature implements WingspanFeature {
 
 		const { entered } = state;
 		const loanPayments = this.recurring.itemRepository.data.peek().recurringItems.filter(item => this.recurring.loanPayments.owns(item) && item.loanAccountId === accountId);
-		const paymentsSince = loanPayments
-			.flatMap(item => this.recurring.payments.matchingTransactions(item, snapshot.transactions))
+		// Two Loan payment items on one loan can match the same payment, which is only paid once.
+		const matchedTransactions = new Map(loanPayments.flatMap(item => this.recurring.payments.matchingTransactions(item, snapshot.transactions)).map(transaction => [transaction.id, transaction]));
+		const paymentsSince = [...matchedTransactions.values()]
 			.filter(transaction => !transaction.pending && transaction.date > entered.date)
 			.map(transaction => ({ date: transaction.date, amount: Math.abs(transaction.amount) }));
 		const hasLoanPayment = loanPayments.length > 0;
