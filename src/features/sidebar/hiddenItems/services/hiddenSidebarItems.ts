@@ -1,4 +1,5 @@
 import { type ReadonlySignal, type Signal, signal } from '@preact/signals-core';
+import { isSameValue } from '../../../../common/sameValue';
 import type { SidebarItem } from '../../../../monarch/pages/sidebar/sidebarPage';
 
 /** In Monarch's local storage, not the extension's, so the early script can hide items before Monarch's app starts. */
@@ -35,7 +36,7 @@ export class HiddenSidebarItems {
 
 	/** Updates `items` from the sidebar. */
 	public follow(items: readonly SidebarItem[]): void {
-		if (JSON.stringify(items) !== JSON.stringify(this.sidebarItems.peek())) this.sidebarItems.value = items;
+		if (!isSameValue(items, this.sidebarItems.peek())) this.sidebarItems.value = items;
 	}
 
 	/** Hides or shows an item and saves the choice. */

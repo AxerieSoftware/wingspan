@@ -47,13 +47,21 @@ export class BusinessEntityView {
 			// A business that was deleted, or nothing chosen yet, falls back to Household.
 			return chosen && businesses.some(business => business.id === chosen) ? chosen : HOUSEHOLD_ENTITY_ID;
 		});
+		// An equal scope keeps the same object, so moving between pages that show the same entities doesn't recompute what depends on it.
+		let lastScope: EntityScope | null = null;
 		this.scope = computed(() => {
-			const businesses = this.businessList.value ?? [];
-			const monarchFilter = this.monarchFilter.value;
-			if (monarchFilter) return this.businessList.value ? EntityScope.fromFilter(monarchFilter, businesses) : EntityScope.assumed(monarchFilter);
-			const workspace = this.workspace.value;
-			return workspace ? EntityScope.fromFilter([workspace], businesses) : EntityScope.everything(businesses);
+			const scope = this.currentScope();
+			if (!lastScope || !isSameValue(scope, lastScope)) lastScope = scope;
+			return lastScope;
 		});
+	}
+
+	private currentScope(): EntityScope {
+		const businesses = this.businessList.value ?? [];
+		const monarchFilter = this.monarchFilter.value;
+		if (monarchFilter) return this.businessList.value ? EntityScope.fromFilter(monarchFilter, businesses) : EntityScope.assumed(monarchFilter);
+		const workspace = this.workspace.value;
+		return workspace ? EntityScope.fromFilter([workspace], businesses) : EntityScope.everything(businesses);
 	}
 
 	/** Null until businesses load from Monarch. */

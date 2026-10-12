@@ -140,10 +140,7 @@ export class CardForecaster {
 									.filter(occurrence => occurrence.paid)
 									.map(occurrence => [occurrence.dueDate, { date: occurrence.matchedTransaction?.date ?? occurrence.dueDate, amount: Math.abs(occurrence.matchedTransaction?.amount ?? 0) }])
 							),
-							postedCharges: this.postedCharges(accountId, transactions),
-							postedPayments: this.postedPayments(accountId, transactions),
-							postedCredits: this.postedCredits(accountId, transactions),
-							pendingCharges: this.pendingCharges(accountId, transactions)
+							...this.postedActivity(accountId, transactions)
 						}
 					: {
 							firstStatementDueDate: owedNow.at(-1)?.dueDate,
@@ -170,10 +167,7 @@ export class CardForecaster {
 					hasAmount: owedByAccountId[account.id] !== undefined,
 					isFirstDueDateOwedToday: true,
 					...this.unlinkedDueDates(account.id, recurringFlows, transactions, endDate),
-					postedCharges: this.postedCharges(account.id, transactions),
-					postedPayments: this.postedPayments(account.id, transactions),
-					postedCredits: this.postedCredits(account.id, transactions),
-					pendingCharges: this.pendingCharges(account.id, transactions),
+					...this.postedActivity(account.id, transactions),
 					typicalPayment: 0,
 					...this.termsOf(account, lastInterestByAccountId, owedByAccountId)
 				})
@@ -273,12 +267,21 @@ export class CardForecaster {
 		};
 	}
 
-	/** Payments that weren't returned. A returned payment and its return are both left out, since together they neither pay nor charge anything. */
-	private postedPayments(accountId: string, transactions: Transaction[]): PostedAmount[] {
-		const { paymentIds } = this.cardPayments.returnedPayments(accountId, transactions);
+	/** A Monarch card's posted and pending activity. A returned payment and its return are both left out, since together they neither pay nor charge anything. */
+	private postedActivity(accountId: string, transactions: Transaction[]): Pick<CardSchedule, 'postedCharges' | 'postedPayments' | 'postedCredits' | 'pendingCharges'> {
+		const { paymentIds, returnIds } = this.cardPayments.returnedPayments(accountId, transactions);
+		return {
+			postedCharges: this.postedCharges(accountId, transactions, returnIds),
+			postedPayments: this.postedPayments(accountId, transactions, paymentIds),
+			postedCredits: this.postedCredits(accountId, transactions),
+			pendingCharges: this.pendingCharges(accountId, transactions)
+		};
+	}
+
+	private postedPayments(accountId: string, transactions: Transaction[], returnedPaymentIds: ReadonlySet<string>): PostedAmount[] {
 		return transactions
 			.filter(transaction => !transaction.pending)
-			.filter(transaction => this.cardPayments.isPaymentToCard(transaction, accountId) && !paymentIds.has(transaction.id))
+			.filter(transaction => this.cardPayments.isPaymentToCard(transaction, accountId) && !returnedPaymentIds.has(transaction.id))
 			.map(transaction => ({ date: transaction.date, amount: transaction.amount, isDescribedAsPayment: this.cardPayments.isDescribedAsPayment(transaction) }));
 	}
 
@@ -288,8 +291,7 @@ export class CardForecaster {
 			.map(transaction => ({ date: transaction.date, amount: transaction.amount }));
 	}
 
-	private postedCharges(accountId: string, transactions: Transaction[]): PostedAmount[] {
-		const { returnIds } = this.cardPayments.returnedPayments(accountId, transactions);
+	private postedCharges(accountId: string, transactions: Transaction[], returnIds: ReadonlySet<string>): PostedAmount[] {
 		return transactions
 			.filter(transaction => !transaction.pending && transaction.accountId === accountId && transaction.amount < 0 && !returnIds.has(transaction.id))
 			.map(transaction => ({ date: transaction.date, amount: -transaction.amount }));

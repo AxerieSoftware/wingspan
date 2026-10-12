@@ -96,7 +96,6 @@ export class RecurringLineBuilder {
 			dueDate: (unpaidOccurrences[0] ?? occurrences.at(-1))?.dueDate ?? '',
 			paid: unpaidOccurrences.length === 0,
 			overdue: unpaidOccurrences.some(occurrence => occurrence.overdue),
-			carried: occurrences.every(occurrence => occurrence.carried),
 			amount: occurrences.reduce((total, occurrence) => total + occurrence.amount, 0),
 			lastPaidDate: null,
 			nextDueDate: null,

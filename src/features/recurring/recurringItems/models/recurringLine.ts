@@ -9,7 +9,6 @@ export interface RecurringLine {
 	dueDate: string;
 	paid: boolean;
 	overdue: boolean;
-	carried: boolean;
 	amount: number;
 	/** The amount owed is unknown, e.g. a card with no Monarch balance and no typical payment. Its amount isn't $0. */
 	amountUnknown?: boolean;

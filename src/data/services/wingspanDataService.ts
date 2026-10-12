@@ -213,14 +213,12 @@ export class WingspanDataService {
 	/** If another browser saved at the same time, re-read Monarch and merge on top of what it saved. */
 	private async syncWithMonarch(): Promise<void> {
 		let monarchEnvelope = await this.loadAccount();
-		for (let attempt = 1; ; attempt++) {
-			try {
-				return await this.syncWithAccount(monarchEnvelope);
-			} catch (error) {
-				if (!(error instanceof ETagMismatchError) || attempt >= MAX_SAVE_ATTEMPTS) throw error;
+		await this.retryOnETagMismatch(
+			() => this.syncWithAccount(monarchEnvelope),
+			async () => {
 				monarchEnvelope = await this.loadAccount();
 			}
-		}
+		);
 	}
 
 	private async syncWithAccount(monarchEnvelope: Envelope<WingspanData> | undefined): Promise<void> {
@@ -241,10 +239,7 @@ export class WingspanDataService {
 		// Nothing to add from this browser, so skip the write; it would only make every other browser re-read it.
 		if (merged && !isSameValue(merged, monarchEnvelope.value)) return this.storeInMonarch(merged, monarchEnvelope);
 
-		this.show(monarchEnvelope.value);
-		await this.saveInBrowser(() => monarchEnvelope.value);
-		await this.saveSyncedCopy(monarchEnvelope.value, monarchEnvelope.etag);
-		if (this.hasUnsavedChanges) await this.setUnsavedChanges(false);
+		await this.adopt(monarchEnvelope.value, monarchEnvelope.etag);
 	}
 
 	private async saveInMonarch(change: DataChange): Promise<void> {
@@ -253,40 +248,53 @@ export class WingspanDataService {
 		// If another tab in this browser saved since, the synced copy has moved ahead, so this page's copy is stale and gets re-read.
 		const syncedETag = (await this.syncedCopy.load())?.etag;
 		let baseEnvelope = this.accountEnvelope && this.accountEnvelope.etag === syncedETag ? this.accountEnvelope : await this.loadAccount();
-		for (let attempt = 1; ; attempt++) {
+		await this.retryOnETagMismatch(
 			// Before the account exists, this browser's copy is the latest data.
-			const baseData = baseEnvelope?.value ?? this.browserEnvelope?.value ?? emptyWingspanData();
-			try {
-				return await this.storeInMonarch(change(baseData), baseEnvelope);
-			} catch (error) {
-				if (!(error instanceof ETagMismatchError) || attempt >= MAX_SAVE_ATTEMPTS) throw error;
+			() => this.storeInMonarch(change(baseEnvelope?.value ?? this.browserEnvelope?.value ?? emptyWingspanData()), baseEnvelope),
+			async () => {
 				baseEnvelope = await this.loadAccount();
 			}
-		}
+		);
 	}
 
 	private async storeInMonarch(data: WingspanData, baseEnvelope: Envelope<WingspanData> | undefined): Promise<void> {
 		const isCreatingAccount = !this.accountStore.linkedAccountId;
 		this.accountEnvelope = await this.accountStore.store({ version: CURRENT_SCHEMA_VERSION, wingspanVersion: this.appVersion, etag: baseEnvelope?.etag ?? '', value: data });
+		await this.adopt(data, this.accountEnvelope.etag);
+		if (isCreatingAccount) this.latestNotice.value = { kind: 'accountCreated' };
+	}
+
+	/** Shows data that Monarch now holds and keeps this browser's copies in step with it. */
+	private async adopt(data: WingspanData, etag: string): Promise<void> {
 		this.show(data);
 		await this.saveInBrowser(() => data);
-		await this.saveSyncedCopy(data, this.accountEnvelope.etag);
+		await this.saveSyncedCopy(data, etag);
 		if (this.hasUnsavedChanges) await this.setUnsavedChanges(false);
-		if (isCreatingAccount) this.latestNotice.value = { kind: 'accountCreated' };
 	}
 
 	/** Applies the change to this browser's latest copy, so another tab's save isn't lost. */
 	private async saveInBrowser(change: DataChange): Promise<void> {
-		for (let attempt = 1; ; attempt++) {
-			const changedData = change(this.browserEnvelope?.value ?? emptyWingspanData());
-			try {
+		await this.retryOnETagMismatch(
+			async () => {
+				const changedData = change(this.browserEnvelope?.value ?? emptyWingspanData());
 				this.browserEnvelope = await this.browserStore.store({ version: CURRENT_SCHEMA_VERSION, wingspanVersion: this.appVersion, etag: this.browserEnvelope?.etag ?? '', value: changedData });
 				this.show(changedData);
 				this.hasBrowserCopy = true;
-				return;
+			},
+			async () => {
+				this.browserEnvelope = this.validate(await this.browserStore.load(), BROWSER_SOURCE);
+			}
+		);
+	}
+
+	/** Runs the operation, re-reading with `reload` and trying again when someone else saved in between, up to MAX_SAVE_ATTEMPTS times. */
+	private async retryOnETagMismatch(operation: () => Promise<void>, reload: () => Promise<void>): Promise<void> {
+		for (let attempt = 1; ; attempt++) {
+			try {
+				return await operation();
 			} catch (error) {
 				if (!(error instanceof ETagMismatchError) || attempt >= MAX_SAVE_ATTEMPTS) throw error;
-				this.browserEnvelope = this.validate(await this.browserStore.load(), BROWSER_SOURCE);
+				await reload();
 			}
 		}
 	}

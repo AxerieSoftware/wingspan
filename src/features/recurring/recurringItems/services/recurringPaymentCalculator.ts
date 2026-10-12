@@ -52,8 +52,7 @@ export class RecurringPaymentCalculator {
 		const candidatesByItemId = this.candidatesByItemId(recurringData.recurringItems, transactions);
 		const settledOccurrences = this.allocate(recurringData, candidatesByItemId, owedByAccountId, transactions);
 		const settledByKey = new Map(settledOccurrences.map(occurrence => [occurrence.key, occurrence]));
-		const settledTransactionIds = new Set(settledOccurrences.flatMap(occurrence => (occurrence.matchedTransaction ? [occurrence.matchedTransaction.id] : [])));
-		const historyUsedTransactionIds = new Set(settledTransactionIds);
+		const historyUsedTransactionIds = new Set(settledOccurrences.flatMap(occurrence => (occurrence.matchedTransaction ? [occurrence.matchedTransaction.id] : [])));
 		const historiesByItemId = new Map(recurringData.recurringItems.map(item => [item.id, this.historyOf(item, candidatesByItemId.get(item.id) ?? [], settledByKey, historyUsedTransactionIds)]));
 
 		return {
@@ -200,7 +199,7 @@ export class RecurringPaymentCalculator {
 	 */
 	private closedOwingNothing(item: RecurringItem, dueDate: string, owedByAccountId: BalancesByAccountId, transactions: Transaction[]): boolean {
 		const accountId = this.kinds.linkedAccountId(item);
-		const owedToday = accountId === undefined ? undefined : owedByAccountId[accountId];
+		const owedToday = this.linkedOwed(item, owedByAccountId);
 		if (owedToday === undefined || dueDate > this.calendar.today()) return false;
 		const closeDate = this.calendar.addDays(dueDate, -STATEMENT_CLOSE_DAYS_BEFORE_DUE);
 		// Skip pending transactions: if the balance doesn't include them, they'd make the statement look paid down sooner than it was.
@@ -212,9 +211,14 @@ export class RecurringPaymentCalculator {
 
 	/** A card linked to an account Monarch shows as owing nothing. If the account has no balance, it isn't assumed to owe nothing. */
 	private owesNothing(item: RecurringItem, owedByAccountId: BalancesByAccountId): boolean {
-		const accountId = this.kinds.linkedAccountId(item);
-		const owed = accountId === undefined ? undefined : owedByAccountId[accountId];
+		const owed = this.linkedOwed(item, owedByAccountId);
 		return owed !== undefined && owed < CENT_TOLERANCE;
+	}
+
+	/** What the item's linked account owes, or undefined when it has none or Monarch has no balance for it. */
+	private linkedOwed(item: RecurringItem, owedByAccountId: BalancesByAccountId): number | undefined {
+		const accountId = this.kinds.linkedAccountId(item);
+		return accountId === undefined ? undefined : owedByAccountId[accountId];
 	}
 
 	/**
@@ -292,9 +296,9 @@ export class RecurringPaymentCalculator {
 			const transaction = transactions[index] ?? null;
 			const paid = settledOccurrence ? settledOccurrence.paid : transaction !== null;
 			// After the end of the month, only include due dates already paid early.
-			if ((!paid && this.isBeforeStart(item, dueDate)) || (!paid && dueDate > monthEnd)) return [];
+			if (!paid && (this.isBeforeStart(item, dueDate) || dueDate > monthEnd)) return [];
 			const upcoming = dueDate > today && !paid;
-			return [{ month: dueDate.slice(0, 7), dueDate, paid, amount: transaction ? Math.abs(transaction.amount) : null, paidDate: transaction?.date ?? null, upcoming, transaction }];
+			return [{ month: this.calendar.monthOf(dueDate), dueDate, paid, amount: transaction ? Math.abs(transaction.amount) : null, paidDate: transaction?.date ?? null, upcoming, transaction }];
 		});
 	}
 

@@ -93,8 +93,11 @@ export class RecurrenceCalculator {
 	/** Searches ahead at least two periods so a schedule due every few years is still found. */
 	public upcomingDue(recurrence: Recurrence, fromDate: string): string | null {
 		const { unit, every } = this.ruleOf(recurrence);
-		const lookaheadDays = Math.max(LOOKAHEAD_DAYS, 2 * every * PERIOD_DAYS[unit]);
-		return this.dueDates(recurrence, fromDate, this.calendar.addDays(fromDate, lookaheadDays))[0] ?? null;
+		const twoPeriodsDays = 2 * every * PERIOD_DAYS[unit];
+		// Two periods find the next date of a schedule that's running, without listing hundreds of days of dates.
+		const nearDue = this.dueDates(recurrence, fromDate, this.calendar.addDays(fromDate, twoPeriodsDays))[0];
+		if (nearDue !== undefined || twoPeriodsDays >= LOOKAHEAD_DAYS) return nearDue ?? null;
+		return this.dueDates(recurrence, fromDate, this.calendar.addDays(fromDate, LOOKAHEAD_DAYS))[0] ?? null;
 	}
 
 	/** Null once a schedule with a count has run out. */

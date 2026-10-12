@@ -5,14 +5,14 @@ import { getCollection } from "astro:content";
 const releasesUrl = "https://github.com/AxerieSoftware/wingspan/releases";
 
 // Feature pages are the ones with `saves`; the rest of the features folder explains Wingspan as a whole.
-const features = await getCollection("docs", (entry) => entry.id.startsWith("features/") && entry.data.saves !== undefined && entry.data.introduced !== undefined);
+const features = await getCollection("docs", (entry) => entry.id.startsWith("features/") && entry.data.saves !== undefined);
 const versionParts = (version: string) => version.split(".").map(Number);
 const newestFirst = (left: string, right: string) => {
 	const [leftParts, rightParts] = [versionParts(left), versionParts(right)];
 	const differingIndex = leftParts.findIndex((part, index) => part !== rightParts[index]);
 	return differingIndex === -1 ? 0 : rightParts[differingIndex] - leftParts[differingIndex];
 };
-const versions = [...new Set(features.map((feature) => feature.data.introduced as string))].sort(newestFirst);
+const versions = [...new Set(features.flatMap((feature) => feature.data.introduced ?? []))].sort(newestFirst);
 const releases = versions.map((version) => ({
 	version,
 	slug: `v${version.replaceAll(".", "-")}`,
