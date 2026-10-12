@@ -375,7 +375,7 @@
 			"card": "debt-paydown"
 		},
 		{
-			"text": "Forecasting, retirement, tax and what-if scenarios, and long-range balance projections",
+			"text": "Forecasting, retirement, tax and what-if scenarios, and balance projections years ahead",
 			"card": "forecasting"
 		},
 		{
@@ -450,7 +450,7 @@
 			"status": "Released October 2025"
 		},
 		"statements": {
-			"title": "Statements card in Recurring 2.0, not on the roadmap",
+			"title": "Statements card in Recurring 2.0",
 			"status": "Coming soon"
 		},
 		"business-filter": {
