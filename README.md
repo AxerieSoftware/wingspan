@@ -32,7 +32,7 @@ Wingspan is free and open source, and it'll stay that way. There's no subscripti
 
 ## Features
 
-Card payments and bills in Recurring, due dates, projected balances and free cash on Cash Flow, retail receipt syncing, and more. See the [feature guide](https://wingspan.axerie.com/features/).
+Card payments and bills in Recurring, due dates, projected balances and free cash on Cash Flow, loans paid down and what their interest costs, retail receipt syncing, and more. See the [feature guide](https://wingspan.axerie.com/features/).
 
 ## Install
 

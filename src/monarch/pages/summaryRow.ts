@@ -4,7 +4,7 @@ const STATISTIC_CARD_SELECTOR = '[data-external-id="deprecated-statistic-card"]'
 /** Matches Monarch's money format, as "-$1,250.00" or "$4,800". */
 const MONEY_PATTERN = /^(-)?\$([\d,]+(?:\.\d+)?)$/;
 /** Wingspan's cards in a row of totals, in the order they go after Monarch's. */
-const SUMMARY_CARDS = ['loansPaidDown'] as const;
+const SUMMARY_CARDS = ['loansPaidDown', 'interestCost'] as const;
 
 /** The classes of Monarch's own summary card and its parts, so Wingspan's card looks the same in every theme. */
 export interface SummaryCardLook {

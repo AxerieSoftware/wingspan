@@ -6,6 +6,9 @@ const ACCOUNT_DETAILS_PATH = /^\/accounts\/details\/([^/]+)$/;
 /** The main column, under the balance chart, holding the account's transactions or holdings. */
 const MAIN_COLUMN_SELECTOR = '[data-external-id="grid-item"][style*="grid-area: rec"]';
 
+/** Wingspan's cards on an account's page. Each shows on its own kind of account, so only one is there at a time. */
+export type AccountCard = 'hsaReimbursements' | 'loanInterest';
+
 /*
  * Monarch's page for one account: /accounts/details/<id>
  *
@@ -18,7 +21,7 @@ const MAIN_COLUMN_SELECTOR = '[data-external-id="grid-item"][style*="grid-area: 
  * +-------------------------------------------------+
  */
 export class AccountDetailsPage {
-	private card: MountedSlot | null = null;
+	private readonly cards = new Map<AccountCard, MountedSlot>();
 
 	public constructor(
 		private readonly window: Window,
@@ -35,20 +38,24 @@ export class AccountDetailsPage {
 		this.navigator.navigateTo(`/transactions/${transactionId}`);
 	}
 
-	/** Puts Wingspan's card first in the main column, or removes it while the column isn't there. */
-	public showCard(content: SlotContent): void {
+	/** Puts the card first in the main column, or removes it while the column isn't there. */
+	public showCard(card: AccountCard, content: SlotContent): void {
 		const mainColumnEl = this.window.document.querySelector<HTMLElement>(MAIN_COLUMN_SELECTOR);
 		if (!mainColumnEl) {
-			this.removeCard();
+			this.removeCard(card);
 			return;
 		}
 
-		this.card ??= MountedSlot.mount(this.window.document, content, WingspanAttribute.accountCard, { style: 'margin-bottom: var(--grid-spacing);' });
-		if (this.card.hostEl !== mainColumnEl.firstElementChild) mainColumnEl.prepend(this.card.hostEl);
+		let mounted = this.cards.get(card);
+		if (!mounted) {
+			mounted = MountedSlot.mount(this.window.document, content, WingspanAttribute.accountCard, { style: 'margin-bottom: var(--grid-spacing);' });
+			this.cards.set(card, mounted);
+		}
+		if (mounted.hostEl !== mainColumnEl.firstElementChild) mainColumnEl.prepend(mounted.hostEl);
 	}
 
-	public removeCard(): void {
-		this.card?.remove();
-		this.card = null;
+	public removeCard(card: AccountCard): void {
+		this.cards.get(card)?.remove();
+		this.cards.delete(card);
 	}
 }

@@ -21,9 +21,10 @@ Before building a feature, check the [roadmap](https://wingspan.axerie.com/roadm
   so every browser and everyone in the household sees the same data. The notes
   hold compact, versioned JSON under a line asking people not to edit them. If
   an edit leaves them unreadable, Wingspan reports it and doesn't save over
-  them. Other than that account, the only thing Wingspan writes to Monarch is
-  receipts from retail receipt sync. There's no server of its own: no
-  analytics, no tracking, no backend.
+  them. Other than that account, Wingspan writes to Monarch only when you ask:
+  receipts from retail receipt sync, and a manual loan's balance when you save
+  one with Update balance. There's no server of its own: no analytics, no
+  tracking, no backend.
 - **Cached in the browser.** Wingspan caches a copy in the browser for fast
   startup and for when Monarch can't be reached. If a change can't be saved to
   Monarch, it's kept there and saved once Monarch is reachable again. The cache

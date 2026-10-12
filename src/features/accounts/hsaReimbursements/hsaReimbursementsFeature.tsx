@@ -68,7 +68,7 @@ export class HsaReimbursementsFeature implements WingspanFeature {
 			void this.queryClient.invalidateQueries({ queryKey: [TAGS_QUERY] });
 			void this.queryClient.invalidateQueries({ queryKey: [TAGGED_TRANSACTIONS_QUERY] });
 		}
-		this.page.showCard({ render: cardEl => this.mountCard(cardEl) });
+		this.page.showCard('hsaReimbursements', { render: cardEl => this.mountCard(cardEl) });
 		this.renderCard();
 	}
 
@@ -80,7 +80,7 @@ export class HsaReimbursementsFeature implements WingspanFeature {
 
 	private hideCard(): void {
 		this.shownAccountId = null;
-		this.page.removeCard();
+		this.page.removeCard('hsaReimbursements');
 	}
 
 	private mountCard(cardEl: HTMLElement): () => void {

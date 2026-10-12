@@ -80,6 +80,18 @@
 					"cards": []
 				},
 				{
+					"name": "Interest cost",
+					"where": "Adds to Cash Flow, Reports and Accounts",
+					"description": "What your loans and carried card balances cost in interest a day, a month and a year",
+					"cards": []
+				},
+				{
+					"name": "Loan payments",
+					"where": "Adds to Recurring and each loan's page",
+					"description": "A loan's monthly payment, and an estimated new balance for a manual loan to save after it posts",
+					"cards": []
+				},
+				{
 					"name": "Retail receipt sync",
 					"where": "Adds to Transactions",
 					"description": "Store purchases sent to Monarch as receipts, so they're split into individual items like Amazon and Target orders. Currently Walmart and Costco.",

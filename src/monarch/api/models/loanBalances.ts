@@ -9,3 +9,9 @@ export interface LoanBalances {
 	endBalance: number | null;
 	currentBalance: number;
 }
+
+/** A manual loan's balance as last entered: what was owed, and the first day Monarch had it. */
+export interface EnteredBalance {
+	owed: number;
+	date: string;
+}

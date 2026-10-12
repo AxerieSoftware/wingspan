@@ -28,6 +28,7 @@ export default defineConfig({
 						{ label: "Expected income", slug: "features/expected-income" },
 						{ label: "Projected balances", slug: "features/projected-balances" },
 						{ label: "Loans paid down", slug: "features/loans-paid-down" },
+						{ label: "Interest cost", slug: "features/interest-cost" },
 						{ label: "Retail receipt sync", slug: "features/receipt-sync" },
 						{ label: "HSA reimbursements", slug: "features/hsa-reimbursements" },
 						{ label: "Workspaces", slug: "features/workspaces" },

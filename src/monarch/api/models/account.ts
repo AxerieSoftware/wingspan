@@ -24,6 +24,8 @@ export interface Account {
 	minimumPayment?: number | null;
 	/** Set when the account belongs to one of the household's businesses in Monarch. */
 	businessEntity?: { id: string } | null;
+	/** Whether the household enters its balance by hand, rather than Monarch syncing it. */
+	isManual?: boolean;
 }
 
 /** An account's notes, where Wingspan keeps the household's data. */

@@ -1,0 +1,45 @@
+---
+title: Interest cost
+description: What your loans and carried card balances cost in interest a day, a month and a year, and estimated balances for loans you enter by hand.
+introduced: 0.4.0
+saves: account
+---
+
+Interest is easy to lose track of, because on a loan you track by hand it never shows up as a transaction. Interest cost puts a number on it: what your debts cost each day, month and year at today's balances.
+
+## Where it shows
+
+- **Cash Flow** and **Reports**: **Interest a month**, after [Loans paid down](/features/loans-paid-down/), so you can see what you paid down next to what interest adds back. Hover it for the cost a day and a year, and each debt's rate and share.
+- **Accounts**: the **Loans** and **Credit Cards** groups say what their debts cost a month.
+- **Each loan's page**: an **Interest** card with the cost a day, a month and a year.
+
+## How it's counted
+
+- A loan counts when Monarch has an interest rate for it. Set it in the loan's account settings in Monarch. Without one, the loan's Interest card says so.
+- A card counts only when it was charged interest in about the last two statements. A card you pay in full each month costs no interest, so it isn't counted.
+- A card with no APR in Monarch gets the rate its last interest charge works out to, at most 36%.
+- A year's interest is the balance times the rate, a day's is a 365th of that and a month's a 12th. Most loans and carried card balances add interest daily, so this is close to what you're charged.
+- It counts the debts of whatever the page shows: Household, a business, or both. Hidden accounts aren't counted.
+
+## Keeping a manual loan current
+
+For a loan you track by hand in Monarch, Wingspan works out the new balance after each payment.
+
+### 1. Add the loan's payment on Recurring
+
+On **Recurring**, choose **Add recurring → Add manually**, then set **Type** to **Loan payment**. Choose the **Loan**, then the **Merchant** and a few of its payments, like a [manual bill](/features/manual-bills/#adding-a-bill). It shows with your bills, owing its monthly amount.
+
+### 2. Check the estimate after a payment
+
+Open the loan's page. The **Interest** card shows the balance you last entered and an estimate for today: that balance, plus daily interest since, minus payments since. Without a Loan payment, it adds interest only.
+
+### 3. Update the balance
+
+Choose **Update balance**. It starts at the estimate. Save it, or enter your servicer's amount if it's different. Monarch's page reloads to show the new balance.
+
+Wingspan changes the balance only when you save. Your servicer's amount can be a little lower, since most charge interest on the principal only.
+
+## Good to know
+
+- **Update balance** appears for loans you track by hand. A pending payment counts once it posts.
+- **Monarch has no balance for this loan yet** means the loan needs a first balance entered in Monarch.
