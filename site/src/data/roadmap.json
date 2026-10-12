@@ -183,17 +183,6 @@
 							"match": "Partial"
 						}
 					]
-				},
-				{
-					"name": "Account groups",
-					"where": "Adds to the Dashboard",
-					"description": "Your own groups of accounts with their totals, such as retirement apart from taxable investments",
-					"cards": [
-						{
-							"card": "dashboard-widgets",
-							"match": "Partial"
-						}
-					]
 				}
 			]
 		},
@@ -201,20 +190,6 @@
 			"id": "later",
 			"title": "Later",
 			"items": [
-				{
-					"name": "Trends",
-					"where": "Adds to Reports",
-					"description": "Spending by month, quarter and year side by side, compared to your budget",
-					"cards": [],
-					"asked": "Year over year and month over month tables"
-				},
-				{
-					"name": "Year-to-date budget",
-					"where": "Adds to Budget",
-					"description": "Budget and actual spending for the year so far, not just this month",
-					"cards": [],
-					"asked": "Annual or YTD budget view"
-				},
 				{
 					"name": "Remember filters and views",
 					"where": "Adds to Transactions and Reports",
@@ -235,13 +210,6 @@
 					"description": "Show budget amounts to the cent",
 					"cards": [],
 					"asked": "Cents in budget"
-				},
-				{
-					"name": "Compact layout",
-					"where": "Everywhere in Monarch",
-					"description": "Denser rows throughout Monarch",
-					"cards": [],
-					"asked": "Compact layout"
 				},
 				{
 					"name": "Easier bill setup",
@@ -401,6 +369,9 @@
 		},
 		{
 			"text": "Recurring detection and matching for anything Monarch can already match itself"
+		},
+		{
+			"text": "Spending trends, year-to-date budget pacing, account groups and compact Transactions and Budget screens, which the MM-Tweaks extension already does well"
 		}
 	],
 	"cards": {
