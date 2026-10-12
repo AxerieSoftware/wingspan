@@ -90,6 +90,110 @@ for (const theme of THEMES) {
 			await siteShot(page, 'manual-bills', theme, details);
 		});
 
+		test('manual bill editor', async ({ page, open }) => {
+			await openAsReturning(page, open);
+			await useTheme(page, theme);
+			const dialog = await addRecurring(page, 'Bill');
+			await chooseMerchant(page, dialog, 'Maple Music');
+			await dialog
+				.getByRole('checkbox', { name: /Maple Music/ })
+				.first()
+				.check();
+			await expect(dialog.getByRole('textbox', { name: 'Transaction contains' })).not.toHaveValue('');
+			await siteShot(page, 'manual-bill-editor', theme, dialog);
+		});
+
+		test('manual bill fields', async ({ page, open }) => {
+			await openAsReturning(page, open);
+			await useTheme(page, theme);
+			const dialog = await addRecurring(page, 'Bill');
+			await chooseMerchant(page, dialog, 'Maple Music');
+			await dialog
+				.getByRole('checkbox', { name: /Maple Music/ })
+				.first()
+				.check();
+			await dialog.getByRole('textbox', { name: 'Transaction contains' }).scrollIntoViewIfNeeded();
+			await siteShot(page, 'manual-bill-fields', theme, dialog);
+		});
+
+		test('card payment editor', async ({ page, open }) => {
+			await openAsReturning(page, open);
+			await useTheme(page, theme);
+			const dialog = await addRecurring(page, 'Card payment');
+			await dialog.getByRole('combobox', { name: 'Card' }).click();
+			await page.getByRole('option', { name: 'Not in Monarch' }).click();
+			await dialog.getByRole('textbox', { name: 'Name' }).fill('Store Card');
+			await dialog.getByRole('textbox', { name: 'Payment description contains' }).fill('4410');
+			await dialog.getByRole('textbox', { name: 'Typical payment' }).fill('88.40');
+			await dialog.getByRole('textbox', { name: 'Typical payment' }).blur();
+			await siteShot(page, 'card-payment-editor', theme, dialog);
+		});
+
+		test('loan payment editor', async ({ page, household, open }) => {
+			household.addLoanPayment();
+			await openAsReturning(page, open);
+			await useTheme(page, theme);
+			const dialog = await addRecurring(page, 'Loan payment');
+			await dialog.getByRole('combobox', { name: 'Loan' }).click();
+			await page.getByRole('option', { name: 'Auto Loan' }).click();
+			await chooseMerchant(page, dialog, 'Fabrikam Auto Finance');
+			await dialog
+				.getByRole('checkbox', { name: /Fabrikam Auto Finance/ })
+				.first()
+				.check();
+			await siteShot(page, 'loan-payment-editor', theme, dialog);
+		});
+
+		test('loans paid down and interest cost on Cash Flow', async ({ page, open }) => {
+			// Wide enough for the row of totals, which Wingspan's two cards make six.
+			await page.setViewportSize({ width: 1600, height: 900 });
+			await openCashFlow(page, open);
+			await useTheme(page, theme);
+			const summary = page.locator('[data-external-id="grid-item"][style*="grid-area: summary"]');
+			await expect(summary.getByTestId('loans-paid-down-card')).toContainText('$340');
+			await expect(summary.getByTestId('interest-cost-card')).toContainText('$49');
+			await siteShot(page, 'loans-paid-down', theme, summary, { pad: 16 });
+		});
+
+		test('interest cost on Accounts', async ({ page, household, open }) => {
+			household.addCardInterest();
+			await openAsReturning(page, open, '/accounts');
+			await useTheme(page, theme);
+			const loans = page.locator('[data-external-id="account-group-card"]').filter({ hasText: 'Auto Loan' });
+			await expect(loans.locator('[data-wingspan-account-group-note]')).toContainText('a month in interest');
+			await siteShot(page, 'interest-cost-accounts', theme, loans, { pad: 16 });
+		});
+
+		test("a loan's interest", async ({ page, household, open }) => {
+			household.addLoanPayment();
+			await openAsReturning(page, open, '/accounts/details/acct-loan');
+			await useTheme(page, theme);
+			const card = page.getByRole('group', { name: 'Interest', exact: true });
+			await expect(card).toContainText('paid since');
+			await card.scrollIntoViewIfNeeded();
+			await siteShot(page, 'loan-interest', theme, card);
+		});
+
+		test('update balance', async ({ page, household, open }) => {
+			household.addLoanPayment();
+			await openAsReturning(page, open, '/accounts/details/acct-loan');
+			await useTheme(page, theme);
+			await page.getByRole('group', { name: 'Interest', exact: true }).getByRole('button', { name: 'Update balance' }).click();
+			const dialog = page.getByRole('dialog', { name: 'Update balance' });
+			await expect(dialog.getByRole('textbox', { name: 'Balance' })).toHaveValue('$8,788.12');
+			await siteShot(page, 'update-balance', theme, dialog);
+		});
+
+		test('HSA tags', async ({ page, household, open }) => {
+			household.addHsaExpenses();
+			await openAsReturning(page, open, '/accounts/details/acct-hsa');
+			await useTheme(page, theme);
+			await page.getByRole('group', { name: 'HSA reimbursements' }).getByRole('button', { name: 'Choose tags' }).click();
+			const dialog = page.getByRole('dialog', { name: 'HSA tags' });
+			await expect(dialog).toBeVisible();
+			await siteShot(page, 'hsa-tags', theme, dialog);
+		});
+
 		test('expected income', async ({ page, open }) => {
 			await openAsReturning(page, open);
 			await useTheme(page, theme);

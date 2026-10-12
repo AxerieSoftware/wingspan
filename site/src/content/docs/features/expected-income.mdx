@@ -13,16 +13,27 @@ Expected income is what you usually take in: say $430 a week. [Projected balance
 
 <Screenshot name="expected-income" alt="Expected income's details: weekly, $430 expected, the deposits it matched, and the next one." />
 
-## Using it
+## Adding it
 
-1. On **Recurring**, choose **Add recurring → Add manually**, then **Income**.
-2. Pick the merchant and a few of its deposits. Wingspan fills in the name, schedule and account from them.
-3. Set **Expected amount** to what you usually take in each time, and save.
+1. On **Recurring**, choose **Add recurring → Add manually**, then set **Type** to **Income**.
+2. Choose the **Merchant** and tick a few of its deposits. Wingspan fills in the rest from them.
+3. Set **Expected amount** to what you usually take in each time, and choose **Add recurring**.
 
-Expected income sits in Monarch's **Income** table. Any deposit that matches counts as received, whatever its size.
+## The options
+
+- **Expected amount**: your average deposit, so it's fine if they vary.
+- **Frequency**, **Next due**, **Transaction contains** and **Paid into** work like a [manual bill's](/features/manual-bills/#the-options).
+
+## Reading it
+
+Expected income sits in Monarch's **Income** table:
+
+- **Expected** under the amount until it arrives, then the deposit's real amount.
+- **Received Oct 3** once a deposit matches. Income due more than once a month shows **2 of 4 received**.
+- **Not received Oct 3** when its date passed with no deposit.
 
 ## How it's counted
 
-- Every upcoming date adds the full expected amount. A small deposit doesn't lower the next one, since the amount is an average.
-- Deposits already received are in your balance, so they aren't counted again.
-- Income that didn't arrive isn't carried over as owed. It shows as not received, and the next date carries on as normal.
+- Any matching deposit counts as received, whatever its size.
+- Every upcoming date adds the full expected amount. A small deposit doesn't lower the next one.
+- Income that didn't arrive isn't carried over. The next date carries on as normal.

@@ -1,30 +1,51 @@
 ---
 title: Card payments
-description: What each credit card owes, when it's due, and whether checking can cover it.
+description: Each card's statement, when it's due, and whether checking can pay it, in Monarch's Statements card.
 introduced: 0.1.0
 saves: account
 ---
 
 import Screenshot from "../../../components/Screenshot.astro";
 
-Monarch shows your card balances, but its **Statements** card, meant for credit card and loan payments, says "Coming soon". Wingspan fills it in: each card's statement, when it's due, and whether checking can pay it on that day.
+Monarch shows your card balances, but its **Statements** card on Recurring, meant for credit card and loan payments, says "Coming soon". Wingspan fills it in: each card's statement, when it's due, and whether checking can pay it on that day.
 
 <Screenshot name="card-payments" alt="Recurring's Statements card filled in with three credit cards, each with its due date, statement amount and whether checking can pay it." />
 
-## What it tells you
+## Adding a card
 
-- Each card's statement balance and due date.
-- Whether checking can pay it in full on that day, only part of it, or not even the minimum, while keeping the amount you set aside in checking.
-- The minimum payment, from Monarch, or estimated by Wingspan when Monarch doesn't have one.
-- When a statement is paid. It counts as paid only once nothing is left on it.
-- What's still owed across your cards this month, and whether checking covers it.
+1. On **Recurring**, choose **Add recurring → Add manually**, then set **Type** to **Card payment**.
+2. Choose the **Card** and its **Due day**, then **Add recurring**.
 
-A card you pay but haven't linked in Monarch can still be tracked, by the payments that leave checking for it.
+For a card Monarch doesn't have, like a store card you pay from checking, choose **Not in Monarch** and fill in:
 
-## Using it
+- **Payment description contains**: text on its payments in checking, often the card's last four digits.
+- **Typical payment**: what you usually pay, used as the amount due.
 
-1. On **Recurring**, choose **Add recurring → Add manually**, then **Card payment**, and pick the card.
-2. On **Cash Flow**, open **Edit cash and cards** to choose which accounts are checking and how much to keep there.
+<Screenshot name="card-payment-editor" alt="Add recurring with Card payment chosen, for a card not in Monarch: name, due day, payment description and typical payment." />
+
+## Reading it
+
+Each card's row shows its statement and due date, and under the amount, what checking can do on that day:
+
+- **Can pay in full**, in green. If the statement is smaller than the card's balance, it says **Can pay the $412.80 statement**.
+- **Can pay $300**, in amber: some of it, but not all.
+- **Can pay $20 of $35 min**, in red: not even the minimum.
+- **~$35 est. min** means Monarch has no minimum for the card, so Wingspan estimates one: 1% of the statement plus a month's interest, at least $35. Add the real minimum in the card's details in Monarch to use it.
+
+These come from [Projected balances](/features/projected-balances/), after every bill due first and the amount you keep in checking. The footer adds up what's owed this month, or says **All paid**.
+
+## When a statement counts as paid
+
+- Only once nothing is left on it. A partial payment leaves it owed, and overdue after the due date.
+- A refund on the card isn't a payment, and a payment the bank returns doesn't count.
+- An unpaid statement folds into the next one instead of being owed twice.
+- A card that owes $0 in Monarch counts as paid.
+
+## Good to know
+
+- **Balance** under the amount means it's the card's balance in Monarch. **Typical** means it's the typical payment you set.
+- **Unknown** with **Set a typical payment** means a card not in Monarch has no typical payment yet. **No balance from Monarch** means Monarch hasn't reported the card's balance.
+- **Edit cash and cards** on Cash Flow sets which accounts are checking and how much to keep there.
 
 :::note
 When Monarch releases its Statements card, Wingspan's card payments will be deprecated and removed.

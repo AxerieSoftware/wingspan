@@ -1,6 +1,6 @@
 ---
 title: Manual bills
-description: Bills without a regular schedule, kept as unpaid until the payment clears.
+description: Bills Monarch can't spot on its own, like a check cashed whenever the landlord gets to it, kept owed until they're paid.
 introduced: 0.1.0
 saves: account
 ---
@@ -13,10 +13,35 @@ A manual bill has the due date you set and stays unpaid until its payment clears
 
 <Screenshot name="manual-bills" alt="A manual bill's details: its due day, amount, the payee it matches, and this month's payment still owed." />
 
-## Using it
+## Adding a bill
 
-1. On **Recurring**, choose **Add recurring → Add manually**, then **Bill**.
-2. Enter the name, amount and due date.
-3. When the payment clears, Wingspan finds it and marks the bill paid.
+1. On **Recurring**, choose **Add recurring → Add manually**, then set **Type** to **Bill**.
+2. Choose the **Merchant**, then tick a few of its past payments. Wingspan fills in the rest from them.
+3. Check the fields below, and choose **Add recurring**.
 
-Manual bills sit in Monarch's **Expenses** table with your other bills, in date order.
+<Screenshot name="manual-bill-editor" alt="Add recurring with Bill chosen: the merchant, a picked payment, and Match found: monthly, $140, around the 20th." />
+
+<Screenshot name="manual-bill-fields" alt="The bill's fields: Amount with Any amount, Frequency, Next due, Transaction contains and Paid from." />
+
+## The options
+
+- **Amount**: what the bill usually costs. A payment counts if it's within 10% or $5 of this, whichever is more.
+- **Any amount**: for a bill that changes every time, like a utility.
+- **Frequency** and **Next due**: weekly up to yearly, twice a month on two set days, or **Custom** for every so many weeks, months or years.
+- **Transaction contains**: text from the payment's description, like the landlord's name. This is how Wingspan finds the payment.
+- **Paid from**: the account it comes out of. Leave it on **Any account** unless the same text shows up in payments from other accounts.
+
+To change or stop a bill, use **Edit** or **Remove** in its menu on Recurring.
+
+## Reading it
+
+- **Due Oct 20** under the name, or **Next Oct 20** for a bill due more than once a month.
+- **Paid Oct 18** once a payment matches. A bill due more than once a month shows **2 of 4 paid**.
+- **Overdue Oct 20** when the due date has passed with no payment. An unpaid bill from an earlier month shows **Owed since** that date, and keeps showing as owed for up to six months.
+- Its details show each payment, and **No payment found** for any due date it missed.
+
+## Good to know
+
+- A payment counts from a few days before the due date, however late it is.
+- Each payment pays one due date, oldest first.
+- Changing the amount, schedule or match text starts the bill fresh. Moving only the due date keeps what's owed.
