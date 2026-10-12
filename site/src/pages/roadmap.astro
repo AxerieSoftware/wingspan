@@ -4,72 +4,78 @@ import data from "../data/roadmap.json";
 import reddit from "../data/reddit.json";
 
 type CardKey = keyof typeof data.cards;
+
 const mentions = new Map(reddit.topRequests.map((request) => [request.request, request.mentions]));
+const format = new Intl.NumberFormat("en-US");
 const checkedOn = new Date(`${data.checkedOn}T12:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 const headings = [
-	{ depth: 2, slug: "how-wingspan-follows-monarch", text: "How Wingspan follows Monarch" },
 	...data.sections.map((section) => ({ depth: 2, slug: section.id, text: section.title })),
 	{ depth: 2, slug: "wont-build", text: "Won't build" },
+	{ depth: 2, slug: "how-wingspan-follows-monarch", text: "How Wingspan follows Monarch" },
 ];
+
+/** Names a Monarch status by how close it is to shipping, for its dot's color. */
+const stageOf = (status: string) => {
+	if (status.startsWith("Released")) return "released";
+	if (status === "In progress") return "in-progress";
+	if (status === "Up next") return "up-next";
+	return "considering";
+};
 ---
 
 <StarlightPage frontmatter={{ title: "Roadmap", description: "What Wingspan has built and plans, against Monarch's official roadmap." }} headings={headings}>
 	<p>
-		Wingspan adds what Monarch doesn't have yet, inside Monarch's own pages. This is what's built and what's planned, against Monarch's <a href={data.roadmapUrl}>official roadmap</a> (it needs a Monarch login), last checked {checkedOn}. Want something moved up? <a href="https://github.com/AxerieSoftware/wingspan/discussions/categories/ideas">Vote on feature requests on GitHub</a>, or suggest a new one.
+		Wingspan adds what Monarch doesn't have yet, inside Monarch's own pages. Here's what's built and planned, checked against Monarch's <a href={data.roadmapUrl}>official roadmap</a> (it needs a Monarch login) on {checkedOn}. Want something moved up? <a href="https://github.com/AxerieSoftware/wingspan/discussions/categories/ideas">Vote on feature requests on GitHub</a>, or suggest a new one.
 	</p>
-
-	<h2 id="how-wingspan-follows-monarch">How Wingspan follows Monarch</h2>
-	<ul>{data.principles.map((principle) => <li>{principle}</li>)}</ul>
+	<p class="text-sm text-gray-500 dark:text-gray-400">
+		<strong>Asked</strong> counts mentions on <a href="/reddit/#top-requests">r/MonarchMoney</a>. <strong>On Monarch's roadmap</strong> shows the closest Monarch feature and how much of Wingspan's it covers. A dash means Monarch has nothing planned.
+	</p>
 
 	{
 		data.sections.map((section) => (
 			<>
-				<h2 id={section.id}>{section.title}</h2>
+				<h2 id={section.id}>
+					{section.title}
+				</h2>
+				<p>{section.summary}</p>
 				<table class="roadmap-table">
 					<thead>
 						<tr>
 							<th>Feature</th>
+							<th class="asked">Asked</th>
 							<th>On Monarch's roadmap</th>
 						</tr>
 					</thead>
 					<tbody>
 						{section.items.map((item) => (
 							<tr>
-								<td>
-									<strong>{item.name}</strong>
+								<td class="feature">
+									<strong>{"page" in item ? <a href={item.page}>{item.name}</a> : item.name}</strong>
 									<div class="text-sm">{item.description}</div>
-									<div class="text-xs text-gray-500 dark:text-gray-400">
-										{item.where}
-										{"asked" in item && (
-											<>
-												{" · "}
-												<a href="/reddit/#top-requests">{mentions.get(item.asked)} mentions on r/MonarchMoney</a>
-											</>
-										)}
-									</div>
+									<div class="text-xs text-gray-500 dark:text-gray-400">{item.where}</div>
 								</td>
-								<td class="text-sm">
+								<td class="asked text-sm" data-label="Asked">
+									{"asked" in item ? <a href="/reddit/#top-requests" title={item.asked}>{format.format(mentions.get(item.asked) ?? 0)}</a> : <span class="none">–</span>}
+								</td>
+								<td class="monarch text-sm" data-label="On Monarch's roadmap">
 									{item.cards.map((match) => {
 										const card = data.cards[match.card as CardKey];
 										return (
-											<div class="mb-2 last:mb-0">
+											<div class="monarch-match">
 												<span class="block">{card.title}</span>
-												<span class="block text-gray-500 dark:text-gray-400">
-													{card.status} · {match.match} match
+												<span class="match-line">
+													<span class={`status ${stageOf(card.status)}`}>{card.status}</span>
+													<span class="text-gray-500 dark:text-gray-400">{match.match} match</span>
 												</span>
-												{"note" in match && <span class="block">{match.note}</span>}
+												{"note" in match && <span class="block text-gray-500 dark:text-gray-400">{match.note}</span>}
 											</div>
 										);
 									})}
-									{"monarch" in item && (
-										<>
-											<span class="block">{item.monarch}</span>
-											<span class="block text-gray-500 dark:text-gray-400">
-												{item.boardStatus} · {item.match}
-											</span>
-										</>
+									{!item.cards.length && (
+										<span class="none" title="Not on Monarch's roadmap">
+											–<span class="sr-only">Not on Monarch's roadmap</span>
+										</span>
 									)}
-									{!item.cards.length && !("monarch" in item) && <span class="text-gray-500 dark:text-gray-400">Not on Monarch's roadmap</span>}
 								</td>
 							</tr>
 						))}
@@ -80,7 +86,7 @@ const headings = [
 	}
 
 	<h2 id="wont-build">Won't build</h2>
-	<p>Monarch already has these, so Wingspan leaves them to Monarch:</p>
+	<p>Monarch or MM-Tweaks already does these, so Wingspan leaves them alone:</p>
 	<ul>
 		{
 			data.wontBuild.map((item) => {
@@ -89,24 +95,102 @@ const headings = [
 			})
 		}
 	</ul>
+
+	<h2 id="how-wingspan-follows-monarch">How Wingspan follows Monarch</h2>
+	<ul>{data.principles.map((principle) => <li>{principle}</li>)}</ul>
 </StarlightPage>
 
 <style>
-	/* Too narrow for two columns, so Monarch's side goes under each feature. */
+	/* Classes on the cells outrank Starlight's own table styles, which match any td in the page. */
+	.roadmap-table th.asked,
+	.roadmap-table td.asked {
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
+
+	.none {
+		color: var(--sl-color-gray-4);
+	}
+
+	.monarch-match + .monarch-match {
+		margin-top: 0.75rem;
+	}
+
+	.match-line {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.375rem;
+		margin-block: 0.25rem;
+	}
+
+	/* An outlined pill like the feature badges, with a dot for how close Monarch is to shipping. */
+	.status {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0 0.5rem;
+		border: 1px solid var(--sl-color-gray-5);
+		border-radius: 999px;
+		font-size: var(--sl-text-xs);
+		font-weight: 600;
+		line-height: 1.6;
+		color: var(--sl-color-white);
+		white-space: nowrap;
+	}
+
+	.status::before {
+		content: "";
+		width: 0.4375rem;
+		height: 0.4375rem;
+		border-radius: 50%;
+		background: var(--sl-color-gray-4);
+	}
+
+	.status.up-next::before {
+		background: #3b82f6;
+	}
+
+	.status.in-progress::before {
+		background: #f59e0b;
+	}
+
+	.status.released::before {
+		background: #22c55e;
+	}
+
+	/* Too narrow for three columns, so each feature stacks with labeled lines. */
 	@media (max-width: 40rem) {
 		.roadmap-table thead {
 			display: none;
 		}
 		.roadmap-table tr,
-		.roadmap-table td {
+		.roadmap-table td.feature,
+		.roadmap-table td.asked,
+		.roadmap-table td.monarch {
 			display: block;
-		}
-		.roadmap-table td:is(:first-child, :not(:first-child)) {
 			padding-inline: 0;
+			text-align: left;
 		}
-		.roadmap-table td:first-child {
+		.roadmap-table td.feature,
+		.roadmap-table td.asked {
 			border-bottom: none;
-			padding-bottom: 0.25rem;
+			padding-bottom: 0;
+		}
+		.roadmap-table td.asked:has(.none) {
+			display: none;
+		}
+		.roadmap-table td.monarch {
+			padding-bottom: 0.75rem;
+		}
+		.roadmap-table td.asked::before,
+		.roadmap-table td.monarch::before {
+			content: attr(data-label) ": ";
+			color: var(--sl-color-gray-3);
+		}
+		.roadmap-table td.monarch:not(:has(.none))::before {
+			display: block;
 		}
 	}
 </style>
