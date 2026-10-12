@@ -4,8 +4,8 @@
 	"principles": [
 		"Wingspan only adds what Monarch doesn't do yet. Most features add to a Monarch page you already use.",
 		"If Monarch has only planned or started a feature, Wingspan can still build it, since plans can change.",
-		"When Monarch releases a feature that matches one of Wingspan's, Wingspan's version is deprecated and removed.",
-		"A full match means Wingspan's feature is removed once Monarch's ships. A partial match means Monarch's covers some of it, so the feature gets another look then.",
+		"When Monarch releases a matching feature, Wingspan deprecates and removes its own.",
+		"A full match means Wingspan's version goes once Monarch's ships. A partial match means Monarch's covers some of it, so Wingspan's gets another look then.",
 		"Wingspan never rebuilds or unlocks what Monarch already has, paid plans included."
 	],
 	"sections": [
@@ -29,7 +29,7 @@
 				{
 					"name": "Manual bills",
 					"where": "Adds to Recurring",
-					"description": "Bills without a regular schedule, like a check that gets cashed late, stay unpaid until the payment clears",
+					"description": "Bills without a regular schedule, like a check cashed late, stay unpaid until the payment clears",
 					"page": "/features/manual-bills/",
 					"cards": [
 						{
@@ -53,7 +53,7 @@
 				{
 					"name": "Projected balances",
 					"where": "Adds to Cash Flow",
-					"description": "Checking day by day ahead, so you see a low point before you hit it, plus your monthly surplus",
+					"description": "Your checking balance day by day, so you see a low point coming, plus your monthly surplus",
 					"asked": "Projected account balances",
 					"page": "/features/projected-balances/",
 					"cards": [
@@ -65,14 +65,14 @@
 						{
 							"card": "forecasting",
 							"match": "Partial",
-							"note": "Monarch's forecasting looks years ahead. Projected balances covers the next few days and weeks."
+							"note": "Monarch's forecasting looks years ahead. Projected balances looks up to a year ahead, day by day."
 						}
 					]
 				},
 				{
 					"name": "Free cash",
 					"where": "Adds to Recurring and Cash Flow",
-					"description": "How much you can safely spend or move out of checking today, through your next paycheck, with bills, card minimums and goals covered",
+					"description": "What you can safely spend or move out of checking today while still covering bills, card minimums and goals through your next paycheck",
 					"page": "/features/projected-balances/#free-cash-today",
 					"cards": [
 						{
@@ -91,7 +91,7 @@
 				{
 					"name": "Loans paid down",
 					"where": "Adds to Cash Flow and Reports",
-					"description": "How much your loans went down, and its share of your income, beside Monarch's savings rate",
+					"description": "How much your loans went down and what share of income that is, beside Monarch's savings rate",
 					"page": "/features/loans-paid-down/",
 					"cards": []
 				},
@@ -105,7 +105,7 @@
 				{
 					"name": "Loan payments",
 					"where": "Adds to Recurring and each loan's page",
-					"description": "A loan's monthly payment, and an estimated new balance for a manual loan to save after it posts",
+					"description": "A loan's monthly payment, plus an estimated new balance to save on a manual loan after the payment posts",
 					"page": "/features/interest-cost/#keeping-a-manual-loan-current",
 					"cards": []
 				},
@@ -119,7 +119,7 @@
 				{
 					"name": "Retail receipt sync",
 					"where": "Adds to Transactions",
-					"description": "Store purchases sent to Monarch as receipts, so they're split into individual items like Amazon and Target orders. Currently Walmart and Costco.",
+					"description": "Walmart and Costco purchases sent to Monarch as receipts, so they split into items like Amazon and Target orders",
 					"page": "/features/receipt-sync/",
 					"cards": []
 				},
@@ -297,7 +297,7 @@
 				{
 					"name": "And/or filters",
 					"where": "Adds to Transactions",
-					"description": "Combine filters with and/or. Monarch is building exclude filters, so Wingspan would only add the and/or part.",
+					"description": "Combine filters with and/or. Monarch is building exclude filters, so Wingspan would add only and/or.",
 					"asked": "Exclude filters, and/or logic",
 					"cards": [
 						{
@@ -329,7 +329,7 @@
 						{
 							"card": "associate",
 							"match": "Partial",
-							"note": "Monarch's card covers pairing transfers along with refunds."
+							"note": "Monarch's card covers transfers as well as refunds."
 						}
 					]
 				},
@@ -405,7 +405,7 @@
 			"text": "Recurring detection and matching for anything Monarch can already match itself"
 		},
 		{
-			"text": "Spending trends, year-to-date budget pacing, account groups, compact Transactions and Budget screens and duplicate-transaction review, which the MM-Tweaks extension already does well"
+			"text": "Spending trends, year-to-date budget pacing, account groups, compact Transactions and Budget screens and duplicate-transaction review, which the MM-Tweaks extension already handles"
 		}
 	],
 	"cards": {

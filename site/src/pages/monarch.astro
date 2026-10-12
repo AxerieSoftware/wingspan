@@ -14,7 +14,7 @@ const headings = [
 
 <StarlightPage frontmatter={{ title: "About Monarch", description: "What Monarch Money does, its plans, and how often it ships." }} headings={headings}>
 	<p>
-		<a href="https://www.monarch.com">Monarch Money</a> is a personal finance app for tracking accounts, budgeting and planning, on the web, iOS and Android. Wingspan adds to its web app. This page is an unofficial summary, checked {asOf}. Monarch ships often, so check its own pages before relying on a detail.
+		<a href="https://www.monarch.com">Monarch Money</a> is a personal finance app for accounts, budgets and planning, on the web, iOS and Android. Wingspan adds to the web app. This is an unofficial summary, checked {asOf}. Monarch ships often, so confirm details on its own pages.
 	</p>
 
 	<h2 id="what-monarch-does">What Monarch does</h2>
@@ -66,6 +66,6 @@ const headings = [
 	<h2 id="official-links">Official links</h2>
 	<ul>{data.links.map((link) => <li><a href={link.href}>{link.label}</a></li>)}</ul>
 	<p>
-		Wingspan tracks Monarch's official roadmap card by card on the <a href="/roadmap/">roadmap</a>, and deprecates and removes its own version of a feature when Monarch releases one.
+		The Wingspan <a href="/roadmap/">roadmap</a> tracks Monarch's official roadmap card by card. When Monarch releases a feature Wingspan has, Wingspan deprecates and removes its own.
 	</p>
 </StarlightPage>

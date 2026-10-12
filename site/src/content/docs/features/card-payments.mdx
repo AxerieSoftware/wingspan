@@ -7,7 +7,7 @@ saves: account
 
 import Screenshot from "../../../components/Screenshot.astro";
 
-Monarch shows your card balances, but its **Statements** card on Recurring, meant for credit card and loan payments, says "Coming soon". Wingspan fills it in: each card's statement, when it's due, and whether checking can pay it on that day.
+Monarch's **Statements** card on Recurring, meant for credit card and loan payments, says "Coming soon". Wingspan fills it in with each card's statement, due date and whether checking can pay it that day.
 
 <Screenshot name="card-payments" alt="Recurring's Statements card filled in with three credit cards, each with its due date, statement amount and whether checking can pay it." />
 
@@ -25,14 +25,14 @@ For a card Monarch doesn't have, like a store card you pay from checking, choose
 
 ## Reading it
 
-Each card's row shows its statement and due date, and under the amount, what checking can do on that day:
+Each row shows the card's statement and due date. Under the amount is what checking can pay that day:
 
 - **Can pay in full**, in green. If the statement is smaller than the card's balance, it says **Can pay the $412.80 statement**.
-- **Can pay $300**, in amber: some of it, but not all.
+- **Can pay $300**, in amber: part of it.
 - **Can pay $20 of $35 min**, in red: not even the minimum.
-- **~$35 est. min** means Monarch has no minimum for the card, so Wingspan estimates one: 1% of the statement plus a month's interest, at least $35. Add the real minimum in the card's details in Monarch to use it.
+- **~$35 est. min** means Monarch has no minimum for the card, so Wingspan estimates one: 1% of the statement plus a month's interest, at least $35. Add the real minimum to the card's details in Monarch to use it instead.
 
-These come from [Projected balances](/features/projected-balances/), after every bill due first and the amount you keep in checking. The footer adds up what's owed this month, or says **All paid**.
+These come from [Projected balances](/features/projected-balances/), after bills due earlier and the amount you keep in checking. The footer adds up what's owed this month, or says **All paid**.
 
 ## When a statement counts as paid
 
@@ -43,10 +43,10 @@ These come from [Projected balances](/features/projected-balances/), after every
 
 ## Good to know
 
-- **Balance** under the amount means it's the card's balance in Monarch. **Typical** means it's the typical payment you set.
+- **Balance** under the amount means it's the card's balance in Monarch. **Typical** means it's your typical payment.
 - **Unknown** with **Set a typical payment** means a card not in Monarch has no typical payment yet. **No balance from Monarch** means Monarch hasn't reported the card's balance.
 - **Edit cash and cards** on Cash Flow sets which accounts are checking and how much to keep there.
 
 :::note
-When Monarch releases its Statements card, Wingspan's card payments will be deprecated and removed.
+Once Monarch releases its Statements card, Wingspan will remove card payments.
 :::

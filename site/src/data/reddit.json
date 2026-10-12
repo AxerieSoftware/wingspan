@@ -7,16 +7,16 @@
 		"askShare": "About 1 in 6 posts asks for something",
 		"peak": "Posts peaked in 2024 (5,318) after Mint shut down."
 	},
-	"method": "Topics come from keyword matching, so a post can land in several, and roughly 60 to 80% of matched requests are real asks. Treat the numbers as relative demand.",
+	"method": "Topics come from keyword matching, so one post can count toward several. Roughly 60 to 80% of matches are real requests, so read the numbers as relative demand.",
 	"topRequests": [
 		{ "request": "Investment transactions and dividends", "mentions": 284, "upvotes": 1435, "status": "Beta since Feb 2024", "fit": "No, data problem" },
 		{ "request": "Projected account balances", "mentions": 269, "upvotes": 1057, "status": "Up next on Monarch's roadmap. Plus Forecasting is long range only.", "fit": "Yes, short range", "wingspan": "/features/projected-balances/", "url": "https://redd.it/1qe3dlg" },
 		{ "request": "Paycheck gross and deductions", "mentions": 166, "upvotes": 531, "status": "Up next on Monarch's roadmap", "fit": "No" },
 		{ "request": "Year over year and month over month tables", "mentions": 133, "upvotes": 732, "status": "Partial", "fit": "Skip, MM-Tweaks covers it" },
-		{ "request": "AI access through MCP", "mentions": 124, "upvotes": 930, "status": "Paused since Jun 2026, now in progress. Staff say it's coming soon.", "fit": "No, provider dispute" },
+		{ "request": "AI access through MCP", "mentions": 124, "upvotes": 930, "status": "Paused Jun 2026, now in progress. Staff say it's close.", "fit": "No, provider dispute" },
 		{ "request": "Annual or YTD budget view", "mentions": 122, "upvotes": 766, "status": "Not shipped", "fit": "Skip, MM-Tweaks covers it", "url": "https://redd.it/1lva05x" },
 		{ "request": "Scheduled future transactions", "mentions": 119, "upvotes": 565, "status": "Announced", "fit": "Skip, announced. Manual bills cover future bills today." },
-		{ "request": "Remember filters and default views", "mentions": 116, "upvotes": 680, "status": "Partial. Net worth range is remembered on web (Oct 2026).", "fit": "Yes" },
+		{ "request": "Remember filters and default views", "mentions": 116, "upvotes": 680, "status": "Partial. Web remembers the net worth range (Oct 2026).", "fit": "Yes" },
 		{ "request": "Exclude filters, and/or logic", "mentions": 102, "upvotes": 459, "status": "Exclude coming soon, no and/or", "fit": "Skip, planned" },
 		{ "request": "Who owes whom with a partner", "mentions": 98, "upvotes": 626, "status": "Bill Split beta retired Jun 2026", "fit": "Maybe" },
 		{ "request": "Refund and reimbursement matching", "mentions": 92, "upvotes": 291, "status": "Not shipped, no plan", "fit": "Yes", "url": "https://redd.it/1mb58se" },
@@ -48,7 +48,7 @@
 	],
 	"leaving": {
 		"total": 968,
-		"note": "People mostly went to Simplifi, YNAB, Quicken and Copilot. April 2026, when Plus launched at $299 and dropped to $199 three days later, is the worst month in the archive.",
+		"note": "Most went to Simplifi, YNAB, Quicken or Copilot. April 2026 is the worst month in the archive: Plus launched at $299 and dropped to $199 three days later.",
 		"reasons": [
 			{ "reason": "Sync and connections", "items": 333, "upvoteWeight": 1492 },
 			{ "reason": "Bugs", "items": 88, "upvoteWeight": 1001 },
@@ -59,12 +59,12 @@
 		]
 	},
 	"recurring": [
-		"The top complaint is that recurring works by merchant, so one merchant can't hold several items. Recurring 2.0 fixes that.",
-		"Recurring 2.0 opened in Early Access in late September. Testers say it misses most annual bills, has no calendar or card statements yet, and doesn't feed future balances. Staff say creating an item from a single transaction is in progress.",
-		"Next come false detections and nagging, about 110 threads, and requests to turn recurring off.",
+		"Top complaint: recurring works by merchant, so one merchant can't hold several items. Recurring 2.0 fixes that.",
+		"Recurring 2.0 opened in Early Access in late September. Testers say it misses most annual bills, has no calendar or card statements yet and doesn't feed future balances. Staff say adding an item from a single transaction is in progress.",
+		"Next: false detections and nagging (about 110 threads), and requests to turn recurring off.",
 		"Twice a month only allows the 1st and 15th, or the 15th and last day. People want any two days.",
 		"Unpaid items drop off the calendar instead of staying overdue.",
 		"Bill Sync lags weeks behind, sends false overdue alerts and isn't tied to transactions.",
-		"People keep asking to set card due dates themselves and to see when a full statement payment will leave checking."
+		"People want to set card due dates themselves and see when a full statement payment leaves checking."
 	]
 }
