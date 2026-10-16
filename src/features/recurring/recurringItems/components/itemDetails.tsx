@@ -222,7 +222,7 @@ function TransactionListRow({ date, dateClassName, amount, amountClassName, exte
 		<div data-external-id={externalId} style={{ minHeight: 50 }} className="-mx-default flex items-center justify-between gap-2.5 px-default py-2xs">
 			<div className="flex min-w-0 flex-1 items-center gap-sm">
 				<span className={`text-sm w-[6.5rem] shrink-0 ${dateClassName}`}>{date}</span>
-				<div className="flex min-w-0 items-center gap-1 pl-1">{children}</div>
+				<div className="flex min-w-0 items-center gap-1 pl-2xs">{children}</div>
 			</div>
 			<div className="flex shrink-0 items-center gap-sm">
 				<span className={`text-sm ${amountClassName}`}>{amount}</span>
