@@ -18,10 +18,10 @@ export type ManualLoanView =
 	| {
 			status: 'ready';
 			entered: EnteredBalance;
-			/** Payments posted since the balance was entered, from the loan's Loan payment items on Recurring. */
+			/** Payments posted since the balance was entered, from the Monarch recurring expenses that pay toward the loan. */
 			paymentsSince: { date: string; amount: number }[];
 			/** Null without a rate. */
 			estimate: number | null;
-			/** Whether a Loan payment on Recurring is tied to this loan. */
-			hasLoanPayment: boolean;
+			/** Whether a Monarch recurring expense pays toward this loan. */
+			hasLinkedPayment: boolean;
 	  };

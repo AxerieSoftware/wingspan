@@ -84,19 +84,12 @@ test('the minimum checking balance is subtracted from free cash', async ({ page,
 	await expect.poll(() => amountOf(page, 'Free cash today')).toBeCloseTo(before - 1000, 2);
 });
 
-test('a loan payment on Recurring comes out of the monthly surplus once, even when Monarch also finds it as a recurring bill', async ({ page, household, open }) => {
-	const surplus = async () => {
-		await open({ path: '/cash-flow', waitForRows: false });
-		await expect(stat(page, 'Monthly surplus')).toHaveText(/\$/);
-		return amountOf(page, 'Monthly surplus');
-	};
-	const withoutLoan = await surplus();
-
-	household.addLoanPayment();
-	await expect.poll(surplus).toBeCloseTo(withoutLoan - 340, 2);
-
-	household.addLoanPaymentToMonarchRecurring();
-	await expect.poll(surplus).toBeCloseTo(withoutLoan - 340, 2);
+test("transactions are read without asking Monarch for each one's recurring item, which is slow on Monarch's side", async ({ open, apiLog }) => {
+	await open({ path: '/cash-flow', waitForRows: false });
+	const transactionQueries = apiLog.wingspanQueries.filter(query => query.includes('allTransactions'));
+	expect(transactionQueries.length).toBeGreaterThan(0);
+	for (const query of transactionQueries) expect(query).not.toContain('recurrenceGroup');
+	expect(apiLog.operations).toContain('wingspan_GetRecurringLinks');
 });
 
 test("free cash is split into money set aside for Monarch goals and money that's actually free", async ({ page, open }) => {

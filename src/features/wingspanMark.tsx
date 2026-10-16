@@ -16,7 +16,7 @@ export function WingspanMark({ label = 'Wingspan feature', tone = 'faint' }: Win
 	const size = tone === 'onButton' ? BUTTON_MARK_SIZE : MARK_SIZE;
 	return (
 		<Tooltip label={label}>
-			<span data-wingspan-mark="" aria-hidden="true" className={`inline-flex shrink-0 items-center transition-opacity hover:opacity-100 ${TONE_CLASS_NAMES[tone]}`}>
+			<span data-wingspan-mark="" aria-hidden="true" className={`inline-flex shrink-0 items-center transition-opacity hover:opacity-90 ${TONE_CLASS_NAMES[tone]}`}>
 				<svg viewBox="0 0 128 128" width={size} height={size} fill="currentColor" aria-hidden="true">
 					<polygon points="64,35 116,17 108,59 76,63 106,85 90,111 64,93 38,111 22,85 52,63 20,59 12,17" />
 				</svg>

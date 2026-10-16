@@ -30,7 +30,7 @@ export default defineContentScript({
 		const projectedBalances = addProjectedBalances(builder, recurring, cashSettings, businessFilter);
 		const summaryScreens = createSummaryScreens(builder, businessFilter);
 		addLoansPaidDown(builder, summaryScreens);
-		addInterestCost(builder, summaryScreens, businessFilter, recurring);
+		addInterestCost(builder, summaryScreens, businessFilter);
 		addRecurringPages(builder, recurring, cashSettings, projectedBalances, businessFilter);
 		addFreeCash(builder, recurring, cashSettings, projectedBalances);
 		addAccounts(builder);

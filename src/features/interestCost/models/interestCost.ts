@@ -1,6 +1,10 @@
 import { DAYS_PER_YEAR, MONTHS_PER_YEAR, PERCENT } from '../../../common/money';
+import type { Account } from '../../../monarch/api/models/account';
 
 /** One debt's interest at today's balance and rate. */
+/** A loan's yearly rate as a percentage, or null when Monarch has none (a rate of 0 means none). */
+export const loanRateOf = (account: Pick<Account, 'interestRate'>): number | null => (account.interestRate && account.interestRate > 0 ? account.interestRate : null);
+
 export interface DebtInterest {
 	accountId: string;
 	name: string;

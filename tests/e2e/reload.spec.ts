@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { expect, itemRow, reloadExtension, test } from './fixtures';
 
-const STALE_MESSAGE = 'Wingspan was updated or disabled. Reload the page to continue.';
+const STALE_MESSAGE = 'Wingspan was updated or disabled';
 
 /** Any click makes the disconnected content script try to sync, which is when it detects that it's disconnected. */
 async function nudge(page: Page) {
@@ -22,6 +22,18 @@ test('a content script disconnected by an extension update greys out what it add
 	await expect.poll(() => row.evaluate(rowElement => getComputedStyle(rowElement).pointerEvents)).toBe('none');
 	await expect(page.getByText(STALE_MESSAGE)).toBeVisible();
 	await expect(page.getByText('Wingspan now saves to your Monarch account')).toHaveCount(0);
+	// Monarch's toast: dark on a light page, a description under the title, a filled action in the title's color and a close button.
+	const toast = page.locator('[data-mds="toast"]').filter({ hasText: STALE_MESSAGE });
+	await expect(toast.locator('[data-mds="toast-description"]')).toHaveText('Reload the page to continue.');
+	const titleColor = await toast.locator('[data-mds="toast-title"]').evaluate(titleElement => getComputedStyle(titleElement).color);
+	const pageColor = await page.locator('body').evaluate(bodyElement => getComputedStyle(bodyElement).color);
+	expect(titleColor).not.toBe(pageColor);
+	const reloadStyle = await toast
+		.getByRole('button', { name: 'Reload' })
+		.evaluate(buttonElement => ({ color: getComputedStyle(buttonElement).color, background: getComputedStyle(buttonElement).backgroundColor }));
+	expect(reloadStyle.color).toBe(titleColor);
+	expect(reloadStyle.background).toMatch(/[,/] 0\.12\)$/);
+	await expect(toast.locator('[data-mds="toast-close"]')).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Internet' })).not.toContainText('· Due');
 	await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
 	await page.waitForTimeout(500);

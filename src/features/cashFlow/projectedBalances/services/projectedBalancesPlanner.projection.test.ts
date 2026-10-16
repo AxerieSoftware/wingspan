@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RecurringFlow } from '../../../../monarch/api/models/recurringFlow';
-import type { LoanPaymentItem } from '../../../recurring/loanPayments/models/loanPaymentItem';
+import type { RecurringItem } from '../../../recurring/recurringItems/models/recurringItem';
 import { account, CARD, CHECKING, cardItem, input, monthly, plannerFor, recurringFlow, SIX_MONTHS, spent, TODAY } from './projectedBalancesPlanner.fixtures';
 
 describe('projected balances', () => {
@@ -138,17 +138,16 @@ describe('projected balances', () => {
 		expect(projection.shortfall).toBe(300);
 	});
 
-	describe('loan payments', () => {
+	describe('a bill Monarch may also track', () => {
 		const LOAN = 'auto-loan';
-		const loanPayment: LoanPaymentItem = {
+		const loanPayment: RecurringItem = {
 			id: 'loan-payment',
-			kind: 'loan',
+			kind: 'bill',
 			name: 'Auto loan',
 			recurrence: monthly(20),
 			amount: 340,
 			active: true,
 			since: '2026-01',
-			loanAccountId: LOAN,
 			matchRule: { matchText: 'Fabrikam Auto', accountId: CHECKING }
 		};
 		const accounts = [account(CHECKING, 'depository', 5000), account(LOAN, 'loan', -9000)];
@@ -157,7 +156,7 @@ describe('projected balances', () => {
 		// The loan's payments belong to Monarch's recurring item for it.
 		const paidToMonarchsLoan = new Map([[loanPayment.id, new Set(['Fabrikam Auto'])]]);
 
-		it('takes each payment out of checking on its due date, like a bill', () => {
+		it('takes each payment out of checking on its due date', () => {
 			const projection = plannerFor().plan(input({ accounts, recurringItems: [loanPayment] }));
 
 			expect(loanFlows(projection).slice(0, 2)).toEqual(['2026-10-20 Auto loan', '2026-11-20 Auto loan']);

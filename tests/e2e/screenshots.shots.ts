@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
-import { addRecurring, chooseMerchant, expect, itemRow, type OpenOptions, section, test, useTheme } from './fixtures';
+import { addRecurring, chooseMerchant, expect, itemRow, monarchRow, type OpenOptions, section, test, useTheme } from './fixtures';
 
 /*
  * The README's screenshots (assets/screenshots, at 2x), the site's feature pages' (site/src/assets/screenshots,
@@ -10,6 +10,7 @@ const SITE = 'site/src/assets/screenshots';
 const STORE = 'store/screenshots';
 const THEMES = ['light', 'dark'] as const;
 
+const DETAIL_PANEL = '[data-external-id="recurrence-group-detail-panel-view"]';
 const projectedBalances = (page: Page) => page.getByRole('group', { name: 'Projected balances' });
 
 type Open = (options?: OpenOptions) => Promise<void>;
@@ -129,19 +130,24 @@ for (const theme of THEMES) {
 			await siteShot(page, 'card-payment-editor', theme, dialog);
 		});
 
-		test('loan payment editor', async ({ page, household, open }) => {
+		test('pays toward', async ({ page, household, open }) => {
 			household.addLoanPayment();
+			household.linkLoanPayment();
 			await openAsReturning(page, open);
 			await useTheme(page, theme);
-			const dialog = await addRecurring(page, 'Loan payment');
-			await dialog.getByRole('combobox', { name: 'Loan' }).click();
-			await page.getByRole('option', { name: 'Auto Loan' }).click();
-			await chooseMerchant(page, dialog, 'Fabrikam Auto Finance');
-			await dialog
-				.getByRole('checkbox', { name: /Fabrikam Auto Finance/ })
-				.first()
-				.check();
-			await siteShot(page, 'loan-payment-editor', theme, dialog);
+			await monarchRow(page, 'Auto Loan').click();
+			await expect(page.getByRole('combobox', { name: 'Pays toward' })).toHaveText('Auto Loan');
+			await siteShot(page, 'pays-toward', theme, page.locator(DETAIL_PANEL).locator('[data-external-id="meta-row"]').first().locator('..'), { pad: 16 });
+		});
+
+		test('payment update banner', async ({ page, household, open }) => {
+			household.addLoanPayment();
+			household.linkLoanPayment();
+			await openAsReturning(page, open, '/transactions/tx-auto-loan');
+			await useTheme(page, theme);
+			const banner = page.locator('[data-wingspan-transaction-banner]');
+			await expect(banner).toContainText('This payment goes toward Auto Loan');
+			await siteShot(page, 'payment-update-banner', theme, banner, { pad: 12 });
 		});
 
 		test('loans paid down and interest cost on Cash Flow', async ({ page, open }) => {
@@ -166,6 +172,7 @@ for (const theme of THEMES) {
 
 		test("a loan's interest", async ({ page, household, open }) => {
 			household.addLoanPayment();
+			household.linkLoanPayment();
 			await openAsReturning(page, open, '/accounts/details/acct-loan');
 			await useTheme(page, theme);
 			const card = page.getByRole('group', { name: 'Interest', exact: true });
@@ -176,6 +183,7 @@ for (const theme of THEMES) {
 
 		test('update balance', async ({ page, household, open }) => {
 			household.addLoanPayment();
+			household.linkLoanPayment();
 			await openAsReturning(page, open, '/accounts/details/acct-loan');
 			await useTheme(page, theme);
 			await page.getByRole('group', { name: 'Interest', exact: true }).getByRole('button', { name: 'Update balance' }).click();

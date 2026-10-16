@@ -1,10 +1,9 @@
 import type { Page } from '@playwright/test';
-import { APP, expect, itemRow, reloadExtension, section, test } from './fixtures';
+import { APP, expect, itemRow, monarchRow, reloadExtension, section, test } from './fixtures';
 
 const BUSINESS_ID = 'biz-contoso';
 
 /** Monarch's own row. Its accessible name starts with the item name and continues into the subtitle. */
-const monarchRow = (page: Page, sectionName: string, name: string) => section(page, sectionName).getByRole('button', { name: new RegExp(`^${name}`) });
 
 const switcher = (page: Page) => page.locator('[data-wingspan-workspace-switcher]').getByRole('button');
 const summaryLine = (page: Page, line: 'expense' | 'income') => page.locator(`[data-wingspan-entity-summary="${line}"]`);
@@ -33,12 +32,12 @@ test.describe("with Monarch's Plus plan", () => {
 	test("the sidebar starts in Household, and Recurring shows and totals only the household's items", async ({ page, open }) => {
 		await open();
 		await expect(switcher(page)).toHaveAccessibleName('Workspace: Household');
-		await expect(monarchRow(page, 'Expenses', 'Kiln Lease')).toBeHidden();
+		await expect(monarchRow(section(page, 'Expenses'), 'Kiln Lease')).toBeHidden();
 		// The household and the business both have a Rent; the business's is identified by its amount.
-		await expect(monarchRow(page, 'Expenses', 'Rent')).toHaveCount(1);
-		await expect(monarchRow(page, 'Expenses', 'Rent')).toContainText('$1,450.00');
+		await expect(monarchRow(section(page, 'Expenses'), 'Rent')).toHaveCount(1);
+		await expect(monarchRow(section(page, 'Expenses'), 'Rent')).toContainText('$1,450.00');
 		// Gym Dues has no Monarch account, so it counts as the household's in both the rows and the totals.
-		await expect(monarchRow(page, 'Expenses', 'Gym Dues')).toBeVisible();
+		await expect(monarchRow(section(page, 'Expenses'), 'Gym Dues')).toBeVisible();
 		await expect(section(page, 'Expenses').locator('[data-wingspan-entity-count]').first()).toHaveText('5');
 		await expect(summaryLine(page, 'expense')).toContainText('$1,590 due');
 		await expect(page.getByRole('button', { name: /inactive/ })).toBeHidden();
@@ -50,10 +49,10 @@ test.describe("with Monarch's Plus plan", () => {
 		await switchTo(page, 'Contoso Pottery');
 
 		await expect(switcher(page)).toHaveAccessibleName('Workspace: Contoso Pottery');
-		await expect(monarchRow(page, 'Expenses', 'Kiln Lease')).toBeVisible();
-		await expect(monarchRow(page, 'Expenses', 'Rent')).toHaveCount(1);
-		await expect(monarchRow(page, 'Expenses', 'Rent')).toContainText('$900.00');
-		await expect(monarchRow(page, 'Expenses', 'Gym Dues')).toBeHidden();
+		await expect(monarchRow(section(page, 'Expenses'), 'Kiln Lease')).toBeVisible();
+		await expect(monarchRow(section(page, 'Expenses'), 'Rent')).toHaveCount(1);
+		await expect(monarchRow(section(page, 'Expenses'), 'Rent')).toContainText('$900.00');
+		await expect(monarchRow(section(page, 'Expenses'), 'Gym Dues')).toBeHidden();
 		await expect(section(page, 'Expenses').locator('[data-wingspan-entity-count]').first()).toHaveText('2');
 		await expect(summaryLine(page, 'expense')).toContainText('$1,210 due');
 		await expect(page.getByRole('button', { name: /Show 1 inactive/ })).toBeVisible();
@@ -109,13 +108,13 @@ test.describe("with Monarch's Plus plan", () => {
 
 	test("after an extension update disconnects Wingspan, Monarch's rows and totals are restored instead of left frozen", async ({ page, context, open }) => {
 		await open();
-		await expect(monarchRow(page, 'Expenses', 'Kiln Lease')).toBeHidden();
+		await expect(monarchRow(section(page, 'Expenses'), 'Kiln Lease')).toBeHidden();
 
 		await reloadExtension(context);
 		await page.getByRole('heading', { level: 1 }).click();
 
-		await expect(page.getByText('Wingspan was updated or disabled. Reload the page to continue.')).toBeVisible();
-		await expect(monarchRow(page, 'Expenses', 'Kiln Lease')).toBeVisible();
+		await expect(page.getByText('Wingspan was updated or disabled')).toBeVisible();
+		await expect(monarchRow(section(page, 'Expenses'), 'Kiln Lease')).toBeVisible();
 		await expect(page.locator('[data-wingspan-entity-summary], [data-wingspan-entity-count], [data-wingspan-workspace-switcher]')).toHaveCount(0);
 	});
 
@@ -128,8 +127,8 @@ test.describe("with Monarch's Plus plan", () => {
 		await expect(switcher(page)).toHaveCount(0);
 
 		await page.goto(`${APP}/recurring-v2/monthly`);
-		await expect(monarchRow(page, 'Expenses', 'Kiln Lease')).toBeVisible();
-		await expect(monarchRow(page, 'Expenses', 'Rent')).toHaveCount(2);
+		await expect(monarchRow(section(page, 'Expenses'), 'Kiln Lease')).toBeVisible();
+		await expect(monarchRow(section(page, 'Expenses'), 'Rent')).toHaveCount(2);
 		await expect(switcher(page)).toHaveCount(0);
 
 		await page.goto(`${APP}/settings/wingspan`);
@@ -171,6 +170,6 @@ test.describe("with Monarch's Plus plan", () => {
 test("without Monarch's Plus plan (required for its business filter), there's no switcher and nothing is hidden", async ({ page, open, household }) => {
 	household.addBusiness({ hasPlus: false });
 	await open();
-	await expect(monarchRow(page, 'Expenses', 'Kiln Lease')).toBeVisible();
+	await expect(monarchRow(section(page, 'Expenses'), 'Kiln Lease')).toBeVisible();
 	await expect(page.locator('[data-wingspan-workspace-switcher]')).toHaveCount(0);
 });

@@ -31,19 +31,27 @@ On a loan you track by hand, interest never shows up as a transaction, so it's e
 
 For a loan you track by hand in Monarch, Wingspan works out the new balance after each payment.
 
-### 1. Add the loan's payment on Recurring
+### 1. Link the loan's payment on Recurring
 
-On **Recurring**, choose **Add recurring → Add manually**, then set **Type** to **Loan payment**. Choose the **Loan**, then the **Merchant** and a few of its payments, like a [manual bill](/features/manual-bills/#adding-a-bill). It shows with your bills, owing its monthly amount.
+On **Recurring**, open the loan's payment (the recurring expense Monarch already tracks) and choose the loan under **Pays toward**. If Monarch doesn't track the payment yet, add it with **Add recurring** first.
 
-<Screenshot name="loan-payment-editor" alt="Add recurring with Loan payment chosen: the Auto Loan, the merchant Fabrikam Auto Finance, and its $340 payment picked." />
+<Screenshot name="pays-toward" alt="Monarch's Auto Loan expense on Recurring, with Pays toward set to the Auto Loan." />
 
 ### 2. Check the estimate after a payment
 
-Open the loan's page. The **Interest** card shows the balance you last entered and an estimate for today: that balance, plus daily interest since, minus payments since. Without a Loan payment, it adds interest only.
+Open the loan's page. The **Interest** card shows the balance you last entered and an estimate for today: that balance, plus daily interest since, minus payments since. Until its payment is linked, it adds interest only.
 
 ### 3. Update the balance
 
-Choose **Update balance**, which starts at the estimate. Save it, or enter your servicer's amount if it differs. Monarch's page reloads to show the new balance.
+Once a linked payment posts, Wingspan reminds you to update the balance:
+
+- **Transactions**: the payment's details say which loan it goes toward, with an **Update balance** button. You see it while reviewing the payment.
+- **Accounts**: the loan's row says **Payment posted, update balance**, and **Accounts** in the sidebar counts the loans to update.
+- **The loan's page**: the **Interest** card says how much posted since the balance was entered.
+
+<Screenshot name="payment-update-banner" alt="A $340 payment's transaction details, saying it goes toward the Auto Loan, with an Update balance button." />
+
+Choose **Update balance** there or on the loan's page. It starts at the estimate. Save it, or enter your servicer's amount if it differs. Monarch's page reloads to show the new balance, and the reminders go away.
 
 <Screenshot name="update-balance" alt="The Update balance dialog, starting at Wingspan's estimate of $8,788.12." />
 
@@ -52,4 +60,5 @@ Wingspan changes the balance only when you save. Your servicer's amount can be a
 ## Good to know
 
 - **Update balance** appears for loans you track by hand. A pending payment counts once it posts.
+- If you merge recurring items in Monarch, choose the loan under **Pays toward** again on the merged item.
 - **Monarch has no balance for this loan yet** means the loan needs a first balance entered in Monarch.

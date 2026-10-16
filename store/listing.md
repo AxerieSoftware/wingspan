@@ -21,10 +21,10 @@ Up to 132 characters, the same as `description` in `wxt.config.ts`.
 > • Manual bills for payments without a fixed date, like a check that gets cashed late. They stay unpaid until the payment clears.
 > • A due date on every row, Monarch's included, with each table in date order.
 > • Expected income for pay that varies, like client payouts, counted at what you usually take in.
-> • Loan payments, tied to the loan so its balance can be estimated after each one.
+> • Pays toward on Monarch's own expenses: link a loan's payment to the loan, and Wingspan estimates its new balance after each one.
 >
 > CASH FLOW
-> • Projected balances: checking day by day, with recurring income and expenses, bills, loan payments, everyday spending and card payments.
+> • Projected balances: checking day by day, with recurring income and expenses, bills, everyday spending and card payments.
 > • Free cash: how much you can spend from checking today and still keep a minimum balance, split into money set aside for goals and money that's actually free.
 > • Credit left: when checking runs low, which cards you'd use (in the order you choose), then your reserves.
 >

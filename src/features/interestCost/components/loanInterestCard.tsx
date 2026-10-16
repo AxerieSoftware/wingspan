@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { DAYS_PER_YEAR, MONTHS_PER_YEAR } from '../../../common/money';
+import { Banner } from '../../../monarch/ui/components/banner';
 import { Button } from '../../../monarch/ui/components/button';
 import { EditIcon } from '../../../monarch/ui/components/icons';
 import { SkeletonText } from '../../../monarch/ui/components/skeleton';
@@ -66,14 +67,20 @@ function ManualLoanRow({ manual, formatter, onRetry }: { manual: ManualLoanView;
 	if (manual.status === 'failed') return <Message action={<Button onClick={onRetry}>Try again</Button>}>Couldn't load when this loan's balance was last entered.</Message>;
 	if (manual.status === 'none') return <Message>Monarch has no balance for this loan yet. Enter one in Monarch to see an estimate.</Message>;
 
-	const { entered, paymentsSince, estimate, hasLoanPayment } = manual;
+	const { entered, paymentsSince, estimate, hasLinkedPayment } = manual;
 	const paid = paymentsSince.reduce((total, payment) => total + payment.amount, 0);
 	const paymentsNote = paymentsSince.length ? `, minus ${formatter.money(paid)} paid since` : '';
+	const paymentsPosted = paymentsSince.length === 1 ? `A ${formatter.money(paid)} payment posted` : `${paymentsSince.length} payments, ${formatter.money(paid)} in all, posted`;
 	return (
 		<div className="flex flex-col gap-2xs border-t border-t-divider-primary px-lg py-default text-sm font-book text-content-secondary">
+			{paymentsSince.length ? (
+				<div className="mb-xs">
+					<Banner>{`${paymentsPosted} since this balance was entered. Update the balance once your servicer shows it.`}</Banner>
+				</div>
+			) : null}
 			<span>{`Balance entered ${formatter.longDate(entered.date)}: ${formatter.money(entered.owed)}.`}</span>
 			{estimate !== null ? <span className="text-content-primary">{`About ${formatter.money(estimate)} today, with interest since${paymentsNote}.`}</span> : null}
-			{hasLoanPayment ? null : <span>Add a Loan payment for this loan, so the estimate takes off what you've paid.</span>}
+			{hasLinkedPayment ? null : <span>Open this loan's payment on Recurring and choose this loan under Pays toward, so the estimate takes off what you've paid.</span>}
 		</div>
 	);
 }

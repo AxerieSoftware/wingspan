@@ -60,6 +60,8 @@ const CATEGORIES = {
 
 /** The auto loan's monthly payment, which all goes to its balance. */
 const LOAN_PAYMENT = 340;
+/** Numeric like Monarch's, since Wingspan reads an open item's id from its path. */
+const AUTO_LOAN_GROUP_ID = '9001';
 /** How many days ago the auto loan's balance was last entered. */
 const LOAN_ENTERED_DAYS_AGO = 5;
 /** How many days of balances Monarch has for the auto loan, for when it was last entered. */
@@ -112,8 +114,8 @@ const MONARCH_RECURRING: MonarchRecurring[] = [
 	{ id: 'rg-rent', name: 'Rent', day: 2, amount: -1450, recurringType: 'expense', accountId: 'acct-checking', category: CATEGORIES.rent },
 	{ id: 'rg-phone', name: 'Phone', day: 14, amount: -42, recurringType: 'expense', accountId: 'acct-checking', category: CATEGORIES.utilities },
 	{ id: 'rg-internet', name: 'Internet', day: 30, amount: -55, recurringType: 'expense', accountId: 'acct-checking', category: CATEGORIES.utilities },
-	{ id: 'rg-pay-1', name: 'Paycheck', day: 1, amount: 3200, recurringType: 'income', accountId: 'acct-checking', category: CATEGORIES.paychecks },
-	{ id: 'rg-pay-15', name: 'Paycheck', day: 15, amount: 3200, recurringType: 'income', accountId: 'acct-checking', category: CATEGORIES.paychecks }
+	{ id: '9101', name: 'Paycheck', day: 1, amount: 3200, recurringType: 'income', accountId: 'acct-checking', category: CATEGORIES.paychecks },
+	{ id: '9115', name: 'Paycheck', day: 15, amount: 3200, recurringType: 'income', accountId: 'acct-checking', category: CATEGORIES.paychecks }
 ];
 
 interface TransactionTag {
@@ -151,7 +153,7 @@ export class Household {
 	private hasPlus = false;
 	private hsaTags: Record<HsaExpense['tag'], TransactionTag> | null = null;
 	private hasLoanPayment = false;
-	private isLoanInMonarchRecurring = false;
+	private isLoanPaymentLinked = false;
 	private hasCardInterest = false;
 	/** Loan balances entered through Monarch's account edit, by account id, as amounts owed. */
 	private readonly enteredLoanBalances = new Map<string, number>();
@@ -169,24 +171,10 @@ export class Household {
 			{ id: 'rewards', kind: 'card', name: 'Rewards Card', recurrence: monthly(17), amount: 0, active: true, since, accountId: 'acct-rewards' },
 			{ id: 'store', kind: 'card', name: 'Store Card', recurrence: monthly(26), amount: 88.4, active: true, since, matchRule: { matchText: '4410', anyAmount: true } },
 			{ id: 'travel', kind: 'card', name: 'Travel Card', recurrence: monthly(26), amount: 64.15, active: true, since, matchRule: { matchText: '8823', anyAmount: true } },
-			{ id: 'piano', kind: 'bill', name: 'Piano Lessons', recurrence: monthly(1), amount: 140, active: true, since, matchRule: { matchText: 'Maple Music' } },
-			...(this.hasLoanPayment
-				? [
-						{
-							id: 'auto-loan',
-							kind: 'loan',
-							name: 'Auto Loan',
-							recurrence: monthly(this.dayOfMonth(this.loanPaymentDate)),
-							amount: LOAN_PAYMENT,
-							active: true,
-							since,
-							matchRule: { matchText: 'Fabrikam Auto' },
-							loanAccountId: 'acct-loan'
-						}
-					]
-				: [])
+			{ id: 'piano', kind: 'bill', name: 'Piano Lessons', recurrence: monthly(1), amount: 140, active: true, since, matchRule: { matchText: 'Maple Music' } }
 		];
-		return { recurring: { trackingSince: since, recurringItems }, recurringDueDates: { dueDatesByRecurrenceId: {} }, cashSettings: { cushion: 0 } };
+		const loanPaymentLinks = { loanAccountIdByRecurrenceId: this.isLoanPaymentLinked ? { [AUTO_LOAN_GROUP_ID]: 'acct-loan' } : {} };
+		return { recurring: { trackingSince: since, recurringItems }, recurringDueDates: { dueDatesByRecurrenceId: {} }, cashSettings: { cushion: 0 }, loanPaymentLinks };
 	}
 
 	/** One bill another browser saved to the household's wingspan account. */
@@ -208,14 +196,14 @@ export class Household {
 		this.hasPlus = hasPlus;
 	}
 
-	/** Pays the auto loan from checking two days ago, after its balance was last entered, and tracks the payment on Recurring as a Loan payment. */
+	/** Pays the auto loan from checking two days ago, after its balance was last entered. Monarch ties the payment to its recurring expense Auto Loan. */
 	public addLoanPayment(): void {
 		this.hasLoanPayment = true;
 	}
 
-	/** Has Monarch track the auto loan's payment as a recurring bill of its own, with the payment tied to it. */
-	public addLoanPaymentToMonarchRecurring(): void {
-		this.isLoanInMonarchRecurring = true;
+	/** Saves Monarch's Auto Loan expense as paying toward the auto loan, as choosing it under Pays toward does. */
+	public linkLoanPayment(): void {
+		this.isLoanPaymentLinked = true;
 	}
 
 	/** Charges the rewards card interest ten days ago, as when a statement wasn't paid in full. */
@@ -237,7 +225,7 @@ export class Household {
 
 	private get monarchRecurring(): MonarchRecurring[] {
 		const autoLoan: MonarchRecurring = {
-			id: 'rg-auto-loan',
+			id: AUTO_LOAN_GROUP_ID,
 			name: 'Auto Loan',
 			day: this.dayOfMonth(this.loanPaymentDate),
 			amount: -LOAN_PAYMENT,
@@ -246,7 +234,7 @@ export class Household {
 			category: CATEGORIES.loanPayment,
 			merchant: 'Fabrikam Auto Finance'
 		};
-		return [...MONARCH_RECURRING, ...(this.hasBusiness ? BUSINESS_RECURRING : []), ...(this.isLoanInMonarchRecurring ? [autoLoan] : [])];
+		return [...MONARCH_RECURRING, ...(this.hasBusiness ? BUSINESS_RECURRING : []), ...(this.hasLoanPayment ? [autoLoan] : [])];
 	}
 
 	public get wingspanAccounts(): readonly StoredAccount[] {
@@ -350,6 +338,7 @@ export class Household {
 			],
 			aggregates: ({ filters, groupBy }) => this.aggregates(filters as { startDate?: string; endDate?: string } | null, (groupBy as string[] | null) ?? []),
 			recurrenceGroupsForPeriod: ({ startDate, endDate }) => this.recurrenceRows(String(startDate ?? this.today), String(endDate ?? startDate ?? this.today)),
+			recurrenceGroup: ({ id }) => this.recurrenceRows(this.today, this.today).find(row => row.recurrenceGroup.id === id)?.recurrenceGroup ?? null,
 			aggregatedRecurrenceGroups: ({ startDate, endDate, filters }) => this.summary(String(startDate), String(endDate), (filters as { accounts?: string[] } | null)?.accounts),
 			createBulkRetailSync: ({ input }) => ({
 				retailSyncs: Array.from({ length: Number((input as { count: number }).count) }, () => ({ id: `retail-sync-${++this.receiptSyncCount}` })),
@@ -406,6 +395,10 @@ export class Household {
 	}
 
 	private recurrenceRows(startDate: string, endDate: string) {
+		const transactionsByGroupId = Map.groupBy(
+			this.transactions().filter(transaction => 'recurrenceGroup' in transaction && transaction.recurrenceGroup),
+			transaction => ('recurrenceGroup' in transaction ? transaction.recurrenceGroup?.id : undefined)
+		);
 		return this.monthsBetween(startDate, endDate).flatMap(month =>
 			this.monarchRecurring.map(recurring => {
 				// A day past the end of the month is clamped to its last day, like Monarch does.
@@ -436,6 +429,7 @@ export class Household {
 						isNew: false,
 						createdAt: '2026-01-01T00:00:00Z',
 						status,
+						transactions: transactionsByGroupId.get(recurring.id) ?? [],
 						account,
 						category: recurring.category,
 						merchant: { id: `merchant-${recurring.merchant ?? recurring.id}`, name: recurring.merchant ?? recurring.name, logoUrl: null }
@@ -525,7 +519,7 @@ export class Household {
 				? [
 						{
 							...transaction('tx-auto-loan', this.loanPaymentDate, -LOAN_PAYMENT, 'FABRIKAM AUTO LOAN PMT', 'Fabrikam Auto Finance', 'acct-checking', CATEGORIES.loanPayment),
-							recurrenceGroup: this.isLoanInMonarchRecurring ? { id: 'rg-auto-loan' } : null
+							recurrenceGroup: { id: AUTO_LOAN_GROUP_ID }
 						}
 					]
 				: []),
@@ -543,7 +537,7 @@ export class Household {
 			...[1, 2, 3, 4, 5, 6].flatMap(monthsAgo =>
 				[1, 15].map(day => ({
 					...transaction(`tx-pay-${monthsAgo}-${day}`, this.monthDay(monthsAgo, day), 3200, 'EMPLOYER PAYROLL', 'Employer', 'acct-checking', CATEGORIES.paychecks),
-					recurrenceGroup: { id: `rg-pay-${day}` }
+					recurrenceGroup: { id: String(9100 + day) }
 				}))
 			)
 		];

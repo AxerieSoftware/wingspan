@@ -8,6 +8,7 @@ import { ReportsPage } from './reports/reportsPage';
 import { SettingsPage } from './settings/settingsPage';
 import { SidebarPage } from './sidebar/sidebarPage';
 import { ReceiptsPage } from './transactions/receiptsPage';
+import { TransactionDrawer } from './transactions/transactionDrawer';
 
 export interface MonarchPages {
 	accounts: AccountsPage;
@@ -19,6 +20,7 @@ export interface MonarchPages {
 	reports: ReportsPage;
 	settings: SettingsPage;
 	sidebar: SidebarPage;
+	transactionDrawer: TransactionDrawer;
 }
 
 export function createMonarchPages(window: Window): MonarchPages {
@@ -32,6 +34,7 @@ export function createMonarchPages(window: Window): MonarchPages {
 		recurring: new RecurringV2Page(window),
 		reports: new ReportsPage(window, navigator),
 		settings: new SettingsPage(window, navigator),
-		sidebar: new SidebarPage(window.document)
+		sidebar: new SidebarPage(window.document),
+		transactionDrawer: new TransactionDrawer(window, navigator)
 	};
 }

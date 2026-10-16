@@ -54,8 +54,9 @@ export class GraphqlMock {
 		const isRequired = isNonNullType(type);
 		const namedType = isNonNullType(type) ? type.ofType : type;
 		if (isListType(namedType)) return [];
-		if (isObjectType(namedType) || isAbstractType(namedType)) return {};
+		// A missing optional object stays null, as Monarch sends it, so the app doesn't take it for one that's there.
 		if (!isRequired) return null;
+		if (isObjectType(namedType) || isAbstractType(namedType)) return {};
 		if (isEnumType(namedType)) return namedType.getValues()[0]?.value;
 		return NON_NULL_SCALAR_DEFAULTS[namedType.name] ?? '';
 	}
