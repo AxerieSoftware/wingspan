@@ -3,7 +3,7 @@ import { StyleOverrides } from '../../ui/styleOverrides';
 import { MountedSlot, type SlotContent } from '../mountedSlot';
 import { WingspanAttribute } from '../wingspanAttributes';
 import type { RecurringV2AddDialogExtension } from './models/recurringV2AddDialogExtension';
-import type { RecurringV2DetailRow } from './models/recurringV2DetailRow';
+import { DETAIL_ROW_ORDER, type RecurringV2DetailRow, type RecurringV2DetailRowKey } from './models/recurringV2DetailRow';
 import type { RecurringV2DueDate, RecurringV2Item } from './models/recurringV2Item';
 import type { RecurringV2WingspanRow, RecurringV2WingspanRows } from './models/recurringV2WingspanRow';
 import type { RecurringView } from './models/recurringView';
@@ -69,7 +69,7 @@ export class RecurringV2Page {
 	private readonly entityFilter: RecurringV2EntityFilter;
 	private readonly wingspanRowEls = new Map<string, HTMLElement>();
 	private readonly wingspanRowOpeners = new Map<string, () => void>();
-	private detailRow: MountedSlot | null = null;
+	private readonly detailRows = new Map<RecurringV2DetailRowKey, MountedSlot>();
 
 	public constructor(private readonly window: Window) {
 		this.sectionCards = new RecurringV2SectionCards(window.document, this.addedSectionStyles);
@@ -190,27 +190,29 @@ export class RecurringV2Page {
 		this.entityFilter.remove();
 	}
 
-	/** Adds a Wingspan row at the end of the open detail panel's meta rows, styled like Monarch's. */
-	public showDetailRow(detailRow: RecurringV2DetailRow): void {
+	/** Adds a Wingspan row after the open detail panel's meta rows, styled like Monarch's. Wingspan's rows keep the order of `DETAIL_ROW_ORDER`. */
+	public showDetailRow(key: RecurringV2DetailRowKey, detailRow: RecurringV2DetailRow): void {
 		const monarchMetaRowEl = this.window.document.querySelector(SELECTORS.detailPanel)?.querySelector<HTMLElement>(SELECTORS.detailMetaRow);
 		const metaRowsEl = monarchMetaRowEl?.parentElement;
 		if (!monarchMetaRowEl || !metaRowsEl) {
-			this.removeDetailRow();
+			this.removeDetailRow(key);
 			return;
 		}
 
 		// A new detail panel means a different item, so the row is recreated.
-		if (!this.detailRow?.hostEl.isConnected) {
-			this.removeDetailRow();
-			this.detailRow = MountedSlot.mount(this.window.document, detailRow, WingspanAttribute.detailRow, { className: monarchMetaRowEl.className });
+		if (!this.detailRows.get(key)?.hostEl.isConnected) {
+			this.removeDetailRow(key);
+			this.detailRows.set(key, MountedSlot.mount(this.window.document, detailRow, WingspanAttribute.detailRow, { className: monarchMetaRowEl.className }));
 		}
 
-		if (this.detailRow.hostEl !== metaRowsEl.lastElementChild) metaRowsEl.append(this.detailRow.hostEl);
+		const hostEls = DETAIL_ROW_ORDER.flatMap(rowKey => this.detailRows.get(rowKey)?.hostEl ?? []);
+		const lastHostEls = [...metaRowsEl.children].slice(-hostEls.length);
+		if (hostEls.some((hostEl, index) => hostEl !== lastHostEls[index])) metaRowsEl.append(...hostEls);
 	}
 
-	public removeDetailRow(): void {
-		this.detailRow?.remove();
-		this.detailRow = null;
+	public removeDetailRow(key: RecurringV2DetailRowKey): void {
+		this.detailRows.get(key)?.remove();
+		this.detailRows.delete(key);
 	}
 
 	/** Puts Wingspan's rows in their sections or the Statements card, adding any sections Monarch doesn't have; returns the row elements by key. */

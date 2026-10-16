@@ -7,8 +7,8 @@ import { ToastHost, type ToastService, UNTIL_DISMISSED } from '../../../monarch/
 import type { WingspanFeature } from '../../wingspanFeature';
 import { WINGSPAN_SETTINGS_SLUG } from './wingspanSettingsFeature';
 
-const NOTICE_MESSAGES: Record<StorageNoticeKind, string> = {
-	accountCreated: 'Wingspan now saves to your Monarch account, in a hidden account named wingspan.'
+const NOTICES: Record<StorageNoticeKind, { title: string; description: string }> = {
+	accountCreated: { title: 'Wingspan now saves to your Monarch account', description: 'It uses a hidden account named wingspan.' }
 };
 
 /** Storage toasts: one-time notices, and save failures that stay up until saving works again or the toast is dismissed. */
@@ -60,14 +60,14 @@ export class StorageNoticesFeature implements WingspanFeature {
 	}
 
 	private showNotice(notice: StorageNotice): void {
-		this.toastService.show(NOTICE_MESSAGES[notice.kind], { label: 'Settings', onClick: () => this.settingsPage.open(WINGSPAN_SETTINGS_SLUG) });
+		this.toastService.show({ ...NOTICES[notice.kind], icon: 'help', action: { label: 'Settings', onClick: () => this.settingsPage.open(WINGSPAN_SETTINGS_SLUG) } });
 	}
 
 	/** The data service's message says what failed and what happened to the household's data. */
 	private showFailure({ message = "Wingspan couldn't save." }: StorageStatus): void {
 		if (this.failure?.message === message) return;
 		this.closeFailure();
-		const toastId = this.toastService.show(message, { label: 'Settings', onClick: () => this.settingsPage.open(WINGSPAN_SETTINGS_SLUG) }, UNTIL_DISMISSED);
+		const toastId = this.toastService.show({ title: message, icon: 'help', action: { label: 'Settings', onClick: () => this.settingsPage.open(WINGSPAN_SETTINGS_SLUG) } }, UNTIL_DISMISSED);
 		if (toastId) this.failure = { toastId, message };
 	}
 

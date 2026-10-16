@@ -59,6 +59,8 @@ export interface ApiBehavior {
 /** What the mocked API received during a test. */
 export class ApiLog {
 	public readonly operations: string[] = [];
+	/** The text of each of Wingspan's queries, in the order they were sent. */
+	public readonly wingspanQueries: string[] = [];
 	/** Files uploaded to Monarch's REST endpoints, by path and file name. */
 	public readonly uploads: { path: string; fileName: string; isPdf: boolean }[] = [];
 	/** Wingspan's requests still in flight. */
@@ -188,8 +190,11 @@ export const itemRow = (scope: Page | Locator, name: string) => scope.getByRole(
 
 export const section = (page: Page, name: string) => page.getByTestId(`recurring-section-card-${name}`);
 
+/** One of Monarch's own rows on Recurring, whose accessible name starts with the item's name. */
+export const monarchRow = (scope: Page | Locator, name: string) => scope.getByRole('button', { name: new RegExp(`^${name} `) });
+
 /** Opens Monarch's "Add recurring" dialog from "Add manually" with one of Wingspan's types chosen. */
-export async function addRecurring(page: Page, type: 'Bill' | 'Loan payment' | 'Income' | 'Card payment') {
+export async function addRecurring(page: Page, type: 'Bill' | 'Income' | 'Card payment') {
 	await page.getByRole('button', { name: 'Add recurring' }).click();
 	await page.getByRole('menuitem', { name: 'Add manually' }).click();
 	const dialog = page.getByRole('dialog', { name: 'Add recurring' });
@@ -200,7 +205,7 @@ export async function addRecurring(page: Page, type: 'Bill' | 'Loan payment' | '
 
 /** Closes the notice a first open shows about the hidden account, which sits over the bottom of a tall dialog for 15 seconds. */
 export async function dismissFirstRunNotice(page: Page) {
-	await page.getByRole('button', { name: 'Dismiss' }).click();
+	await page.locator('[data-mds="toast-close"]').click();
 	await expect(page.getByText('Wingspan now saves to your Monarch account')).toHaveCount(0);
 }
 
@@ -260,7 +265,10 @@ async function answer(route: Route, graphqlMock: GraphqlMock, api: ApiBehavior, 
 	const isWingspan = !!body.operationName?.startsWith(WINGSPAN_OPERATION_PREFIX);
 	apiLog.operations.push(body.operationName ?? 'anonymous');
 	if (process.env.E2E_DEBUG) console.log(`[e2e] ${body.operationName}`);
-	if (isWingspan) apiLog.pending += 1;
+	if (isWingspan) {
+		apiLog.wingspanQueries.push(body.query);
+		apiLog.pending += 1;
+	}
 	try {
 		if (isWingspan && api.delayMs) await new Promise(resolve => setTimeout(resolve, api.delayMs));
 		if (!isWingspan && api.monarchDelayMs) await new Promise(resolve => setTimeout(resolve, api.monarchDelayMs));

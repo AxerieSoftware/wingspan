@@ -15,6 +15,9 @@ const UNFILTERED_LABEL = 'Business';
 const OPEN_TIMEOUT_MS = 2000;
 /** One card per group of accounts, like Loans or Credit Cards, titled with the group's name. */
 const GROUP_TITLE_SELECTOR = '[data-external-id="account-group-card"] span[class*="CardTitle"]';
+/** Each account's row links to its page; its name sits over a second line of details, like the account's type. */
+const accountRowSelector = (accountId: string) => `[data-external-id="account-group-card"] a[href$="/accounts/details/${CSS.escape(accountId)}"]`;
+const ROW_DETAILS_LINE_SELECTOR = '.min-w-24 > :nth-child(2)';
 
 export type HouseholdPick = 'waiting' | 'done';
 
@@ -30,6 +33,7 @@ export type HouseholdPick = 'waiting' | 'done';
  */
 export class AccountsPage {
 	private readonly groupNotes = new Map<string, MountedSlot>();
+	private readonly accountNotes = new Map<string, MountedSlot>();
 	private openedAt: number | null = null;
 	private hidingStyleEl: HTMLStyleElement | null = null;
 
@@ -89,6 +93,31 @@ export class AccountsPage {
 
 	public removeGroupNotes(): void {
 		this.showGroupNotesCore(new Map());
+	}
+
+	/** Puts Wingspan's note first on each account's second line, under its name, where Monarch says an account is disconnected. Removes the notes of other accounts. */
+	public showAccountNotes(contentByAccountId: ReadonlyMap<string, SlotContent>): void {
+		for (const [accountId, note] of this.accountNotes) {
+			if (contentByAccountId.has(accountId) && note.hostEl.isConnected) continue;
+			note.remove();
+			this.accountNotes.delete(accountId);
+		}
+		if (!this.isActive) return;
+
+		for (const [accountId, content] of contentByAccountId) {
+			const lineEl = this.window.document.querySelector(accountRowSelector(accountId))?.querySelector<HTMLElement>(ROW_DETAILS_LINE_SELECTOR);
+			if (!lineEl) continue;
+			let note = this.accountNotes.get(accountId);
+			if (!note) {
+				note = MountedSlot.mount(this.window.document, content, WingspanAttribute.accountNote, { tagName: 'span', className: 'flex items-center gap-xs' });
+				this.accountNotes.set(accountId, note);
+			}
+			if (note.hostEl !== lineEl.firstElementChild) lineEl.prepend(note.hostEl);
+		}
+	}
+
+	public removeAccountNotes(): void {
+		this.showAccountNotes(new Map());
 	}
 
 	/** Stops a pick in progress and stops hiding Monarch's menu. */

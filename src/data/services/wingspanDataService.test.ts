@@ -132,7 +132,8 @@ const dataWith = (dueDays: Record<string, number>, cashSettings: WingspanData['c
 	recurringDueDates: { dueDatesByRecurrenceId: dueDays },
 	cashSettings,
 	businessCashSettings: {},
-	hsaReimbursementTags: { toReimburseTagId: '', reimbursedTagId: '' }
+	hsaReimbursementTags: { toReimburseTagId: '', reimbursedTagId: '' },
+	loanPaymentLinks: { loanAccountIdByRecurrenceId: {} }
 });
 const browserContext = new AsyncLocalStorage<string>();
 runningBrowser.store = browserContext;

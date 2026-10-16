@@ -16,6 +16,7 @@ import type { MonarchItemMonth } from './models/monarchItemMonth';
 import type { DueDateCalculator } from './services/dueDateCalculator';
 
 const RECURRENCE_GROUPS_QUERY = 'recurrenceGroups';
+const DUE_DAY_ROW = 'dueDay';
 
 /** Shows due dates on Monarch's recurring rows, and adds a Due day row to an item's panel for setting a custom due day. */
 export class DueDatesFeature implements WingspanFeature {
@@ -77,7 +78,7 @@ export class DueDatesFeature implements WingspanFeature {
 
 	private clear(): void {
 		this.page.removeDueDates();
-		this.page.removeDetailRow();
+		this.page.removeDetailRow(DUE_DAY_ROW);
 	}
 
 	private dueDateFor(monarchItem: RecurringV2Item, itemMonth: MonarchItemMonth | undefined, view: RecurringView, month: string): RecurringV2DueDate | null {
@@ -105,19 +106,19 @@ export class DueDatesFeature implements WingspanFeature {
 	private showPanelRow(month: string, itemMonths: MonarchItemMonth[]): void {
 		const itemId = this.page.openItemId;
 		if (!itemId) {
-			this.page.removeDetailRow();
+			this.page.removeDetailRow(DUE_DAY_ROW);
 			return;
 		}
 
 		const itemMonth = itemMonths.find(candidate => candidate.group.recurrenceGroup.id === itemId);
 		if (itemMonth?.repeatsInMonth) {
-			this.page.removeDetailRow();
+			this.page.removeDetailRow(DUE_DAY_ROW);
 			return;
 		}
 
 		const expectedDueDate = itemMonth ? this.calculator.dueDate(itemMonth, month, undefined) : null;
 		this.panelRow.update({ itemId, customDueDay: this.customDueDays.value[itemId], expectedDueDate });
-		this.page.showDetailRow(this.panelRow);
+		this.page.showDetailRow(DUE_DAY_ROW, this.panelRow);
 	}
 
 	private setCustomDueDay(itemId: string, customDueDay: number | undefined): Promise<void> {

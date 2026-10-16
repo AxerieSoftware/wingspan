@@ -1,7 +1,7 @@
 import { Select as BaseSelect } from '@base-ui/react/select';
 import type { ReactNode } from 'react';
 import { usePortalPlacement } from '../portalContainer';
-import { checkboxStyles, menuStyles, selectStyles } from '../styles';
+import { checkboxStyles, INLINE_SELECT_TRIGGER_CLASS_NAME, menuStyles, selectStyles } from '../styles';
 import { CheckIcon, ChevronIcon } from './icons';
 
 const EMPTY_OPTION_VALUE = '\u0000';
@@ -11,12 +11,13 @@ export type SelectSize = 'sm' | 'md';
 /** A value, its label, and an optional icon or tag shown with it. */
 export type SelectOption<TValue extends string> = readonly [value: TValue, label: string, adornment?: ReactNode];
 
-/** An option's value may be an empty string, as for a "None" choice. */
+/** An option's value may be an empty string, as for a "None" choice. `inline` shows the trigger as plain text, as in a detail panel. */
 export interface SelectProps<TValue extends string> {
 	options: readonly SelectOption<TValue>[];
 	value: NoInfer<TValue>;
 	label?: string;
 	disabled?: boolean;
+	inline?: boolean;
 	onChange(value: TValue): void;
 }
 
@@ -35,7 +36,7 @@ interface SelectPopupProps {
 	children: ReactNode;
 }
 
-export function Select<TValue extends string>({ options, value, label, disabled, onChange }: SelectProps<TValue>) {
+export function Select<TValue extends string>({ options, value, label, disabled, inline, onChange }: SelectProps<TValue>) {
 	const selectSlots = selectStyles();
 	const menuSlots = menuStyles();
 	const items = options.map(([optionValue, optionLabel, adornment]) => ({ value: toItemValue(optionValue), label: optionLabel, adornment }));
@@ -50,7 +51,7 @@ export function Select<TValue extends string>({ options, value, label, disabled,
 				if (chosen) onChange(chosen[0]);
 			}}
 		>
-			<BaseSelect.Trigger data-mds="select-trigger" className={selectSlots.trigger()} aria-label={label}>
+			<BaseSelect.Trigger data-mds="select-trigger" className={inline ? INLINE_SELECT_TRIGGER_CLASS_NAME : selectSlots.trigger()} aria-label={label}>
 				<BaseSelect.Value data-mds="select-value" className={selectSlots.value()}>
 					{(selectedValue: string) => {
 						const selectedItem = items.find(item => item.value === selectedValue);
@@ -62,7 +63,7 @@ export function Select<TValue extends string>({ options, value, label, disabled,
 						);
 					}}
 				</BaseSelect.Value>
-				<SelectChevron />
+				{inline ? null : <SelectChevron />}
 			</BaseSelect.Trigger>
 			<SelectPopup>
 				{items.map(item => (

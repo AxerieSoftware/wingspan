@@ -42,6 +42,7 @@ export interface SidebarItem {
  */
 export class SidebarPage {
 	private row: MountedSlot | null = null;
+	private linkBadge: MountedSlot | null = null;
 
 	public constructor(private readonly document: Document) {}
 
@@ -103,6 +104,24 @@ export class SidebarPage {
 	public removeRow(): void {
 		this.row?.remove();
 		this.row = null;
+	}
+
+	/** Puts a badge at the end of the link to the path, where Monarch puts Recurring's count, or removes it while the link isn't there. */
+	public showLinkBadge(path: string, content: SlotContent): void {
+		const linkEl = this.document.querySelector(`${SIDEBAR_SELECTOR} ${NAV_LINK_SELECTOR}[href=${JSON.stringify(path)}]`);
+		if (!linkEl) {
+			this.removeLinkBadge();
+			return;
+		}
+
+		// Shown only while the sidebar is expanded, like Monarch's own badges.
+		this.linkBadge ??= MountedSlot.mount(this.document, content, WingspanAttribute.sidebarBadge, { tagName: 'span', className: 'ml-auto hidden in-aria-expanded:inline-flex' });
+		if (linkEl.lastElementChild !== this.linkBadge.hostEl) linkEl.append(this.linkBadge.hostEl);
+	}
+
+	public removeLinkBadge(): void {
+		this.linkBadge?.remove();
+		this.linkBadge = null;
 	}
 }
 

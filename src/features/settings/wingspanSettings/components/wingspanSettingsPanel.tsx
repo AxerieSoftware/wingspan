@@ -1,4 +1,5 @@
 import type { WingspanDataService } from '../../../../data/services/wingspanDataService';
+import { Badge } from '../../../../monarch/ui/components/badge';
 import { CheckboxLabel } from '../../../../monarch/ui/components/checkbox';
 import { Fieldset } from '../../../../monarch/ui/components/fieldset';
 import { Spinner } from '../../../../monarch/ui/components/spinner';
@@ -64,11 +65,7 @@ export function WingspanSettingsPanel({ dataService, businessView, hiddenSidebar
 			<Fieldset legend="About">
 				<div className="flex items-center gap-xs text-base text-content-primary">
 					{`Wingspan ${version}`}
-					<span data-mds="badge" className="inline-flex shrink-0 items-center gap-2xs rounded-sm bg-background-info px-xs py-2xs text-content-info">
-						<span data-mds="badge-label" className="text-xs font-medium">
-							Beta
-						</span>
-					</span>
+					<Badge tone="info">Beta</Badge>
 				</div>
 				<p className="m-0 text-sm text-content-secondary">Wingspan is in beta, so some things may not work as expected yet. If something looks wrong, let us know.</p>
 				<a className="text-sm font-medium text-content-link" href={reportProblemUrl} target="_blank" rel="noopener noreferrer">

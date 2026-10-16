@@ -1,5 +1,5 @@
 {
-	"checkedOn": "2026-10-12",
+	"checkedOn": "2026-10-16",
 	"roadmapUrl": "https://app.monarch.com/roadmap",
 	"principles": [
 		"Wingspan only adds what Monarch doesn't do yet. Most features add to a Monarch page you already use.",
@@ -103,9 +103,9 @@
 					"cards": []
 				},
 				{
-					"name": "Loan payments",
-					"where": "Adds to Recurring and each loan's page",
-					"description": "A loan's monthly payment, plus an estimated new balance to save on a manual loan after the payment posts",
+					"name": "Loan balance updates",
+					"where": "Adds to Recurring, Transactions, Accounts and each loan's page",
+					"description": "An estimated new balance to save on a loan you track by hand, once the payment you linked on Recurring posts",
 					"page": "/features/interest-cost/#keeping-a-manual-loan-current",
 					"cards": []
 				},
@@ -405,7 +405,11 @@
 			"text": "Recurring detection and matching for anything Monarch can already match itself"
 		},
 		{
-			"text": "Spending trends, year-to-date budget pacing, account groups, compact Transactions and Budget screens and duplicate-transaction review, which the MM-Tweaks extension already handles"
+			"text": "Spending trends, year-to-date budget pacing, compact Transactions and Budget screens and duplicate-transaction review, which the MM-Tweaks extension already handles"
+		},
+		{
+			"text": "Account groups, which MM-Tweaks already handles",
+			"card": "account-groups"
 		}
 	],
 	"cards": {
@@ -459,6 +463,10 @@
 		},
 		"documents": {
 			"title": "Secure Document Storage",
+			"status": "Under consideration"
+		},
+		"account-groups": {
+			"title": "Custom Account Groups",
 			"status": "Under consideration"
 		}
 	}

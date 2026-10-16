@@ -34,7 +34,7 @@ Your data is never sold or transferred to anyone, never used for anything but dr
 
 ## What Wingspan stores
 
-Its own items, due days and settings, and which store purchases it has sent, in the notes of a hidden manual account named "wingspan" in your Monarch account.
+Its own items, due days, the loans your recurring payments pay toward, its settings, and which store purchases it has sent, in the notes of a hidden manual account named "wingspan" in your Monarch account.
 
 The browser's storage for Monarch's site keeps:
 
@@ -49,7 +49,7 @@ To remove what's in Monarch too, uninstall Wingspan first, then delete the "wing
 
 ## What Wingspan changes in Monarch
 
-Only what you ask it to. Retail receipt sync sends the receipts you choose. **Update balance** on a manual loan's page enters the balance you save as that loan's balance. Wingspan never changes any other account or transaction.
+Only what you ask it to. Retail receipt sync sends the receipts you choose. **Update balance**, on a manual loan's page or a payment's details, enters the balance you save as that loan's balance. Wingspan never changes any other account or transaction.
 
 ## Permissions
 

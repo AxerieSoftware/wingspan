@@ -4,7 +4,7 @@ import type { Account } from '../../../monarch/api/models/account';
 import { MonarchAccountType } from '../../../monarch/api/models/monarchValues';
 import { type EntityScope, entityIdOf } from '../../businessEntities/models/entityScope';
 import { aprOf, impliedAprOf, lastInterestChargesByAccountId } from '../../cashFlow/projectedBalances/models/cardTerms';
-import { type DebtInterest, InterestCost } from '../models/interestCost';
+import { type DebtInterest, InterestCost, loanRateOf } from '../models/interestCost';
 
 /**
  * Which debts cost interest now: loans with a rate in Monarch, and cards charged interest lately, since a card paid in
@@ -29,8 +29,8 @@ export class InterestCostCalculator {
 	private debtOf(account: Account, owed: number, lastInterest: number | undefined): DebtInterest | null {
 		const base = { accountId: account.id, name: account.displayName, groupName: account.type.display, owed };
 		if (account.type.name === MonarchAccountType.loan) {
-			const rate = account.interestRate ?? 0;
-			return rate > 0 ? { ...base, rate, isRateImplied: false } : null;
+			const rate = loanRateOf(account);
+			return rate === null ? null : { ...base, rate, isRateImplied: false };
 		}
 
 		if (account.type.name !== MonarchAccountType.credit || lastInterest === undefined) return null;

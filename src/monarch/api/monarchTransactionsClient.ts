@@ -18,8 +18,16 @@ const GET_TRANSACTIONS_QUERY = `
 				merchant { id name logoUrl }
 				category { id name icon group { type } }
 				account { id }
-				recurrenceGroup { id }
 			}
+		}
+	}
+`;
+
+// Asking for each transaction's recurrenceGroup takes Monarch about 20 ms per transaction, so the links come from the groups instead.
+const GET_RECURRING_LINKS_QUERY = `
+	query wingspan_GetRecurringLinks {
+		recurrenceGroupsForPeriod(includeInactive: true, filters: {}) {
+			recurrenceGroup { id transactions { id } }
 		}
 	}
 `;
@@ -54,8 +62,7 @@ const MonarchTransactionSchema = v.object({
 	hideFromReports: v.nullish(v.boolean()),
 	pending: v.nullish(v.boolean()),
 	category: v.nullish(v.object({ id: v.string(), name: v.string(), icon: v.nullish(v.string()), group: v.nullish(v.object({ type: v.string() })) })),
-	account: v.nullish(v.object({ id: v.string() })),
-	recurrenceGroup: v.nullish(v.object({ id: v.string() }))
+	account: v.nullish(v.object({ id: v.string() }))
 });
 
 const MonarchTaggedTransactionSchema = v.object({
@@ -75,6 +82,9 @@ type MonarchTaggedTransaction = v.InferOutput<typeof MonarchTaggedTransactionSch
 
 const GetTransactionsSchema = v.object({ allTransactions: v.object({ totalCount: v.number(), results: lenientArray('transactions', MonarchTransactionSchema) }) });
 const GetTaggedTransactionsSchema = v.object({ allTransactions: v.object({ totalCount: v.number(), results: lenientArray('tagged transactions', MonarchTaggedTransactionSchema) }) });
+const GetRecurringLinksSchema = v.object({
+	recurrenceGroupsForPeriod: lenientArray('recurring items', v.object({ recurrenceGroup: v.object({ id: v.string(), transactions: v.nullish(v.array(v.object({ id: v.string() })), []) }) }))
+});
 const GetTransactionTagsSchema = v.object({ householdTransactionTags: lenientArray('transaction tags', v.object({ id: v.string(), name: v.string(), color: v.string() })) });
 
 interface TransactionsPage<TResult> {
@@ -85,10 +95,13 @@ interface TransactionsPage<TResult> {
 export class MonarchTransactionsClient {
 	public constructor(private readonly client: MonarchClient) {}
 
-	/** Every transaction from `startDate` to `endDate`, in a fixed order. */
+	/** Every transaction from `startDate` to `endDate`, in a fixed order, each with the recurring item Monarch ties it to. */
 	public async getTransactions(startDate: string, endDate: string): Promise<Transaction[]> {
-		const results = await this.readAllPages('wingspan_GetTransactions', GET_TRANSACTIONS_QUERY, GetTransactionsSchema, { startDate, endDate }, `since ${startDate}`);
-		return results.map(result => this.toTransaction(result));
+		const [results, recurrenceGroupIdByTransactionId] = await Promise.all([
+			this.readAllPages('wingspan_GetTransactions', GET_TRANSACTIONS_QUERY, GetTransactionsSchema, { startDate, endDate }, `since ${startDate}`),
+			this.getRecurringLinks()
+		]);
+		return results.map(result => this.toTransaction(result, recurrenceGroupIdByTransactionId.get(result.id)));
 	}
 
 	/** Every transaction with the tag, from any date. */
@@ -129,7 +142,12 @@ export class MonarchTransactionsClient {
 		return [...resultsById.values()];
 	}
 
-	private toTransaction(result: MonarchTransaction): Transaction {
+	private async getRecurringLinks(): Promise<Map<string, string>> {
+		const { recurrenceGroupsForPeriod } = await this.client.request('wingspan_GetRecurringLinks', GET_RECURRING_LINKS_QUERY, GetRecurringLinksSchema);
+		return new Map(recurrenceGroupsForPeriod.flatMap(({ recurrenceGroup }) => recurrenceGroup.transactions.map(transaction => [transaction.id, recurrenceGroup.id] as const)));
+	}
+
+	private toTransaction(result: MonarchTransaction, recurrenceGroupId: string | undefined): Transaction {
 		return {
 			id: result.id,
 			date: result.date,
@@ -140,7 +158,7 @@ export class MonarchTransactionsClient {
 			logoUrl: result.merchant?.logoUrl ?? undefined,
 			category: result.category ? { id: result.category.id, name: result.category.name, icon: result.category.icon ?? null, groupType: result.category.group?.type } : undefined,
 			accountId: result.account?.id,
-			recurrenceGroupId: result.recurrenceGroup?.id,
+			recurrenceGroupId,
 			hideFromReports: result.hideFromReports ?? false,
 			pending: result.pending ?? false
 		};

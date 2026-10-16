@@ -31,12 +31,13 @@ describe('merging two copies', () => {
 		active: true,
 		since: '2026-01'
 	});
-	const dataOf = (items: RecurringItem[], dueDays: Record<string, number> = {}, cushion = 0): WingspanData => ({
+	const dataOf = (items: RecurringItem[], dueDays: Record<string, number> = {}, cushion = 0, loanLinks: Record<string, string> = {}): WingspanData => ({
 		recurring: { trackingSince: '2026-01', recurringItems: items },
 		recurringDueDates: { dueDatesByRecurrenceId: dueDays },
 		cashSettings: { cushion },
 		businessCashSettings: {},
-		hsaReimbursementTags: { toReimburseTagId: '', reimbursedTagId: '' }
+		hsaReimbursementTags: { toReimburseTagId: '', reimbursedTagId: '' },
+		loanPaymentLinks: { loanAccountIdByRecurrenceId: loanLinks }
 	});
 	const names = (data: WingspanData) => data.recurring.recurringItems.map(each => each.name);
 
@@ -50,6 +51,14 @@ describe('merging two copies', () => {
 		expect(names(merged)).toEqual(['Rent!', 'Phone 2']);
 		expect(merged.recurringDueDates.dueDatesByRecurrenceId).toEqual({ rent: 3 });
 		expect(merged.cashSettings.cushion).toBe(500);
+	});
+
+	it("keeps each side's loan links, so one browser unlinking a payment and another linking a new one both stick", () => {
+		const base = dataOf([], {}, 0, { 'student-loan-payment': 'student-loan' });
+		const theirs = dataOf([], {}, 0, {});
+		const ours = dataOf([], {}, 0, { 'student-loan-payment': 'student-loan', 'car-payment': 'car-loan' });
+
+		expect(mergeWingspanData(theirs, ours, base).loanPaymentLinks.loanAccountIdByRecurrenceId).toEqual({ 'car-payment': 'car-loan' });
 	});
 
 	it('keeps a removal from either side, unless the other side edited the item since', () => {
@@ -76,7 +85,14 @@ describe('merging two copies', () => {
 
 describe("merging each business's cash and card settings", () => {
 	const data = (businessCashSettings: WingspanData['businessCashSettings']) =>
-		({ recurring, recurringDueDates, cashSettings: { cushion: 0 }, businessCashSettings, hsaReimbursementTags: { toReimburseTagId: '', reimbursedTagId: '' } }) as WingspanData;
+		({
+			recurring,
+			recurringDueDates,
+			cashSettings: { cushion: 0 },
+			businessCashSettings,
+			hsaReimbursementTags: { toReimburseTagId: '', reimbursedTagId: '' },
+			loanPaymentLinks: { loanAccountIdByRecurrenceId: {} }
+		}) as WingspanData;
 
 	it("takes each business's from whichever side changed it", () => {
 		const base = data({ studio: { cushion: 100 }, shop: { cushion: 200 } });

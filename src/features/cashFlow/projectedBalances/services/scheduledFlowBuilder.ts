@@ -2,7 +2,6 @@ import type { Calendar } from '../../../../common/calendar';
 import { ENDED_OCCURRENCE_STATUSES, MonarchOccurrenceStatus, MonarchRecurringType } from '../../../../monarch/api/models/monarchValues';
 import { occurrenceAccountId, type RecurringFlow } from '../../../../monarch/api/models/recurringFlow';
 import type { ExpectedIncomeKind } from '../../../recurring/expectedIncome/expectedIncomeKind';
-import type { LoanPaymentKind } from '../../../recurring/loanPayments/loanPaymentKind';
 import type { ManualBillKind } from '../../../recurring/manualBills/manualBillKind';
 import type { Occurrence } from '../../../recurring/recurringItems/models/occurrence';
 import type { RecurringItem } from '../../../recurring/recurringItems/models/recurringItem';
@@ -20,7 +19,7 @@ export interface ProjectedAccounts {
 }
 
 /**
- * Monarch's recurring income and expenses, and Wingspan's bills, loan payments and income, from today to the end date.
+ * Monarch's recurring income and expenses, and Wingspan's bills and income, from today to the end date.
  * Flows through checking have no accountId; flows on a card keep the card's id. Flows on any other account are left out.
  */
 export class ScheduledFlowBuilder {
@@ -29,7 +28,6 @@ export class ScheduledFlowBuilder {
 		private readonly recurrence: RecurrenceCalculator,
 		private readonly payments: RecurringPaymentCalculator,
 		private readonly manualBills: ManualBillKind,
-		private readonly loanPayments: LoanPaymentKind,
 		private readonly expectedIncome: ExpectedIncomeKind
 	) {}
 
@@ -47,19 +45,14 @@ export class ScheduledFlowBuilder {
 		endDate: string
 	): ScheduledFlow[] {
 		const monarchRecurrenceIds = this.projectedExpenseRecurrenceIds(recurringFlows, accounts);
-		// A bill Monarch already projects, such as a loan payment it found on its own, is counted once, from Monarch's flow.
+		// A bill Monarch also projects is counted once, from Monarch's flow.
 		const isProjectedByMonarch = (item: RecurringItem) => [...(paidRecurrenceIdsByItemId.get(item.id) ?? [])].some(recurrenceId => monarchRecurrenceIds.has(recurrenceId));
-		const bills = recurringItems.filter(item => this.isBill(item) && !isProjectedByMonarch(item));
+		const bills = recurringItems.filter(item => this.manualBills.owns(item) && !isProjectedByMonarch(item));
 		return [
 			...this.monarchFlows(recurringFlows, accounts, dueDayByRecurrenceId, endDate),
 			...this.billFlows(bills, outstandingOccurrences, accounts, endDate),
 			...this.incomeFlows(outstandingOccurrences, recurringItems, accounts, endDate)
 		];
-	}
-
-	/** Manual bills and loan payments are owed the same way. */
-	private isBill(item: RecurringItem): boolean {
-		return this.manualBills.owns(item) || this.loanPayments.owns(item);
 	}
 
 	/** Monarch's recurring expenses with an occurrence from today on an account the projection follows. */

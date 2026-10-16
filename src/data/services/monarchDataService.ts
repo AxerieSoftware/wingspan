@@ -85,6 +85,12 @@ export class MonarchDataService {
 		}
 	}
 
+	/** Fetches a new snapshot even though today's is cached, as after Monarch adds a recurring item. The current one shows until it arrives. */
+	public refresh(): Promise<void> {
+		this.queryClient.removeQueries({ queryKey: this.queryKey(), exact: true });
+		return this.load();
+	}
+
 	/** Monarch's accounts from the snapshot, loading it first if needed. Empty when it can't load. */
 	public async getAccounts(): Promise<Account[]> {
 		await this.load();

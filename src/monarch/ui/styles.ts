@@ -305,25 +305,59 @@ export const metaRowStyles = tv({
 	}
 });
 
-/** Monarch's pill-shaped toast at the bottom of the page, with its action buttons. */
-export const actionToastStyles = tv({
+/** Monarch's small badge: an orange count or a blue tag. */
+export const badgeStyles = tv({
+	base: 'inline-flex shrink-0 items-center gap-2xs rounded-sm py-2xs',
+	variants: {
+		tone: {
+			count: 'h-6.5 min-w-6.5 justify-center bg-background-brand px-2xs text-content-white',
+			info: 'bg-background-info px-xs text-content-info'
+		}
+	}
+});
+
+/** Monarch's info banner: a tinted strip with an icon, a description and its actions at the end. */
+export const bannerStyles = tv({
 	slots: {
-		viewport: 'pointer-events-none fixed inset-x-0 bottom-default z-toast flex flex-col items-center px-default outline-none',
+		root: 'flex items-center gap-sm overflow-auto rounded-sm bg-background-info px-default py-xs text-base font-book text-content-info',
+		icon: 'inline-flex shrink-0 items-center',
+		content: 'flex min-w-0 flex-1 flex-col gap-3xs',
+		description: 'text-sm',
+		actions: 'ml-auto flex shrink-0 items-center gap-2xs'
+	}
+});
+
+/** Monarch's toast: a card at the bottom right with an icon, a title, an optional description, an action and a close button. */
+export const toastStyles = tv({
+	slots: {
+		viewport:
+			'fixed right-default bottom-[calc(var(--spacing-default)+var(--toast-bottom-offset,0px)+var(--mds-prompt-toast-offset,0px))] z-toast w-105 max-w-[calc(100vw-2*var(--spacing-default))] outline-none',
 		root: [
-			'pointer-events-auto flex w-fit max-w-container-2xl items-center gap-default rounded-pill bg-background-frosted py-xs text-content-primary shadow-lg',
-			'[backdrop-filter:var(--background-blur-frosted)] transition-[opacity,translate] duration-200 ease-out',
-			'data-ending-style:pointer-events-none data-ending-style:translate-y-xs data-ending-style:opacity-0 data-limited:hidden',
-			'data-starting-style:pointer-events-none data-starting-style:translate-y-xs data-starting-style:opacity-0',
+			'flex w-105 max-w-full rounded-lg bg-background-frosted text-content-primary shadow-lg',
+			'[backdrop-filter:var(--background-blur-frosted)] data-ending-style:opacity-0 data-starting-style:opacity-0',
 			'[body:has([data-mds=dialog-backdrop],[data-mds=alert-dialog-backdrop],[data-mds=drawer-backdrop])_&]:[backdrop-filter:none]'
 		],
-		message: 'm-0 min-w-0 text-sm/snug font-medium text-pretty text-content-primary',
-		actions: 'flex shrink-0 items-center gap-2xs',
+		content: 'flex flex-1 items-start gap-sm overflow-hidden rounded-lg p-sm',
+		iconSlot: 'flex h-5 w-4 shrink-0 items-center justify-center',
+		body: 'flex min-w-0 flex-1 flex-col justify-center gap-sm',
+		text: 'flex flex-col gap-3xs text-pretty wrap-anywhere',
+		title: 'm-0 text-sm/5 font-medium text-content-primary',
+		description: 'm-0 text-xs font-book text-content-secondary',
+		actionsPanel: 'flex flex-wrap items-center gap-xs',
 		action: [
-			'flex cursor-pointer items-center justify-center rounded-pill border-0 bg-content-primary/10 px-sm py-2xs text-sm font-medium whitespace-nowrap text-content-primary outline-none',
-			'hover:bg-content-primary/20 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-border-info focus-visible:outline-solid active:bg-content-primary/25'
+			'flex h-7.5 cursor-pointer items-center justify-center rounded-pill border-0 px-sm text-sm font-medium whitespace-nowrap outline-none',
+			'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-border-info focus-visible:outline-solid',
+			'bg-content-primary/12 text-content-primary hover:bg-content-primary/18 active:bg-content-primary/25'
+		],
+		closeButton: [
+			'-mt-3xs flex size-6 shrink-0 cursor-pointer items-center justify-center self-start rounded-round border-0 bg-transparent text-content-primary outline-none hover:bg-content-primary/10',
+			'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-border-info focus-visible:outline-solid'
 		]
 	},
-	variants: { hasActions: { true: { root: 'pr-xs pl-lg' }, false: { root: 'px-lg' } } }
+	variants: {
+		// Monarch's toast asking for an action tints its question mark; its bell stays plain.
+		icon: { help: { iconSlot: 'text-content-info' }, bell: {} }
+	}
 });
 
 /** The shimmering placeholder Monarch shows while data loads. */
