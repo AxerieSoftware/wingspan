@@ -330,8 +330,7 @@ export const bannerStyles = tv({
 /** Monarch's toast: a card at the bottom right with an icon, a title, an optional description, an action and a close button. */
 export const toastStyles = tv({
 	slots: {
-		viewport:
-			'fixed right-default bottom-[calc(var(--spacing-default)+var(--toast-bottom-offset,0px)+var(--mds-prompt-toast-offset,0px))] z-toast w-105 max-w-[calc(100vw-2*var(--spacing-default))] outline-none',
+		viewport: 'fixed right-default bottom-[calc(var(--spacing-default)+var(--toast-bottom-offset,0px))] z-toast w-105 max-w-[calc(100vw-2*var(--spacing-default))] outline-none',
 		root: [
 			'flex w-105 max-w-full rounded-lg bg-background-frosted text-content-primary shadow-lg',
 			'[backdrop-filter:var(--background-blur-frosted)] data-ending-style:opacity-0 data-starting-style:opacity-0',
