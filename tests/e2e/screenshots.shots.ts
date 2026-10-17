@@ -150,6 +150,20 @@ for (const theme of THEMES) {
 			await siteShot(page, 'payment-update-banner', theme, banner, { pad: 12 });
 		});
 
+		test('sync status', async ({ page, household, open }) => {
+			household.stallAccountSync('acct-flex', 19);
+			await page.setViewportSize({ width: 1440, height: 900 });
+			await openAsReturning(page, open, '/transactions');
+			await useTheme(page, theme);
+			await page
+				.locator('[data-wingspan-header-note]')
+				.getByRole('button', { name: /last account sync/ })
+				.click();
+			const popover = page.getByRole('dialog', { name: 'Account syncs' });
+			await expect(popover).toBeVisible();
+			await siteShot(page, 'sync-status', theme, popover, { band: true });
+		});
+
 		test('loans paid down and interest cost on Cash Flow', async ({ page, open }) => {
 			// Wide enough for the row of totals, which Wingspan's two cards make six.
 			await page.setViewportSize({ width: 1600, height: 900 });

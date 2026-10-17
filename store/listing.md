@@ -38,6 +38,7 @@ Up to 132 characters, the same as `description` in `wxt.config.ts`.
 >
 > TRANSACTIONS
 > • Retail receipt sync: your purchases are sent to Monarch as receipts, which Monarch matches and splits like its Amazon and Target receipts.
+> • Sync status: when your accounts last synced, which ones are behind or need attention, and a button to refresh them all.
 >
 > SIDEBAR
 > • Workspaces: switch between the household and a business, and supported pages show only that one's money. For households using Monarch's businesses (Plus plan).

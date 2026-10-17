@@ -124,6 +124,13 @@
 					"cards": []
 				},
 				{
+					"name": "Sync status",
+					"where": "Adds to Transactions",
+					"description": "When your accounts last synced, which are behind or need attention, and a button to refresh them all",
+					"page": "/features/sync-status/",
+					"cards": []
+				},
+				{
 					"name": "Workspaces",
 					"where": "Adds to the sidebar",
 					"description": "One switch for the household or a business that every supported page follows, for Monarch Plus households with a business",

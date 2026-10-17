@@ -29,6 +29,7 @@ import { MonarchRowScope } from './services/monarchRowScope';
 import type { WorkspaceNavigation } from './services/workspaceNavigation';
 
 const GROUP_ACCOUNTS_QUERY = 'recurrenceGroupAccounts';
+const UNFILTERED_NOTE = 'unfiltered';
 const SUMMARY_QUERY = 'recurringSummary';
 /** The All view lists every item, including yearly ones, so rows are matched against a full year of occurrences. */
 const ALL_VIEW_MONTHS = 12;
@@ -137,7 +138,7 @@ export class WorkspaceFeature implements WingspanFeature {
 		this.accountsPage.cancel();
 		this.recurringPage.removeEntityFilter();
 		this.sidebar.removeRow();
-		this.pageHeader.removeNote();
+		this.pageHeader.removeNote(UNFILTERED_NOTE);
 	}
 
 	/** Accounts can't be opened on Household by a link, so Household is picked in Monarch's own filter as the page opens. */
@@ -154,10 +155,10 @@ export class WorkspaceFeature implements WingspanFeature {
 	/** On pages Monarch can't filter by business, says so in the header. */
 	private showUnfilteredNote(isSwitching: boolean): void {
 		if (!isSwitching || !isUnfilteredPage(this.pageHeader.path)) {
-			this.pageHeader.removeNote();
+			this.pageHeader.removeNote(UNFILTERED_NOTE);
 			return;
 		}
-		this.pageHeader.showNote({
+		this.pageHeader.showNote(UNFILTERED_NOTE, {
 			render: hostEl => {
 				const island = new Island(hostEl);
 				island.render(<UnfilteredPageNote />);
