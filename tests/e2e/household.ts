@@ -155,6 +155,11 @@ export class Household {
 	private hasLoanPayment = false;
 	private isLoanPaymentLinked = false;
 	private hasCardInterest = false;
+	/** When the accounts that sync with a bank last synced: two hours ago, until Refresh all syncs them now. */
+	private accountsSyncedAt = new Date(Date.now() - 2 * 60 * 60_000).toISOString();
+	private readonly disconnectedAccountIds = new Set<string>();
+	/** Accounts stuck at an older sync that Refresh all doesn't move, by account id. */
+	private readonly stalledSyncedAt = new Map<string, string>();
 	/** Loan balances entered through Monarch's account edit, by account id, as amounts owed. */
 	private readonly enteredLoanBalances = new Map<string, number>();
 
@@ -204,6 +209,16 @@ export class Household {
 	/** Saves Monarch's Auto Loan expense as paying toward the auto loan, as choosing it under Pays toward does. */
 	public linkLoanPayment(): void {
 		this.isLoanPaymentLinked = true;
+	}
+
+	/** Has the account's bank connection need signing in again, as Monarch shows on Accounts. */
+	public disconnectAccount(accountId: string): void {
+		this.disconnectedAccountIds.add(accountId);
+	}
+
+	/** Has the account last sync the given days ago and stay there, like a card that syncs only when its owner opens Monarch. */
+	public stallAccountSync(accountId: string, daysAgo: number): void {
+		this.stalledSyncedAt.set(accountId, new Date(Date.now() - daysAgo * 24 * 60 * 60_000).toISOString());
 	}
 
 	/** Charges the rewards card interest ten days ago, as when a statement wasn't paid in full. */
@@ -279,6 +294,8 @@ export class Household {
 					businessEntity: null,
 					includeInNetWorth: !account.isHidden,
 					includeBalanceInNetWorth: !account.isHidden,
+					displayLastUpdatedAt: this.stalledSyncedAt.get(account.id) ?? this.accountsSyncedAt,
+					credential: this.disconnectedAccountIds.has(account.id) ? { updateRequired: true, disconnectedFromDataProviderAt: null } : null,
 					...account,
 					...(this.enteredLoanBalances.has(account.id) ? { currentBalance: -(this.enteredLoanBalances.get(account.id) ?? 0) } : {}),
 					...(account.type.name === 'loan' ? { signedBalance: ({ date }: { date: string }) => this.loanBalanceOn(date, account.currentBalance) } : {})
@@ -349,6 +366,11 @@ export class Household {
 				pageInfo: { hasNextPage: false, endCursor: null },
 				edges: this.existingReceipts.map((receipt, index) => ({ cursor: String(index), node: { id: `retail-order-${index}`, ...receipt } }))
 			}),
+			forceRefreshAllAccounts: () => {
+				this.accountsSyncedAt = this.now();
+				return { success: true, forceRefreshOperationId: 'refresh-1', errors: null };
+			},
+			forceRefreshOperation: () => ({ state: 'COMPLETED' }),
 			createManualAccount: ({ input }) => {
 				const { name } = input as { name: string };
 				const account: StoredAccount = { id: `acct-manual-${this.storedAccounts.length + 1}`, displayName: name, isHidden: false, notes: null, updatedAt: this.now(), deletedAt: null };

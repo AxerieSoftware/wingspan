@@ -19,6 +19,8 @@ export class Formatter {
 	private readonly shortMonthFormat: Intl.DateTimeFormat;
 	private readonly weekdayFormat: Intl.DateTimeFormat;
 	private readonly timeFormat: Intl.DateTimeFormat;
+	private readonly relativeTimeFormat: Intl.RelativeTimeFormat;
+	private readonly narrowRelativeTimeFormat: Intl.RelativeTimeFormat;
 
 	/** Monarch shows US English only. */
 	public readonly locale = MONARCH_LOCALE;
@@ -39,6 +41,8 @@ export class Formatter {
 		this.weekdayFormat = new Intl.DateTimeFormat(locale, { weekday: 'long', timeZone: DATE_TIME_ZONE });
 		// Uses the local time zone, unlike dates, which are calendar days.
 		this.timeFormat = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' });
+		this.relativeTimeFormat = new Intl.RelativeTimeFormat(locale, { numeric: 'always' });
+		this.narrowRelativeTimeFormat = new Intl.RelativeTimeFormat(locale, { numeric: 'always', style: 'narrow' });
 	}
 
 	/** Rounded to the cent first, so float noise never shows as "-$0.00". */
@@ -79,6 +83,16 @@ export class Formatter {
 		const day = String(date.getDate()).padStart(2, '0');
 		const isoDate = `${year}-${month}-${day}`;
 		return isoDate === this.calendar.today() ? this.timeFormat.format(date) : this.nearDate(isoDate);
+	}
+
+	/** How long ago, as "just now", "5 minutes ago", "2 hours ago" or "3 days ago". */
+	public timeAgo(timestamp: number, now: number): string {
+		return this.timeAgoCore(timestamp, now, this.relativeTimeFormat);
+	}
+
+	/** How long ago, as "just now", "5m ago", "2h ago" or "3d ago". */
+	public shortTimeAgo(timestamp: number, now: number): string {
+		return this.timeAgoCore(timestamp, now, this.narrowRelativeTimeFormat);
 	}
 
 	/** Leaves out the year for dates in the current year. */
@@ -129,5 +143,14 @@ export class Formatter {
 
 	private withoutNegativeZero(amount: number): number {
 		return amount === 0 ? 0 : amount;
+	}
+
+	private timeAgoCore(timestamp: number, now: number, relativeTimeFormat: Intl.RelativeTimeFormat): string {
+		const minutes = Math.floor((now - timestamp) / 60_000);
+		if (minutes < 1) return 'just now';
+		if (minutes < 60) return relativeTimeFormat.format(-minutes, 'minute');
+		const hours = Math.floor(minutes / 60);
+		if (hours < 24) return relativeTimeFormat.format(-hours, 'hour');
+		return relativeTimeFormat.format(-Math.floor(hours / 24), 'day');
 	}
 }

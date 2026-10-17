@@ -53,6 +53,10 @@ export class AccountsPage {
 		return !!userState && typeof userState === 'object' && 'businessEntityIds' in userState;
 	}
 
+	public open(): void {
+		this.navigator.navigateTo(ACCOUNTS_PATH);
+	}
+
 	/**
 	 * Picks Household in Monarch's business filter, out of sight, leaving an existing choice alone. Monarch opens its
 	 * menu a frame after the click, so this runs again on each sync until it's done.

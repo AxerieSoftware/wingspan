@@ -4,6 +4,11 @@ import { WingspanAttribute } from '../wingspanAttributes';
 
 const HEADER_SELECTOR = '[data-external-id="header"]';
 
+/** Wingspan's notes in the header, in the order they're shown. */
+const NOTE_ORDER = ['unfiltered', 'syncStatus'] as const;
+
+export type PageHeaderNoteKey = (typeof NOTE_ORDER)[number];
+
 /*
  * The header at the top of most of Monarch's pages: a grid with the title and tabs on the left and, on most pages,
  * a row of buttons on the right.
@@ -12,10 +17,10 @@ const HEADER_SELECTOR = '[data-external-id="header"]';
  * | Goals  [Save up] [Pay down]        [ Wingspan's note ] [Manage] [Add] |
  * +----------------------------------------------------------------------+
  *
- * The note goes first in the button row, or in its own column at the right where there's no row.
+ * Notes go first in the button row, or in their own column at the right where there's no row.
  */
 export class PageHeader {
-	private note: MountedSlot | null = null;
+	private readonly notes = new Map<PageHeaderNoteKey, MountedSlot>();
 
 	public constructor(
 		private readonly document: Document,
@@ -26,25 +31,32 @@ export class PageHeader {
 		return this.navigator.path;
 	}
 
-	/** Shows the note in the header, or removes it while the page has no header. */
-	public showNote(content: SlotContent): void {
+	/** Shows the note in the header, in `NOTE_ORDER` with Wingspan's other notes, or removes it while the page has no header. */
+	public showNote(key: PageHeaderNoteKey, content: SlotContent): void {
 		const headerEl = this.document.querySelector<HTMLElement>(HEADER_SELECTOR);
 		if (!headerEl) {
-			this.removeNote();
+			this.removeNote(key);
 			return;
 		}
 
-		this.note ??= MountedSlot.mount(this.document, content, WingspanAttribute.headerNote, { className: 'flex shrink-0 items-center', style: 'margin-right: var(--spacing-xs);' });
+		if (!this.notes.get(key)?.hostEl.isConnected) {
+			this.removeNote(key);
+			this.notes.set(key, MountedSlot.mount(this.document, content, WingspanAttribute.headerNote, { className: 'flex shrink-0 items-center', style: 'margin-right: var(--spacing-xs);' }));
+		}
+
+		const noteEls = NOTE_ORDER.flatMap(noteKey => this.notes.get(noteKey)?.hostEl ?? []);
 		const buttonRowEl = headerEl.children.length > 1 ? headerEl.lastElementChild : null;
 		if (buttonRowEl) {
-			if (buttonRowEl.firstElementChild !== this.note.hostEl) buttonRowEl.prepend(this.note.hostEl);
-		} else if (headerEl.lastElementChild !== this.note.hostEl) {
-			headerEl.append(this.note.hostEl);
+			const firstEls = [...buttonRowEl.children].slice(0, noteEls.length);
+			if (noteEls.some((noteEl, index) => noteEl !== firstEls[index])) buttonRowEl.prepend(...noteEls);
+		} else {
+			const lastEls = [...headerEl.children].slice(-noteEls.length);
+			if (noteEls.some((noteEl, index) => noteEl !== lastEls[index])) headerEl.append(...noteEls);
 		}
 	}
 
-	public removeNote(): void {
-		this.note?.remove();
-		this.note = null;
+	public removeNote(key: PageHeaderNoteKey): void {
+		this.notes.get(key)?.remove();
+		this.notes.delete(key);
 	}
 }

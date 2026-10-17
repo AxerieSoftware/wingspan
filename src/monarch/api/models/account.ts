@@ -6,6 +6,19 @@ export interface AccountSummary {
 	type: { name: string };
 }
 
+/** An account as it syncs with its bank. */
+export interface SyncedAccount {
+	id: string;
+	displayName: string;
+	isHidden: boolean;
+	isManual: boolean;
+	syncDisabled: boolean;
+	/** When Monarch last updated the account from its bank. */
+	displayLastUpdatedAt: string | null;
+	/** Set when the bank connection needs the household, like signing in again. */
+	credential: { updateRequired: boolean; disconnectedFromDataProviderAt: string | null } | null;
+}
+
 export interface Account {
 	id: string;
 	displayName: string;

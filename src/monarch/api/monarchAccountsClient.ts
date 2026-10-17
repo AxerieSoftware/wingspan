@@ -1,5 +1,6 @@
 import * as v from 'valibot';
-import type { Account, AccountNotes, AccountSummary, CreateManualAccountInput, UpdateAccountInput } from './models/account';
+import { lenientArray } from './lenientArray';
+import type { Account, AccountNotes, AccountSummary, CreateManualAccountInput, SyncedAccount, UpdateAccountInput } from './models/account';
 import type { BusinessEntity } from './models/businessEntity';
 import { MonarchApiError } from './monarchApiError';
 import type { MonarchClient } from './monarchClient';
@@ -57,6 +58,35 @@ const DELETE_ACCOUNT_MUTATION = `
 	}
 `;
 
+const GET_SYNC_STATUS_QUERY = `
+	query wingspan_GetSyncStatus {
+		accounts {
+			id displayName isHidden isManual syncDisabled displayLastUpdatedAt
+			credential { updateRequired disconnectedFromDataProviderAt }
+		}
+	}
+`;
+
+const REFRESH_ALL_ACCOUNTS_MUTATION = `
+	mutation wingspan_RefreshAllAccounts($input: ForceRefreshAllAccountsInput) {
+		forceRefreshAllAccounts(input: $input) {
+			success
+			forceRefreshOperationId
+			errors { message }
+		}
+	}
+`;
+
+const GET_REFRESH_STATE_QUERY = `
+	query wingspan_GetRefreshState($id: ID!) {
+		forceRefreshOperation(id: $id) { state }
+	}
+`;
+
+/** Where Monarch's refresh was started from, as Monarch's own buttons report it. */
+const REFRESH_SOURCE = 'wingspan_transactions';
+const COMPLETED_STATE = 'COMPLETED';
+
 const ACCOUNT_CHANGE_REJECTED: MutationRejection = { logMessage: "Monarch rejected a change to Wingspan's account.", userMessage: "Monarch couldn't save the change." };
 
 const AccountSummarySchema = v.object({ id: v.string(), displayName: v.string(), isHidden: v.boolean(), type: v.object({ name: v.string() }) });
@@ -94,7 +124,21 @@ const CreateManualAccountSchema = v.object({ createManualAccount: MutationPayloa
 const UpdateAccountSchema = v.object({ updateAccount: MutationPayloadSchema({}) });
 const DeleteAccountSchema = v.object({ deleteAccount: MutationPayloadSchema({ deleted: v.nullish(v.boolean()) }) });
 
-/** Reads the household's accounts and businesses, and creates, updates and deletes Wingspan's own account. */
+const SyncedAccountSchema = v.object({
+	id: v.string(),
+	displayName: v.string(),
+	isHidden: v.nullish(v.boolean(), false),
+	isManual: v.nullish(v.boolean(), false),
+	syncDisabled: v.nullish(v.boolean(), false),
+	displayLastUpdatedAt: v.nullish(v.string(), null),
+	credential: v.nullish(v.object({ updateRequired: v.nullish(v.boolean(), false), disconnectedFromDataProviderAt: v.nullish(v.string(), null) }), null)
+});
+
+const GetSyncStatusSchema = v.object({ accounts: lenientArray('accounts', SyncedAccountSchema) });
+const RefreshAllAccountsSchema = v.object({ forceRefreshAllAccounts: MutationPayloadSchema({ forceRefreshOperationId: v.nullish(v.string(), null) }) });
+const GetRefreshStateSchema = v.object({ forceRefreshOperation: v.nullish(v.object({ state: v.nullish(v.string(), null) }), null) });
+
+/** Reads the household's accounts and businesses, creates, updates and deletes Wingspan's own account, and refreshes the accounts from their banks. */
 export class MonarchAccountsClient {
 	public constructor(private readonly client: MonarchClient) {}
 
@@ -144,5 +188,26 @@ export class MonarchAccountsClient {
 		const { deleteAccount } = await this.client.request('wingspan_DeleteAccount', DELETE_ACCOUNT_MUTATION, DeleteAccountSchema, { id: accountId });
 		ensureMutationSucceeded(deleteAccount, ACCOUNT_CHANGE_REJECTED);
 		if (deleteAccount?.deleted === false) throw new MonarchApiError("Monarch didn't delete the account.", false);
+	}
+
+	/** Every account with when it last synced and whether its bank connection needs attention. */
+	public async getSyncedAccounts(): Promise<SyncedAccount[]> {
+		const { accounts } = await this.client.request('wingspan_GetSyncStatus', GET_SYNC_STATUS_QUERY, GetSyncStatusSchema);
+		return accounts;
+	}
+
+	/** Starts refreshing every account and returns the refresh's id, or null when Monarch didn't give one to follow. */
+	public async refreshAllAccounts(): Promise<string | null> {
+		const { forceRefreshAllAccounts } = await this.client.request('wingspan_RefreshAllAccounts', REFRESH_ALL_ACCOUNTS_MUTATION, RefreshAllAccountsSchema, {
+			input: { source: REFRESH_SOURCE }
+		});
+		ensureMutationSucceeded(forceRefreshAllAccounts, { logMessage: 'Monarch rejected refreshing all accounts.', userMessage: "Monarch couldn't refresh your accounts." });
+		return forceRefreshAllAccounts?.forceRefreshOperationId ?? null;
+	}
+
+	/** Whether the refresh has finished with every account. */
+	public async isRefreshComplete(refreshId: string): Promise<boolean> {
+		const { forceRefreshOperation } = await this.client.request('wingspan_GetRefreshState', GET_REFRESH_STATE_QUERY, GetRefreshStateSchema, { id: refreshId });
+		return forceRefreshOperation?.state === COMPLETED_STATE;
 	}
 }
