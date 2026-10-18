@@ -58,7 +58,10 @@ Up to 132 characters, the same as `description` in `wxt.config.ts`.
 | Website | https://wingspan.axerie.com |
 | Support | https://github.com/AxerieSoftware/wingspan/issues |
 | Privacy policy | https://wingspan.axerie.com/privacy/ |
-| Visibility for the beta | Unlisted, then public |
+| Visibility for the beta | Chrome: Unlisted. Edge: Hidden. Then public |
+| Markets (Edge) | United States, where Monarch works in dollars |
+| Mature content (Edge) | No |
+| Search terms (Edge) | Monarch Money, budget, recurring bills, cash flow, credit card payments, loans, receipts |
 
 ## Images
 
@@ -68,10 +71,12 @@ Up to 132 characters, the same as `description` in `wxt.config.ts`.
 | --- | --- | --- |
 | Icon | 128x128 (`public/icon/128.png`) | Both |
 | Screenshots (`store/screenshots`) | 1280x800 | Both |
-| Small promo tile | 440x280 (`store/promo-tile.png`, from `assets/promo-tile.svg`) | Chrome |
+| Small promo tile | 440x280 (`store/promo-tile.png`, from `assets/promo-tile.svg`) | Both |
 | Logo | 300x300 (`store/logo.png`, from `assets/store-logo.svg`) | Edge |
 
-## Privacy practices (Chrome)
+## Privacy practices
+
+Chrome's Privacy practices tab and Edge's Privacy page ask the same things.
 
 **Single purpose:** adds personal finance features to the Monarch Money web app.
 
@@ -93,6 +98,8 @@ Up to 132 characters, the same as `description` in `wxt.config.ts`.
 
 ## Notes for reviewers
 
-> Wingspan runs on app.monarch.com and needs a Monarch Money account with Recurring 2.0 turned on (Settings → Early Access). It adds rows to the Recurring page, a Projected balances card to Cash Flow, and a Sync retailer menu to Transactions → Receipts. Syncing Walmart or Costco first asks for that site on the extension's own page.
+Reviewers need a Monarch account to try Wingspan. Add a test account's email and password to the form's notes field when submitting, never to this file.
+
+> Wingspan runs on app.monarch.com and needs a Monarch Money account with Recurring 2.0 turned on (Settings → Early Access). It adds rows to the Recurring page, a Projected balances card to Cash Flow, a sync status button to Transactions, and a Sync retailer menu to Transactions → Receipts. Syncing Walmart or Costco first asks for that site on the extension's own page.
 >
 > Its requests to Monarch's own API are each tagged client=wingspan in their address, and its GraphQL requests are named with a wingspan_ prefix. It reads Monarch's CSRF cookie only to send it back to Monarch with those requests, and Monarch's saved session only for the household's ID. When the household syncs Walmart or Costco, it also calls that store's own API from the store tab it opens, with the session signed in there; for Costco it reuses the sign-in token Costco's page sends with its receipts request, in that tab only. Purchases read there go only to Monarch, as receipts. The source is at https://github.com/AxerieSoftware/wingspan.
