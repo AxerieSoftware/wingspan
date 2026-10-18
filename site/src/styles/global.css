@@ -110,6 +110,75 @@ h1#_top {
 	box-shadow: 0 2rem 4rem -1.5rem rgb(0 0 0 / 0.6);
 }
 
+/*
+ * The Wingspan mark rests on the hero screenshot's corner, then flaps and flutters off once per visit. Only transform
+ * and opacity change, so nothing shifts; visitors who ask for less motion see it resting.
+ */
+.hero-perch {
+	position: relative;
+}
+
+/* The flight leaves to the right; clipping it here keeps phones from scrolling sideways. */
+.hero {
+	overflow-x: clip;
+}
+
+.hero-mark {
+	position: absolute;
+	top: -1.6rem;
+	left: -0.6rem;
+	width: 3.5rem;
+	height: 3.5rem;
+	fill: #e8eaed;
+	filter: drop-shadow(0 0.4rem 0.6rem rgb(0 0 0 / 0.45));
+	transform: rotate(-10deg);
+	pointer-events: none;
+	animation: hero-mark-flight 2.6s cubic-bezier(0.45, 0, 0.75, 0.6) 1.7s both;
+}
+
+.hero-mark-wing {
+	transform-box: view-box;
+	transform-origin: 64px 64px;
+	animation: hero-mark-flap 0.22s ease-in-out 1.2s 20 alternate;
+}
+
+@keyframes hero-mark-flap {
+	to {
+		transform: scaleX(0.2);
+	}
+}
+
+@keyframes hero-mark-flight {
+	0% {
+		transform: translate(0, 0) rotate(-10deg);
+		opacity: 1;
+	}
+	18% {
+		transform: translate(0.6rem, -2.2rem) rotate(8deg);
+	}
+	38% {
+		transform: translate(4.5rem, -4.5rem) rotate(-6deg);
+	}
+	58% {
+		transform: translate(10rem, -6rem) rotate(10deg);
+	}
+	78% {
+		transform: translate(17rem, -10rem) rotate(-4deg);
+		opacity: 1;
+	}
+	100% {
+		transform: translate(26rem, -17rem) rotate(8deg) scale(0.7);
+		opacity: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.hero-mark,
+	.hero-mark-wing {
+		animation: none;
+	}
+}
+
 @media (min-width: 50rem) {
 	.hero {
 		grid-template-columns: 5fr 7fr;
@@ -130,7 +199,8 @@ h1#_top {
 	margin-block: 1.5rem;
 }
 
-.screenshot img {
+.screenshot img,
+.screenshot video {
 	display: block;
 	max-width: 100%;
 	height: auto;
@@ -147,4 +217,17 @@ h1#_top {
 :root[data-theme="dark"] .screenshot-light,
 :root:not([data-theme="dark"]) .screenshot-dark {
 	display: none;
+}
+
+/* The front page's tour, made by `npm run videos`. */
+.demo-video {
+	margin-block: 1.5rem 2.5rem;
+}
+
+.demo-video video {
+	display: block;
+	width: 100%;
+	height: auto;
+	border: 1px solid var(--sl-color-gray-5);
+	border-radius: 0.75rem;
 }

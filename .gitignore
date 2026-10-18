@@ -7,3 +7,4 @@ playwright-report/
 tests/.monarch-snapshot/
 site/dist/
 site/.astro/
+site/public/videos/

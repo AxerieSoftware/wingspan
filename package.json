@@ -2,7 +2,7 @@
 	"name": "wingspan",
 	"description": "",
 	"private": true,
-	"version": "0.4.1",
+	"version": "0.5.0",
 	"type": "module",
 	"engines": {
 		"node": ">=26"
@@ -29,6 +29,7 @@
 		"e2e": "wxt build && playwright test --project=e2e",
 		"e2e:refresh": "rm -rf tests/.monarch-snapshot",
 		"screenshots": "wxt build && playwright test --project=screenshots",
+		"videos": "wxt build && playwright test --project=video",
 		"generate:icons": "node scripts/generateIcons.ts",
 		"postinstall": "wxt prepare"
 	},

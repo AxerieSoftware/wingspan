@@ -6,7 +6,7 @@ export default defineConfig({
 	manifest: ({ browser }) => ({
 		name: 'Wingspan for Monarch Money',
 		short_name: 'Wingspan',
-		description: 'Extended features inside the Monarch Money web app. Not affiliated with Monarch.',
+		description: 'A third-party extension that adds features to the Monarch Money web app. Not affiliated with Monarch.',
 		permissions: ['storage', 'scripting'],
 		optional_host_permissions: ['https://www.walmart.com/*', 'https://www.costco.com/*'],
 		homepage_url: 'https://wingspan.axerie.com',

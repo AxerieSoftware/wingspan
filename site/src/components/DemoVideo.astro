@@ -1,0 +1,17 @@
+---
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+
+/* The one-minute tour made by `npm run videos`. It isn't in git: the site's deploy records it, and a local build without it shows nothing. */
+const VIDEO = "/videos/wingspan-demo.mp4";
+const POSTER = "/videos/wingspan-demo.jpg";
+const hasVideo = existsSync(join(process.cwd(), "public", VIDEO));
+---
+
+{
+	hasVideo && (
+		<figure class="demo-video not-content">
+			<video src={VIDEO} poster={POSTER} width="1920" height="1080" controls playsinline preload="none" aria-label="A one-minute tour of Wingspan in Monarch, with a caption for each feature." />
+		</figure>
+	)
+}
