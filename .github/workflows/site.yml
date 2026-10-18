@@ -35,10 +35,10 @@ jobs:
             site/package-lock.json
 
       # The tour and feature clips aren't in git: they're recorded here from the e2e tests' made-up household, and
-      # kept until the extension or the recordings change. If recording fails, the pages show their screenshots.
-      - name: Cache videos
+      # kept until the extension or the recordings change. A page whose clip failed to record shows its screenshot.
+      - name: Restore videos
         id: videos
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: site/public/videos
           key: videos-${{ hashFiles('src/**', 'entrypoints/**', 'public/**', 'tests/e2e/**', 'package-lock.json', 'wxt.config.ts') }}
@@ -67,10 +67,21 @@ jobs:
           path: tests/.monarch-snapshot
           key: monarch-snapshot-${{ steps.date.outputs.today }}
 
+      # Each video is saved as it's recorded, so one that fails leaves the others in place.
       - name: Record videos
+        id: record
         if: steps.videos.outputs.cache-hit != 'true'
+        continue-on-error: true
         working-directory: .
-        run: npm run videos || rm -rf site/public/videos
+        run: npm run videos
+
+      # Only a full set is kept, so a failed recording is tried again on the next deploy.
+      - name: Save videos
+        if: steps.record.outcome == 'success'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: site/public/videos
+          key: ${{ steps.videos.outputs.cache-primary-key }}
 
       - name: Install dependencies
         run: npm ci
