@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 280" width="440" height="280">
+  <title>Wingspan for Monarch Money</title>
+  <rect width="440" height="280" fill="#2F353C"/>
+  <g transform="translate(36 76) scale(1)">
+    <polygon points="64,35 116,17 108,59 76,63 106,85 90,111 64,93 38,111 22,85 52,63 20,59 12,17" fill="#E8EAED"/>
+  </g>
+  <text x="172" y="140" fill="#FFFFFF" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="46" font-weight="650" letter-spacing="-1">Wingspan</text>
+  <text x="174" y="172" fill="#A7AFB8" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="17" font-weight="500">Extended features for</text>
+  <text x="174" y="194" fill="#A7AFB8" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="17" font-weight="500">Monarch Money's web app</text>
+</svg>

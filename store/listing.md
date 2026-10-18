@@ -68,8 +68,8 @@ Up to 132 characters, the same as `description` in `wxt.config.ts`.
 | --- | --- | --- |
 | Icon | 128x128 (`public/icon/128.png`) | Both |
 | Screenshots (`store/screenshots`) | 1280x800 | Both |
-| Small promo tile | 440x280 | Chrome |
-| Logo | 300x300 | Edge |
+| Small promo tile | 440x280 (`store/promo-tile.png`, from `assets/promo-tile.svg`) | Chrome |
+| Logo | 300x300 (`store/logo.png`, from `assets/store-logo.svg`) | Edge |
 
 ## Privacy practices (Chrome)
 
