@@ -111,15 +111,15 @@ status 200 for a rejected request, so look for `"errors"` in the response.
 4. Tag the merged commit: `git switch main && git pull`, then
    `git tag vX.Y.Z && git push origin vX.Y.Z`. The tag starts `release.yml`,
    which runs CI, builds zips for Chrome, Edge, Firefox and Safari, and attaches
-   all four to a draft GitHub release. During the beta nothing goes to the
-   browser stores.
+   all four to a draft GitHub release. Upload the Chrome zip to the Chrome Web
+   Store, which Edge installs from too. The others are for loading by hand.
 5. Open the draft under Releases, write the notes and click **Publish
    release**. Nothing is public until then. GitHub fills in the merged pull
    requests, grouped by label (see `.github/release.yml`); add a short summary
    of what changed for users above them.
 6. Run the **Site** workflow from the Actions tab. It records the site's tour and
    feature clips again from the released code, since they aren't in git. Upload
-   the tour to YouTube for the store listings.
+   the tour to YouTube for the store listing.
 
 ## Layout
 

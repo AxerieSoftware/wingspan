@@ -1,6 +1,6 @@
 # Store listing
 
-What goes into the Chrome Web Store and Edge Add-ons forms.
+What goes into the Chrome Web Store's form. Edge installs extensions from the Chrome Web Store, so there's no separate Edge Add-ons listing.
 
 ## Name
 
@@ -53,31 +53,27 @@ Up to 132 characters, the same as `description` in `wxt.config.ts`.
 
 | Field | Value |
 | --- | --- |
-| Category | Chrome: Tools. Edge: Productivity |
+| Category | Productivity → Tools |
 | Language | English (United States) |
 | Website | https://wingspan.axerie.com |
 | Support | https://github.com/AxerieSoftware/wingspan/issues |
 | Privacy policy | https://wingspan.axerie.com/privacy/ |
-| Visibility for the beta | Chrome: Unlisted. Edge: Hidden. Then public |
-| Markets (Edge) | United States, where Monarch works in dollars |
-| Mature content (Edge) | No |
-| Search terms (Edge) | Monarch Money, budget, recurring bills, cash flow, credit card payments, loans, receipts |
+| Visibility for the beta | Unlisted, then public |
+| Distribution | United States, since Monarch works in US dollars |
+| Payments | Free of charge |
 
 ## Images
 
 `npm run screenshots` takes them from the e2e tests' made-up household, never a real account. They show Recurring with Statements and due dates, a manual bill's details, Projected balances, and the Cash and cards dialog.
 
-| Image | Size | Store |
-| --- | --- | --- |
-| Icon | 128x128 (`public/icon/128.png`) | Both |
-| Screenshots (`store/screenshots`) | 1280x800 | Both |
-| Small promo tile | 440x280 (`store/promo-tile.png`, from `assets/promo-tile.svg`) | Both |
-| Logo | 300x300 (`store/logo.png`, from `assets/store-logo.svg`) | Edge |
-| Demo video | YouTube upload of `site/public/videos/wingspan-demo.mp4`, recorded by `npm run videos` | Both |
+| Image | Size |
+| --- | --- |
+| Icon | 128x128 (`public/icon/128.png`) |
+| Screenshots (`store/screenshots`) | 1280x800 |
+| Small promo tile | 440x280 (`store/promo-tile.png`, from `assets/promo-tile.svg`) |
+| Demo video | YouTube upload of `site/public/videos/wingspan-demo.mp4`, recorded by `npm run videos` |
 
 ## Privacy practices
-
-Chrome's Privacy practices tab and Edge's Privacy page ask the same things.
 
 **Single purpose:** adds personal finance features to the Monarch Money web app.
 
@@ -89,20 +85,17 @@ Chrome's Privacy practices tab and Edge's Privacy page ask the same things.
 
 **Remote code:** No. All code ships in the package.
 
-**Data usage** (boxes to check):
+**Data usage** (boxes to check). The store counts data an extension reads and uses, even only in the browser, so these are checked although nothing reaches Axerie:
 - **Financial and payment information:** accounts, transactions, recurring items, budgets, goals and the household's businesses, read from Monarch to show Wingspan's features. With retail receipt sync, each purchase's items, prices, totals and payment method, sent only to Monarch as receipts. With Update balance, the loan balance you save, sent only to Monarch.
 - **Website content:** text on Monarch's pages, like row names, dates and the month shown, so Wingspan can place its additions next to Monarch's. Also Monarch's business filter on the page and how Recurring is grouped, so Wingspan can follow them.
 - **Authentication information:** Monarch's CSRF cookie, sent only back to Monarch's API with Wingspan's requests, the same way Monarch's web app does. During a Costco sync, the sign-in token Costco's own page sends with its receipts request, kept only in that tab's memory and sent only back to Costco with the same request. Neither is stored or sent anywhere else.
+- **Health information:** the medical expenses HSA reimbursements reads from Monarch, to total what's left to pay back from the HSA. They're shown only on the HSA's page.
 - **Personally identifiable information:** the signed-in household's ID from Monarch's saved session, used only to keep each household's data apart in this browser. Nothing else from the session is kept, and the ID is never sent anywhere.
 
 **Certifications:** not sold or transferred to third parties, not used for anything outside the single purpose, and not used to determine creditworthiness or for lending.
 
 ## Notes for reviewers
 
-Reviewers need a paid Monarch account to try Wingspan. Point them to the demo video instead, and add a test account to the form's notes field only if they ask for one, never to this file.
+The **Test instructions** tab, with no username or password, since Monarch is a paid service and we don't share an account. Up to 500 characters:
 
-> Wingspan runs on app.monarch.com and needs a Monarch Money account with Recurring 2.0 turned on (Settings → Early Access). It adds rows to the Recurring page, a Projected balances card to Cash Flow, a sync status button to Transactions, and a Sync retailer menu to Transactions → Receipts. Syncing Walmart or Costco first asks for that site on the extension's own page.
->
-> Its requests to Monarch's own API are each tagged client=wingspan in their address, and its GraphQL requests are named with a wingspan_ prefix. It reads Monarch's CSRF cookie only to send it back to Monarch with those requests, and Monarch's saved session only for the household's ID. When the household syncs Walmart or Costco, it also calls that store's own API from the store tab it opens, with the session signed in there; for Costco it reuses the sign-in token Costco's page sends with its receipts request, in that tab only. Purchases read there go only to Monarch, as receipts. The source is at https://github.com/AxerieSoftware/wingspan.
->
-> Monarch is a paid service, so we don't have a test account to share. The demo video in the listing shows each feature in a made-up household. If you need to try it yourself, reply and we'll set one up.
+> Wingspan needs a paid Monarch Money account at app.monarch.com, with Recurring 2.0 turned on (Settings > Early Access). We can't share one, but each feature page at https://wingspan.axerie.com/features/ has a clip of it running in a made-up household. Its requests go only to Monarch's API, tagged client=wingspan, with GraphQL names prefixed wingspan_. Wingspan is open source, so you can read all of its code at https://github.com/AxerieSoftware/wingspan.
