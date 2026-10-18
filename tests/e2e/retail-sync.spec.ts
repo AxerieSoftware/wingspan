@@ -52,6 +52,13 @@ test("Receipts and Retail Sync get a Sync retailer menu of Walmart and Costco ju
 	}
 });
 
+test('a household with businesses gets the Sync retailer menu too, where Monarch adds its business filter to Settings', async ({ page, household, open }) => {
+	household.addBusiness();
+	await open({ path: '/transactions/receipts', waitForRows: false });
+
+	await expect(syncMenu(page)).toBeVisible();
+});
+
 test("while one store syncs, the menu is disabled and shows which store it's reading", async ({ page, context, open }) => {
 	await open({ path: '/transactions/retail-sync', waitForRows: false });
 	await sendFromBackground(context, [{ type: 'retailSync:progress', retailer: 'costco', found: 3, fetched: 1 }]);

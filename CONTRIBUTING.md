@@ -67,6 +67,7 @@ npm test           # Vitest unit tests
 npx playwright install chromium
 npm run e2e                # the built extension in Monarch's real web app, with a made-up household
 npm run screenshots        # the README's and the stores' screenshots, from the made-up household
+npm run videos             # the site's tour and feature clips, to site/public/videos (needs ffmpeg)
 ```
 
 `e2e` serves Monarch's own web app from a local snapshot of its public bundle,
@@ -116,6 +117,9 @@ status 200 for a rejected request, so look for `"errors"` in the response.
    release**. Nothing is public until then. GitHub fills in the merged pull
    requests, grouped by label (see `.github/release.yml`); add a short summary
    of what changed for users above them.
+6. Run the **Site** workflow from the Actions tab. It records the site's tour and
+   feature clips again from the released code, since they aren't in git. Upload
+   the tour to YouTube for the store listings.
 
 ## Layout
 

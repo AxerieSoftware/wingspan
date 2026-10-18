@@ -4,8 +4,11 @@ import { WingspanAttribute } from '../wingspanAttributes';
 
 const RECEIPTS_PATH = '/transactions/receipts';
 const RETAIL_SYNC_PATH = '/transactions/retail-sync';
-/** Monarch's Settings link at the right of the Transactions header, on its Receipts and Retail Sync tabs. */
-const SETTINGS_LINK_SELECTOR = `[data-external-id="header"] a[href$="/settings"]`;
+/**
+ * Monarch's Settings link at the right of the Transactions header, on its Receipts and Retail Sync tabs. For a household
+ * with businesses, Monarch adds its business filter to the link's query.
+ */
+const SETTINGS_LINK_SELECTOR = `[data-external-id="header"] :is(a[href$="/settings"], a[href*="/settings?"])`;
 
 /** Transactions → Receipts and Retail Sync, where Monarch shows what it read from receipts and orders. */
 export class ReceiptsPage {

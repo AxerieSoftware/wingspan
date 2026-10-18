@@ -9,7 +9,7 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: "Wingspan",
-			description: "A browser extension that adds what Monarch Money doesn't have yet, inside Monarch's own pages.",
+			description: "A third-party browser extension that adds features to Monarch Money, inside Monarch's own pages.",
 			logo: { light: "./src/assets/wordmark.svg", dark: "./src/assets/wordmark-dark.svg", alt: "Wingspan", replacesTitle: true },
 			favicon: "/favicon.svg",
 			social: [{ icon: "github", label: "GitHub", href: repo }],

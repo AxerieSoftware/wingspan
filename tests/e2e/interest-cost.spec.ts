@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, monarchRow, type OpenOptions, test } from './fixtures';
+import { expect, monarchRow, type OpenOptions, settled, test } from './fixtures';
 
 const LOAN_PATH = '/accounts/details/acct-loan';
 const PAYMENT_PATH = '/transactions/tx-auto-loan';
@@ -50,7 +50,7 @@ test("after a payment, Update balance starts at the balance plus interest since,
 	await expect(loanCard(page)).toContainText('About $8,790.50 today');
 });
 
-test("choosing a loan under Pays toward in a Monarch expense's panel takes its payments off the loan's estimate", async ({ page, household, open }) => {
+test("choosing a loan under Pays toward in a Monarch expense's panel takes its payments off the loan's estimate", async ({ page, household, open, apiLog }) => {
 	household.addLoanPayment();
 	await open();
 
@@ -60,6 +60,8 @@ test("choosing a loan under Pays toward in a Monarch expense's panel takes its p
 	await paysToward.click();
 	await page.getByRole('option', { name: 'Auto Loan' }).click();
 	await expect(paysToward).toHaveText('Auto Loan');
+	// Reloading onto the loan before the link saves would lose it.
+	await settled(apiLog);
 
 	const card = await openLoan(page, open);
 	await expect(card).toContainText('minus $340.00 paid since.');

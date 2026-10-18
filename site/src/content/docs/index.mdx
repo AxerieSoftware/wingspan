@@ -1,12 +1,15 @@
 ---
 title: Wingspan for Monarch Money
-description: A free, open-source browser extension that adds what Monarch Money doesn't have yet, inside Monarch's own pages.
+description: A free, open-source, third-party browser extension that adds features to Monarch Money, inside Monarch's own pages.
 template: splash
 hero:
-  tagline: Adds what Monarch Money doesn't do yet, inside Monarch. See when every bill is due, which card payments checking can cover, and how much is safe to spend today. Free and open source, forever.
+  tagline: A third-party extension that adds features to Monarch Money, inside Monarch. See when every bill is due, which card payments checking can cover, and how much is safe to spend today. Free and open source, forever.
   image:
     html: |
+      <div class="hero-perch">
       <img class="hero-shot" src="/screenshots/projected-balances-dark-1200.webp" srcset="/screenshots/projected-balances-dark-1200.webp 1200w, /screenshots/projected-balances-dark-2048.webp 2048w" sizes="(min-width: 50rem) 58vw, 100vw" width="2048" height="1152" alt="Projected balances on Monarch&#39;s Cash Flow page, with checking day by day, free cash and what the cards owe." fetchpriority="high" />
+      <svg class="hero-mark" viewBox="0 0 128 128" aria-hidden="true"><g class="hero-mark-wing hero-mark-wing-left"><polygon points="64,35 12,17 20,59 52,63 22,85 38,111 64,93" /></g><g class="hero-mark-wing hero-mark-wing-right"><polygon points="64,35 116,17 108,59 76,63 106,85 90,111 64,93" /></g></svg>
+      </div>
   actions:
     - text: Quick start
       link: /quick-start/
@@ -17,7 +20,10 @@ hero:
 ---
 
 import { CardGrid, LinkCard } from "@astrojs/starlight/components";
+import DemoVideo from "../../components/DemoVideo.astro";
 import FeatureMap from "../../components/FeatureMap.astro";
+
+<DemoVideo />
 
 ## What it adds
 
