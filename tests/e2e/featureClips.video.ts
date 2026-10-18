@@ -18,6 +18,8 @@ const CAPTION_ZOOM = 1.5;
 const READING_PAUSE_MS = 2800;
 const LEAD_IN_MS = 600;
 const THEMES = ['light', 'dark'] as const;
+/** Sync status waits for a refresh, which a slow CI runner can take past Playwright's default 30 seconds to finish. */
+const CLIP_TIMEOUT_MS = 2 * 60_000;
 
 test.use({ viewport: CLIP_SIZE });
 
@@ -233,6 +235,7 @@ const CLIPS: Clip[] = [
 for (const clip of CLIPS) {
 	for (const theme of THEMES) {
 		test(`${clip.name}, ${theme}`, async ({ page, household, open }, testInfo) => {
+			test.setTimeout(CLIP_TIMEOUT_MS);
 			clip.setUp?.(household);
 			await page.addInitScript(installDemoOverlay, { zoom: CAPTION_ZOOM, hasTitleCard: false });
 			const demo = new DemoOverlay(page);
