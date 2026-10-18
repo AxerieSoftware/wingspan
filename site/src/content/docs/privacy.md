@@ -49,7 +49,7 @@ To remove what's in Monarch too, uninstall Wingspan first, then delete the "wing
 
 ## What Wingspan changes in Monarch
 
-Only what you ask it to. Retail receipt sync sends the receipts you choose. **Update balance**, on a manual loan's page or a payment's details, enters the balance you save as that loan's balance. Wingspan never changes any other account or transaction.
+Only what you ask it to. Retail receipt sync sends the receipts you choose. **Update balance**, on a manual loan's page or a payment's details, enters the balance you save as that loan's balance. **Refresh all** on Transactions asks Monarch to refresh your accounts from your banks, like Monarch's own button on Accounts. Wingspan never changes any other account or transaction.
 
 ## Permissions
 
