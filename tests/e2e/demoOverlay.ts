@@ -1,8 +1,9 @@
-import type { Locator, Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 /** Mouse moves in this many steps, so the cursor glides to what it clicks. */
 const CURSOR_STEPS = 28;
 const CLICK_SETTLE_MS = 250;
+const SCROLL_ATTEMPT_MS = 1000;
 /** Room around a highlighted element, so the outline doesn't sit on its edge. */
 const HIGHLIGHT_PADDING = 8;
 
@@ -149,6 +150,11 @@ export class DemoOverlay {
 		);
 	}
 
+	/** Scrolls `target` into view, again if Monarch redraws it mid-scroll, as it does while a page's data loads. */
+	public async scrollTo(target: Locator): Promise<void> {
+		await expect(async () => target.scrollIntoViewIfNeeded({ timeout: SCROLL_ATTEMPT_MS })).toPass();
+	}
+
 	/** Hides the caption and highlight as the view changes. */
 	public async clear(): Promise<void> {
 		await this.page.evaluate(() => {
@@ -160,7 +166,7 @@ export class DemoOverlay {
 	/** Glides the cursor to the middle of `target` and clicks it, as a person would. */
 	public async click(target: Locator): Promise<void> {
 		await this.clear();
-		await target.scrollIntoViewIfNeeded();
+		await this.scrollTo(target);
 		const box = await target.boundingBox();
 		if (!box) throw new Error('The demo has nothing to click.');
 		const x = box.x + box.width / 2;

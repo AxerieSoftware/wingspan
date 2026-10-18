@@ -50,7 +50,7 @@ test('a walk through Wingspan for the stores', async ({ page, household, open },
 
 	const statements = page.locator('[data-wingspan-statements]');
 	await demo.clear();
-	await statements.scrollIntoViewIfNeeded();
+	await demo.scrollTo(statements);
 	await demo.explain('Recurring', "Each card's statement, and whether checking can cover it", statements);
 	await pause(page);
 
@@ -71,7 +71,7 @@ test('a walk through Wingspan for the stores', async ({ page, household, open },
 	await demo.click(page.getByRole('link', { name: 'Cash Flow' }));
 	const projectedBalances = page.getByRole('group', { name: 'Projected balances' });
 	await expect(projectedBalances.getByRole('img', { name: /^Checking from / })).toBeVisible();
-	await projectedBalances.scrollIntoViewIfNeeded();
+	await demo.scrollTo(projectedBalances);
 	await demo.explain('Cash Flow', 'See checking day by day, and how much is free to spend today', projectedBalances);
 	await pause(page);
 	await demo.click(projectedBalances.getByRole('button', { name: 'Edit cash and cards', exact: true }));
@@ -84,7 +84,7 @@ test('a walk through Wingspan for the stores', async ({ page, household, open },
 	await demo.goTo('/accounts/details/acct-loan');
 	const interest = page.getByRole('group', { name: 'Interest', exact: true });
 	await expect(interest.getByRole('button', { name: 'Update balance' })).toBeVisible();
-	await interest.scrollIntoViewIfNeeded();
+	await demo.scrollTo(interest);
 	await demo.explain('Loans', 'See what a loan costs in interest each day, month and year', interest);
 	await pause(page);
 	await demo.click(interest.getByRole('button', { name: 'Update balance' }));
@@ -97,7 +97,7 @@ test('a walk through Wingspan for the stores', async ({ page, household, open },
 	await demo.goTo('/accounts/details/acct-hsa');
 	const hsaReimbursements = page.getByRole('group', { name: 'HSA reimbursements' });
 	await expect(hsaReimbursements).toBeVisible();
-	await hsaReimbursements.scrollIntoViewIfNeeded();
+	await demo.scrollTo(hsaReimbursements);
 	await demo.explain('Accounts', 'Find medical expenses you can still pay back from your HSA', hsaReimbursements);
 	await pause(page);
 

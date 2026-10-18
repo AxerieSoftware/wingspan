@@ -42,7 +42,7 @@ const CLIPS: Clip[] = [
 			await pause(page);
 			const income = section(page, 'Income');
 			await demo.clear();
-			await income.scrollIntoViewIfNeeded();
+			await demo.scrollTo(income);
 			await demo.explain('Recurring', 'Income too, so you can see what lands before each bill', income);
 			await pause(page);
 		}
@@ -52,7 +52,7 @@ const CLIPS: Clip[] = [
 		ready: page => itemRow(page.locator('[data-wingspan-statements]'), 'Rewards Card'),
 		async play(demo, page) {
 			const statements = page.locator('[data-wingspan-statements]');
-			await statements.scrollIntoViewIfNeeded();
+			await demo.scrollTo(statements);
 			await demo.explain('Recurring', 'Each card’s statement, due date and whether checking can cover it', statements);
 			await pause(page);
 			await demo.click(itemRow(statements, 'Rewards Card'));
@@ -102,7 +102,7 @@ const CLIPS: Clip[] = [
 		ready: page => page.getByRole('group', { name: 'Projected balances' }).getByRole('img', { name: /^Checking from / }),
 		async play(demo, page) {
 			const card = page.getByRole('group', { name: 'Projected balances' });
-			await card.scrollIntoViewIfNeeded();
+			await demo.scrollTo(card);
 			await demo.explain('Cash Flow', 'Checking day by day ahead, and how much is free to spend today', card);
 			await pause(page);
 			await demo.click(card.getByRole('button', { name: 'Edit cash and cards', exact: true }));
@@ -118,7 +118,7 @@ const CLIPS: Clip[] = [
 		ready: page => page.getByTestId('loans-paid-down-card'),
 		async play(demo, page) {
 			const loansPaidDown = page.getByTestId('loans-paid-down-card');
-			await loansPaidDown.scrollIntoViewIfNeeded();
+			await demo.scrollTo(loansPaidDown);
 			await demo.explain('Cash Flow', 'How much your loans went down, and its share of your income', loansPaidDown);
 			await pause(page);
 			await demo.explain('Cash Flow', 'What your debts cost in interest this month', page.getByTestId('interest-cost-card'));
@@ -135,7 +135,7 @@ const CLIPS: Clip[] = [
 		ready: page => page.getByRole('group', { name: 'Interest', exact: true }).getByRole('button', { name: 'Update balance' }),
 		async play(demo, page) {
 			const card = page.getByRole('group', { name: 'Interest', exact: true });
-			await card.scrollIntoViewIfNeeded();
+			await demo.scrollTo(card);
 			await demo.explain('Accounts', 'What a loan costs in interest each day, month and year', card);
 			await pause(page);
 			await demo.click(card.getByRole('button', { name: 'Update balance' }));
@@ -152,7 +152,7 @@ const CLIPS: Clip[] = [
 		ready: page => page.getByRole('group', { name: 'HSA reimbursements' }),
 		async play(demo, page) {
 			const card = page.getByRole('group', { name: 'HSA reimbursements' });
-			await card.scrollIntoViewIfNeeded();
+			await demo.scrollTo(card);
 			await demo.explain('Accounts', 'Medical expenses you can still pay back from your HSA', card);
 			await pause(page);
 			await demo.click(card.getByRole('button', { name: /^Reimbursed/ }));
