@@ -7,7 +7,9 @@ Wingspan works in Chrome and Edge on Monarch's web app. Firefox and Safari build
 
 ## Install
 
-A Chrome Web Store listing is on the way, and Edge installs from it too: the first time, Edge asks you to allow extensions from other stores. Until then, build from source:
+[Add Wingspan from the Chrome Web Store](https://chromewebstore.google.com/detail/jpbbafooilhlohnnmioddafboidfjepn), in Chrome or Edge. The first time, Edge asks you to allow extensions from other stores.
+
+To try changes before they're released, build it from source instead:
 
 ```bash
 git clone https://github.com/AxerieSoftware/wingspan.git
