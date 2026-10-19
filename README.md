@@ -36,7 +36,9 @@ Card payments and bills in Recurring, due dates, projected balances and free cas
 
 ## Install
 
-Wingspan is in beta and not in the Chrome Web Store yet. Once it is, Edge can install it from there too. Until then, each [release](https://github.com/AxerieSoftware/wingspan/releases) has a zip per browser. Unzip it, then:
+**[Add Wingspan from the Chrome Web Store](https://chromewebstore.google.com/detail/jpbbafooilhlohnnmioddafboidfjepn)**, in Chrome or Edge 144+. Edge asks once to allow extensions from other stores.
+
+Each [release](https://github.com/AxerieSoftware/wingspan/releases) also has a zip per browser, for Firefox and Safari or to load a build by hand. Unzip it, then:
 
 - **Chrome or Edge 144+:** open `chrome://extensions` or `edge://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder.
 - **Firefox 141+ (experimental):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `manifest.json` in the unzipped folder. Firefox removes it when it restarts, since the build isn't signed. If Wingspan doesn't appear on Monarch, open **Extensions** in the toolbar and allow it on app.monarch.com.
