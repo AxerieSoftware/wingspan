@@ -82,6 +82,18 @@ h1#_top {
 	color: var(--color-accent-600);
 }
 
+.hero .sl-link-button.secondary {
+	background: transparent;
+	border-color: rgb(232 234 237 / 0.5);
+	color: #f4f5f7;
+	font-weight: 600;
+}
+
+.hero .sl-link-button.secondary:hover {
+	border-color: #f4f5f7;
+	color: #ffffff;
+}
+
 .hero .sl-link-button.minimal {
 	color: #e8eaed;
 	text-decoration: underline;
