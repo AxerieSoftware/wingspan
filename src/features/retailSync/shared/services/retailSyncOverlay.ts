@@ -25,9 +25,8 @@ const STYLES = `
 	}
 `;
 
-const MARK_SVG = `<svg class="mark" viewBox="0 0 128 128" width="28" height="28" fill="currentColor" aria-hidden="true">
-	<polygon points="64,35 116,17 108,59 76,63 106,85 90,111 64,93 38,111 22,85 52,63 20,59 12,17" />
-</svg>`;
+const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
+const MARK_POINTS = '64,35 116,17 108,59 76,63 106,85 90,111 64,93 38,111 22,85 52,63 20,59 12,17';
 
 /** Shows that Wingspan is working in the store's tab, and blocks clicks on the page while it reads. */
 export interface SyncOverlay {
@@ -58,25 +57,49 @@ export class RetailSyncOverlay implements SyncOverlay {
 		this.progressEl = null;
 	}
 
+	// Built element by element rather than from an HTML string, which Firefox's add-on review flags.
 	private mount(): void {
 		const hostEl = this.document.createElement('div');
 		hostEl.setAttribute(HOST_ATTRIBUTE, '');
 		const root = hostEl.attachShadow({ mode: 'closed' });
-		root.innerHTML = `<style>${STYLES}</style>
-			<div class="backdrop" role="dialog" aria-modal="true" aria-labelledby="title">
-				<div class="card">
-					${MARK_SVG}
-					<p class="title" id="title"></p>
-					<div class="spinner" aria-hidden="true"></div>
-					<p class="progress" role="status"></p>
-					<p class="note">Keep this tab open. It closes automatically when it's done.</p>
-				</div>
-			</div>`;
-		this.progressEl = root.querySelector('.progress');
-		const titleEl = root.querySelector('.title');
-		if (titleEl) titleEl.textContent = this.title;
+
+		const style = this.document.createElement('style');
+		style.textContent = STYLES;
+		const backdrop = this.element('div', 'backdrop');
+		backdrop.setAttribute('role', 'dialog');
+		backdrop.setAttribute('aria-modal', 'true');
+		backdrop.setAttribute('aria-labelledby', 'title');
+		const card = this.element('div', 'card');
+		const title = this.element('p', 'title', this.title);
+		title.id = 'title';
+		const spinner = this.element('div', 'spinner');
+		spinner.setAttribute('aria-hidden', 'true');
+		const progress = this.element('p', 'progress');
+		progress.setAttribute('role', 'status');
+		const note = this.element('p', 'note', "Keep this tab open. It closes automatically when it's done.");
+		card.append(this.mark(), title, spinner, progress, note);
+		backdrop.append(card);
+		root.append(style, backdrop);
+
+		this.progressEl = progress;
 		this.document.documentElement.append(hostEl);
 		this.hostEl = hostEl;
+	}
+
+	private element(tagName: string, className: string, text?: string): HTMLElement {
+		const element = this.document.createElement(tagName);
+		element.className = className;
+		if (text) element.textContent = text;
+		return element;
+	}
+
+	private mark(): SVGElement {
+		const svg = this.document.createElementNS(SVG_NAMESPACE, 'svg');
+		for (const [name, value] of Object.entries({ class: 'mark', viewBox: '0 0 128 128', width: '28', height: '28', fill: 'currentColor', 'aria-hidden': 'true' })) svg.setAttribute(name, value);
+		const polygon = this.document.createElementNS(SVG_NAMESPACE, 'polygon');
+		polygon.setAttribute('points', MARK_POINTS);
+		svg.append(polygon);
+		return svg;
 	}
 }
 
