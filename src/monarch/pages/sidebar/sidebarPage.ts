@@ -42,7 +42,7 @@ export interface SidebarItem {
  */
 export class SidebarPage {
 	private row: MountedSlot | null = null;
-	private linkBadge: MountedSlot | null = null;
+	private readonly linkBadges = new Map<string, MountedSlot>();
 
 	public constructor(private readonly document: Document) {}
 
@@ -110,18 +110,22 @@ export class SidebarPage {
 	public showLinkBadge(path: string, content: SlotContent): void {
 		const linkEl = this.document.querySelector(`${SIDEBAR_SELECTOR} ${NAV_LINK_SELECTOR}[href=${JSON.stringify(path)}]`);
 		if (!linkEl) {
-			this.removeLinkBadge();
+			this.removeLinkBadge(path);
 			return;
 		}
 
-		// Shown only while the sidebar is expanded, like Monarch's own badges.
-		this.linkBadge ??= MountedSlot.mount(this.document, content, WingspanAttribute.sidebarBadge, { tagName: 'span', className: 'ml-auto hidden in-aria-expanded:inline-flex' });
-		if (linkEl.lastElementChild !== this.linkBadge.hostEl) linkEl.append(this.linkBadge.hostEl);
+		let badge = this.linkBadges.get(path);
+		if (!badge) {
+			// Shown only while the sidebar is expanded, like Monarch's own badges.
+			badge = MountedSlot.mount(this.document, content, WingspanAttribute.sidebarBadge, { tagName: 'span', className: 'ml-auto hidden in-aria-expanded:inline-flex' });
+			this.linkBadges.set(path, badge);
+		}
+		if (linkEl.lastElementChild !== badge.hostEl) linkEl.append(badge.hostEl);
 	}
 
-	public removeLinkBadge(): void {
-		this.linkBadge?.remove();
-		this.linkBadge = null;
+	public removeLinkBadge(path: string): void {
+		this.linkBadges.get(path)?.remove();
+		this.linkBadges.delete(path);
 	}
 }
 

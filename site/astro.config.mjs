@@ -33,6 +33,7 @@ export default defineConfig({
 						{ label: "HSA reimbursements", slug: "features/hsa-reimbursements" },
 						{ label: "Workspaces", slug: "features/workspaces" },
 						{ label: "Sidebar items", slug: "features/sidebar-items" },
+						{ label: "Transactions to review", slug: "features/transactions-to-review" },
 					],
 				},
 				{
