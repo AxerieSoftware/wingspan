@@ -118,3 +118,52 @@ test.describe('grouped by status', () => {
 		expect(names.every(name => /recurring-section-card-(Overdue|Upcoming|Paid)$/.test(name ?? ''))).toBe(true);
 	});
 });
+
+test("an overdue bill can be marked paid when its payment isn't found, and marked not paid again", async ({ page, open }) => {
+	await open();
+	const row = itemRow(section(page, 'Expenses'), 'Piano Lessons');
+	await expect(row).toContainText(/2 owed since \w{3} 1/);
+
+	await row.getByRole('button', { name: 'More options for Piano Lessons' }).click();
+	await page.getByRole('menuitem', { name: 'Mark as paid' }).click();
+	await expect(row).toContainText(/(Overdue|Not paid yet · due) \w{3} 1/);
+
+	await row.getByRole('button', { name: 'More options for Piano Lessons' }).click();
+	await page.getByRole('menuitem', { name: /^Mark .+ as not paid$/ }).click();
+	await expect(row).toContainText(/2 owed since \w{3} 1/);
+});
+
+test("a row due more than once in the month opens to show each due date, its status and amount, like Monarch's", async ({ page, open }) => {
+	await open();
+	const row = itemRow(section(page, 'Expenses'), 'Piano Lessons');
+	const chevron = row.getByRole('button', { name: 'Show each payment for Piano Lessons' });
+	await expect(chevron).toHaveAttribute('aria-expanded', 'false');
+
+	await chevron.click();
+	await expect(row.getByRole('button', { name: 'Hide each payment for Piano Lessons' })).toHaveAttribute('aria-expanded', 'true');
+	await expect(row).toContainText(/\w{3}, \w{3} 1\s*Overdue \w{3} 1\s*\$140\.00/);
+	// The chevron only opens the row; the item's details stay closed.
+	await expect(page).toHaveURL(/\/recurring-v2\/monthly\/?(\?.*)?$/);
+
+	await row.getByRole('button', { name: 'Hide each payment for Piano Lessons' }).click();
+	await expect(row).not.toContainText(/\w{3}, \w{3} 1/);
+});
+
+test("an overdue bill's payment can be chosen when Wingspan didn't match it, and unchosen again", async ({ page, open }) => {
+	await open();
+	const row = itemRow(section(page, 'Expenses'), 'Piano Lessons');
+	await expect(row).toContainText(/2 owed since \w{3} 1/);
+
+	await row.getByRole('button', { name: 'More options for Piano Lessons' }).click();
+	await page.getByRole('menuitem', { name: 'Choose payment…' }).click();
+	const dialog = page.getByRole('dialog', { name: 'Choose payment' });
+	await expect(dialog.getByRole('button', { name: 'Choose payment' })).toBeDisabled();
+	await dialog.getByRole('checkbox').first().click();
+	await dialog.getByRole('button', { name: 'Choose payment' }).click();
+	await expect(dialog).toBeHidden();
+	await expect(row).toContainText(/(Overdue|Not paid yet · due) \w{3} 1/);
+
+	await row.getByRole('button', { name: 'More options for Piano Lessons' }).click();
+	await page.getByRole('menuitem', { name: /^Mark .+ as not paid$/ }).click();
+	await expect(row).toContainText(/2 owed since \w{3} 1/);
+});

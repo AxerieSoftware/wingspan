@@ -14,6 +14,9 @@ export type PaymentWindow = 'nearDueDate' | 'afterDueDate';
 /** Whether an item's payments leave the household, like a bill, or arrive, like income. */
 export type MoneyFlow = 'outflow' | 'inflow';
 
+/** The status word for a due date that's settled, by which way its money flows. */
+export const PAID_WORDS: Record<MoneyFlow, string> = { outflow: 'Paid', inflow: 'Received' };
+
 /** Load state of Monarch's transactions. */
 export type TransactionsStatus = 'loading' | 'failed' | 'ready';
 
@@ -48,6 +51,8 @@ export interface RecurringItemKind {
 	/** How many months an unpaid occurrence is carried over before it's dropped. */
 	readonly unpaidCarryMonths: number;
 	readonly showsInStatements: boolean;
+	/** How to tell its payments from another item's, shown when the editor finds they match the same ones. */
+	readonly separatePaymentsAdvice: string;
 	readonly EditorFields: ComponentType<RecurringItemEditorFieldsProps>;
 	owns(item: RecurringItem): boolean;
 	paymentRule(item: RecurringItem): TransactionPredicate | null;

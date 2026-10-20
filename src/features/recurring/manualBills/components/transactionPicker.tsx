@@ -14,13 +14,15 @@ const MAX_SHOWN_TRANSACTIONS = 200;
 const UNKNOWN_ACCOUNT_NAME = 'Unknown account';
 const UNCATEGORIZED_NAME = 'Uncategorized';
 
-/** Only `merchantName`'s transactions are listed, plus any already picked. `matchCard` is shown above the list. */
+/** Only `merchantName`'s transactions are listed, plus any already picked, unless `showsAllTransactions` is set. `matchCard` is shown above the list. */
 export interface TransactionPickerProps {
 	transactions: Transaction[];
 	status: TransactionsStatus;
 	accounts: Account[];
 	pickedIds: ReadonlySet<string>;
 	merchantName: string | null;
+	/** Lists every transaction given, whatever its merchant. */
+	showsAllTransactions?: boolean;
 	services: RecurringItemServices;
 	matchCard: ReactNode;
 	onChange(pickedIds: ReadonlySet<string>): void;
@@ -66,13 +68,13 @@ interface FilterSelectProps {
 }
 
 /** Newest first, grouped by month, at most 200 shown, with filters for amount, account and category. */
-export function TransactionPicker({ transactions, status, accounts, pickedIds, merchantName, services, matchCard, onChange }: TransactionPickerProps) {
+export function TransactionPicker({ transactions, status, accounts, pickedIds, merchantName, showsAllTransactions = false, services, matchCard, onChange }: TransactionPickerProps) {
 	const { formatter } = services;
 	const [filters, setFilters] = useState<TransactionFilters>({ minimumAmount: null, maximumAmount: null, accountIds: [], categoryIds: [] });
 	const accountsById = new Map(accounts.map(account => [account.id, account]));
 	const changeFilters = (patch: Partial<TransactionFilters>) => setFilters(currentFilters => ({ ...currentFilters, ...patch }));
 
-	const candidateTransactions = transactions.filter(transaction => pickedIds.has(transaction.id) || (!!merchantName && transaction.merchantName === merchantName));
+	const candidateTransactions = transactions.filter(transaction => showsAllTransactions || pickedIds.has(transaction.id) || (!!merchantName && transaction.merchantName === merchantName));
 	const filteredTransactions = candidateTransactions
 		.filter(transaction => {
 			const amount = Math.abs(transaction.amount);
@@ -102,7 +104,8 @@ export function TransactionPicker({ transactions, status, accounts, pickedIds, m
 	};
 
 	let emptyMessage = 'No transactions from this merchant in the data Wingspan has loaded.';
-	if (!merchantName) emptyMessage = 'Choose a merchant to see its transactions.';
+	if (showsAllTransactions) emptyMessage = 'No unmatched transactions near this date in the data Wingspan has loaded.';
+	else if (!merchantName) emptyMessage = 'Choose a merchant to see its transactions.';
 	else if (hasFilters) emptyMessage = 'No transactions match these filters.';
 
 	let listContent: ReactNode;
@@ -151,7 +154,7 @@ export function TransactionPicker({ transactions, status, accounts, pickedIds, m
 		);
 	} else {
 		listContent = (
-			<div className={`flex h-full items-center justify-center px-xl text-center ${merchantName ? '' : 'bg-background-secondary'}`}>
+			<div className={`flex h-full items-center justify-center px-xl text-center ${merchantName || showsAllTransactions ? '' : 'bg-background-secondary'}`}>
 				<span data-mds="text" className="text-sm font-book text-content-secondary">
 					{emptyMessage}
 				</span>

@@ -1,3 +1,5 @@
+import type { Transaction } from './transaction';
+
 /** Monarch's names for the account types Wingspan acts on. */
 export const MonarchAccountType = { cash: 'depository', credit: 'credit', loan: 'loan' } as const;
 
@@ -12,3 +14,8 @@ export const MonarchRecurringType = { expense: 'expense', income: 'income', cred
 export const MonarchOccurrenceStatus = { paid: 'paid', overdue: 'overdue' } as const;
 /** Statuses for occurrences Monarch doesn't expect to happen again. */
 export const ENDED_OCCURRENCE_STATUSES: ReadonlySet<string> = new Set(['ended', 'possibly_inactive']);
+
+/** Categorized as a transfer, like a card payment or a move between the household's own accounts. */
+export function isTransfer(transaction: Transaction): boolean {
+	return TRANSFER_GROUP_TYPES.has(transaction.category?.groupType ?? '');
+}

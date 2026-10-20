@@ -21,6 +21,7 @@ export class ManualBillKind implements RecurringItemKind {
 	public readonly paymentWindow = 'afterDueDate';
 	public readonly unpaidCarryMonths = UNPAID_CARRY_MONTHS;
 	public readonly showsInStatements = false;
+	public readonly separatePaymentsAdvice = 'Set Paid from or a narrower description to tell them apart.';
 
 	public constructor(
 		private readonly matcher: TransactionMatcher,

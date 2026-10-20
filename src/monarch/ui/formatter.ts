@@ -18,6 +18,7 @@ export class Formatter {
 	private readonly longMonthYearFormat: Intl.DateTimeFormat;
 	private readonly shortMonthFormat: Intl.DateTimeFormat;
 	private readonly weekdayFormat: Intl.DateTimeFormat;
+	private readonly weekdayDateFormat: Intl.DateTimeFormat;
 	private readonly timeFormat: Intl.DateTimeFormat;
 	private readonly relativeTimeFormat: Intl.RelativeTimeFormat;
 	private readonly narrowRelativeTimeFormat: Intl.RelativeTimeFormat;
@@ -39,6 +40,7 @@ export class Formatter {
 		this.longMonthYearFormat = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric', timeZone: DATE_TIME_ZONE });
 		this.shortMonthFormat = new Intl.DateTimeFormat(locale, { month: 'short', timeZone: DATE_TIME_ZONE });
 		this.weekdayFormat = new Intl.DateTimeFormat(locale, { weekday: 'long', timeZone: DATE_TIME_ZONE });
+		this.weekdayDateFormat = new Intl.DateTimeFormat(locale, { weekday: 'short', month: 'short', day: 'numeric', timeZone: DATE_TIME_ZONE });
 		// Uses the local time zone, unlike dates, which are calendar days.
 		this.timeFormat = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' });
 		this.relativeTimeFormat = new Intl.RelativeTimeFormat(locale, { numeric: 'always' });
@@ -119,6 +121,11 @@ export class Formatter {
 	/** The full weekday name, as "Tuesday". */
 	public weekday(isoDate: string): string {
 		return this.weekdayFormat.format(this.parseDate(isoDate));
+	}
+
+	/** As "Thu, Oct 22", like Monarch's list of a recurring item's payments. */
+	public weekdayDate(isoDate: string): string {
+		return this.weekdayDateFormat.format(this.parseDate(isoDate));
 	}
 
 	/** As "1st", "2nd" or "11th". */

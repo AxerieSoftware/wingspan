@@ -1,6 +1,6 @@
 import { CENT_TOLERANCE } from '../../../common/money';
 import type { BalancesByAccountId } from '../../../data/models/balancesByAccountId';
-import { TRANSFER_GROUP_TYPES } from '../../../monarch/api/models/monarchValues';
+import { isTransfer } from '../../../monarch/api/models/monarchValues';
 import type { Transaction } from '../../../monarch/api/models/transaction';
 import { EXPENSES_SECTION_NAME, type RecurringItemEditorFieldsProps, type RecurringItemKind } from '../recurringItems/kinds/recurringItemKind';
 import type { DetailRow } from '../recurringItems/models/detailRow';
@@ -26,6 +26,7 @@ export class CardPaymentKind implements RecurringItemKind {
 	/** A statement due late last month that's still unpaid is carried over into this month. */
 	public readonly unpaidCarryMonths = 1;
 	public readonly showsInStatements = true;
+	public readonly separatePaymentsAdvice = 'Use a narrower description to tell them apart.';
 
 	public constructor(private readonly matcher: TransactionMatcher) {}
 
@@ -140,6 +141,6 @@ export class CardPaymentKind implements RecurringItemKind {
 	}
 
 	private looksLikePayment(transaction: Transaction): boolean {
-		return TRANSFER_GROUP_TYPES.has(transaction.category?.groupType ?? '') || PAYMENT_DESCRIPTION_PATTERN.test(transaction.description);
+		return isTransfer(transaction) || PAYMENT_DESCRIPTION_PATTERN.test(transaction.description);
 	}
 }

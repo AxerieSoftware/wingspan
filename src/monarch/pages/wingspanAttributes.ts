@@ -2,7 +2,7 @@
 export const WingspanAttribute = {
 	row: 'data-wingspan-row',
 	rowDate: 'data-wingspan-date',
-	rowMenu: 'data-wingspan-row-menu',
+	rowControl: 'data-wingspan-row-control',
 	rowsHost: 'data-wingspan-rows',
 	section: 'data-wingspan-section',
 	statements: 'data-wingspan-statements',
@@ -39,7 +39,7 @@ export const WingspanAttribute = {
 /** What gets greyed out after an extension update: everything Wingspan shows, except the reload toasts and hidden hosts. */
 export const STALE_PARTS = [
 	WingspanAttribute.row,
-	WingspanAttribute.rowMenu,
+	WingspanAttribute.rowControl,
 	WingspanAttribute.section,
 	WingspanAttribute.statements,
 	WingspanAttribute.statementsCount,

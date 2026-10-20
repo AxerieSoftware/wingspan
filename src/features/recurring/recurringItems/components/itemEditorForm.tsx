@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { MonarchDataService } from '../../../../data/services/monarchDataService';
 import type { Account } from '../../../../monarch/api/models/account';
+import type { Transaction } from '../../../../monarch/api/models/transaction';
 import { Button } from '../../../../monarch/ui/components/button';
 import { useSignalValue } from '../../../../monarch/ui/hooks/useSignalValue';
 import { WingspanMark } from '../../../wingspanMark';
@@ -9,12 +10,15 @@ import type { EditedField, RecurringItemDraft } from '../models/recurringItemDra
 import type { RecurringItemRepository } from '../services/recurringItemRepository';
 import type { RecurringItemServices } from '../services/recurringItemServices';
 
+const NO_TRANSACTIONS: Transaction[] = [];
+
 type BusyAction = 'save' | 'remove';
 
 /** An editor's draft and actions. `problems` stop saving; `startItem` is null for a new item. */
 export interface ItemEditorState {
 	startItem: RecurringItem | null;
 	draft: RecurringItemDraft;
+	savedItems: RecurringItem[];
 	editedFields: ReadonlySet<EditedField>;
 	problems: string[];
 	busyAction: BusyAction | null;
@@ -37,6 +41,13 @@ export interface ItemEditorFieldsProps {
 	editor: ItemEditorState;
 	accounts: Account[];
 	monarchData: MonarchDataService;
+	services: RecurringItemServices;
+}
+
+interface SharedPaymentsNoteProps {
+	item: RecurringItem;
+	savedItems: RecurringItem[];
+	transactions: Transaction[];
 	services: RecurringItemServices;
 }
 
@@ -65,11 +76,14 @@ export function useItemEditor({ startItem, kind, services, itemRepository, onDon
 		}
 	};
 
+	const savedItems = itemRepository.data.value.recurringItems;
+
 	return {
 		startItem,
 		draft,
+		savedItems,
 		editedFields,
-		problems: validator.problemsWith(draft.item, draft.schedule, itemRepository.data.value.recurringItems),
+		problems: validator.problemsWith(draft.item, draft.schedule, savedItems),
 		busyAction,
 		changeDraft: (changedDraft, editedField) => {
 			if (editedField) setEditedFields(fields => new Set(fields).add(editedField));
@@ -87,6 +101,7 @@ export function useItemEditor({ startItem, kind, services, itemRepository, onDon
 export function ItemEditorFields({ editor, accounts, monarchData, services }: ItemEditorFieldsProps) {
 	const monarch = useSignalValue(monarchData.state);
 	const itemKind = services.kinds.of(editor.draft.item);
+	const transactions = monarch.status === 'ready' ? monarch.snapshot.transactions : NO_TRANSACTIONS;
 
 	return (
 		<>
@@ -95,15 +110,34 @@ export function ItemEditorFields({ editor, accounts, monarchData, services }: It
 				draft={editor.draft}
 				editedFields={editor.editedFields}
 				accounts={accounts}
-				transactions={monarch.status === 'ready' ? monarch.snapshot.transactions : []}
+				transactions={transactions}
 				transactionsStatus={monarch.status}
 				services={services}
 				onChange={editor.changeDraft}
 			/>
+			<SharedPaymentsNote item={editor.draft.item} savedItems={editor.savedItems} transactions={transactions} services={services} />
 			<p className="my-0 mt-md text-xs text-content-danger" role="status">
 				{editor.editedFields.size ? editor.problems.join(' ') : ''}
 			</p>
 		</>
+	);
+}
+
+/** Names another saved item that matches some of the same payments, since each payment marks only one of them paid. */
+function SharedPaymentsNote({ item, savedItems, transactions, services }: SharedPaymentsNoteProps) {
+	const { payments, kinds } = services;
+	const itemPayments = useMemo(() => payments.matchingTransactions(item, transactions), [item, transactions, payments]);
+	// Each saved item is checked against just this item's payments, not every transaction.
+	const sharingItem = useMemo(
+		() => (itemPayments.length ? savedItems.find(saved => saved.active && saved.id !== item.id && payments.matchingTransactions(saved, itemPayments).length) : undefined),
+		[itemPayments, savedItems, item.id, payments]
+	);
+	if (!sharingItem) return null;
+
+	return (
+		<p className="my-0 mt-md text-sm font-book text-content-secondary" role="status">
+			{`Also matches payments for ${sharingItem.name}. ${kinds.of(item).separatePaymentsAdvice}`}
+		</p>
 	);
 }
 
