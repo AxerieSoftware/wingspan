@@ -202,7 +202,7 @@ for (const theme of THEMES) {
 			await useTheme(page, theme);
 			await page.getByRole('group', { name: 'Interest', exact: true }).getByRole('button', { name: 'Update balance' }).click();
 			const dialog = page.getByRole('dialog', { name: 'Update balance' });
-			await expect(dialog.getByRole('textbox', { name: 'Balance' })).toHaveValue('$8,788.12');
+			await expect(dialog.getByRole('button', { name: 'Use estimate, $8,788.00' })).toBeVisible();
 			await siteShot(page, 'update-balance', theme, dialog);
 		});
 

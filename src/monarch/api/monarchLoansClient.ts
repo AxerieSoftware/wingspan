@@ -7,7 +7,7 @@ import { ensureMutationSucceeded, MutationPayloadSchema } from './mutationPayloa
 const GET_LOAN_BALANCES_QUERY = `
 	query wingspan_GetLoanBalances($startDate: Date, $endDate: Date) {
 		accounts {
-			id displayName currentBalance type { name } businessEntity { id }
+			id displayName currentBalance isHidden isManual interestRate type { name } businessEntity { id }
 			startBalance: signedBalance(date: $startDate)
 			endBalance: signedBalance(date: $endDate)
 		}
@@ -35,6 +35,9 @@ const GetLoanBalancesSchema = v.object({
 			id: v.string(),
 			displayName: v.string(),
 			currentBalance: v.nullish(v.number(), 0),
+			isHidden: v.nullish(v.boolean(), false),
+			isManual: v.nullish(v.boolean(), false),
+			interestRate: v.nullish(v.number(), null),
 			type: v.object({ name: v.string() }),
 			businessEntity: v.nullish(v.object({ id: v.string() }), null),
 			startBalance: v.nullable(v.number()),
@@ -49,12 +52,11 @@ const UpdateBalanceSchema = v.object({ updateAccount: MutationPayloadSchema({}) 
 export class MonarchLoansClient {
 	public constructor(private readonly client: MonarchClient) {}
 
-	/** Every loan's balance at the end of each date. */
+	/** Every visible loan's balance at the end of each date. */
 	public async getLoanBalances(startDate: string, endDate: string): Promise<LoanBalances[]> {
 		const { accounts } = await this.client.request('wingspan_GetLoanBalances', GET_LOAN_BALANCES_QUERY, GetLoanBalancesSchema, { startDate, endDate });
-		return accounts
-			.filter(account => account.type.name === MonarchAccountType.loan)
-			.map(({ id, displayName, currentBalance, businessEntity, startBalance, endBalance }) => ({ accountId: id, displayName, currentBalance, businessEntity, startBalance, endBalance }));
+		const loans = accounts.filter(account => account.type.name === MonarchAccountType.loan && !account.isHidden);
+		return loans.map(({ id, type: _type, isHidden: _isHidden, ...loan }) => ({ accountId: id, ...loan }));
 	}
 
 	/** Null when Monarch has no balance for the loan. Monarch keeps a balance for every day, so the date is when the latest one first appears. */

@@ -11,7 +11,7 @@ test("loans paid down shows after Reports' Savings rate for the report's dates, 
 	// The auto loan's balance drops $340 each month.
 	await expect(paydown).toContainText('$340');
 	const income = Number((await totalIncome.locator('span').first().textContent())?.replace(/[^\d.]/g, ''));
-	await expect(paydown).toContainText(`$340 (${new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 0 }).format(340 / income)})`);
+	await expect(paydown).toContainText(`$340Loans paid down · ${new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 0 }).format(340 / income)} of income`);
 });
 
 test("loans paid down isn't shown while Reports covers all time", async ({ page, open }) => {

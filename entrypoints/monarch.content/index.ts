@@ -6,6 +6,7 @@ import { addCashSettings } from '@/src/features/cashFlow/cashSettings/addCashSet
 import { addFreeCash } from '@/src/features/cashFlow/freeCash/addFreeCash';
 import { addProjectedBalances } from '@/src/features/cashFlow/projectedBalances/addProjectedBalances';
 import { addInterestCost } from '@/src/features/interestCost/addInterestCost';
+import { createManualLoans } from '@/src/features/interestCost/createManualLoans';
 import { addLoansPaidDown } from '@/src/features/loansPaidDown/addLoansPaidDown';
 import { addRecurringPages } from '@/src/features/recurring/addRecurringPages';
 import { createRecurring } from '@/src/features/recurring/createRecurring';
@@ -29,8 +30,9 @@ export default defineContentScript({
 		const cashSettings = addCashSettings(builder, businessFilter);
 		const projectedBalances = addProjectedBalances(builder, recurring, cashSettings, businessFilter);
 		const summaryScreens = createSummaryScreens(builder, businessFilter);
-		addLoansPaidDown(builder, summaryScreens);
-		addInterestCost(builder, summaryScreens, businessFilter);
+		const manualLoans = createManualLoans(builder);
+		addLoansPaidDown(builder, summaryScreens, manualLoans);
+		addInterestCost(builder, summaryScreens, businessFilter, manualLoans);
 		addRecurringPages(builder, recurring, cashSettings, projectedBalances, businessFilter);
 		addFreeCash(builder, recurring, cashSettings, projectedBalances);
 		addAccounts(builder);

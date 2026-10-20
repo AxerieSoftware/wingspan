@@ -24,6 +24,8 @@ export interface MonarchSnapshot {
 	accounts: Account[];
 	owedByAccountId: BalancesByAccountId;
 	recurringFlows: RecurringFlow[];
+	/** The earliest date the transactions cover. */
+	transactionsFrom: string;
 	/** When Monarch answered, epoch milliseconds. */
 	fetchedAt: number;
 }
@@ -115,7 +117,7 @@ export class MonarchDataService {
 			this.recurringClient.getRecurringFlows(`${this.calendar.addMonths(currentMonth, -RECURRING_FLOWS_HISTORY_MONTHS)}-01`, flowsEnd)
 		]);
 
-		return { transactions, accounts, owedByAccountId: this.owedByAccountId(accounts), recurringFlows, fetchedAt: Date.now() };
+		return { transactions, accounts, owedByAccountId: this.owedByAccountId(accounts), recurringFlows, transactionsFrom: transactionsStart, fetchedAt: Date.now() };
 	}
 
 	/**

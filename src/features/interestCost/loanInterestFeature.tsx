@@ -77,7 +77,7 @@ export class LoanInterestFeature implements WingspanFeature {
 
 	private renderCard(accountId: string, view: LoanInterestView): void {
 		const manual = view.manual;
-		const onUpdateBalance = manual?.status === 'ready' ? () => this.manualLoans.openUpdateDialog(accountId, view.accountName, manual.estimate ?? manual.entered.owed) : null;
+		const onUpdateBalance = manual?.status === 'ready' ? () => this.manualLoans.openUpdateDialog(accountId, view.accountName, manual.estimate) : null;
 		this.cardIsland?.render(<LoanInterestCard view={view} formatter={this.formatter} onUpdateBalance={onUpdateBalance} onRetry={() => this.manualLoans.retry(accountId)} />);
 	}
 }

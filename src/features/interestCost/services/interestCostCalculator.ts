@@ -35,7 +35,7 @@ export class InterestCostCalculator {
 
 		if (account.type.name !== MonarchAccountType.credit || lastInterest === undefined) return null;
 		const apr = aprOf(account);
-		if (apr) return { ...base, rate: apr, isRateImplied: false };
+		if (apr !== null) return { ...base, rate: apr, isRateImplied: false };
 		return { ...base, rate: impliedAprOf(lastInterest, owed), isRateImplied: true };
 	}
 }

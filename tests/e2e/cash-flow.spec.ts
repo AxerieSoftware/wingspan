@@ -150,7 +150,7 @@ test("loans paid down shows after Monarch's Savings rate as how much the loans w
 	await expect(savingsRate.locator('xpath=following-sibling::*[1]')).toContainText('Loans paid down');
 	// The auto loan's balance drops $340 each month.
 	await expect(paydown).toContainText('$340');
-	await expect(paydown).toContainText(/\$340 \(\d+%\)Loans paid down/);
+	await expect(paydown).toContainText(/\$340Loans paid down · \d+% of income/);
 });
 
 test('loans paid down covers each month of a past quarter', async ({ page, open }) => {

@@ -13,7 +13,7 @@ export interface GroupInterestNoteProps {
 export function GroupInterestNote({ cost, formatter }: GroupInterestNoteProps) {
 	return (
 		<>
-			<TooltipButton label={describeInterestCost(cost, formatter)} className="text-base font-medium text-content-secondary">
+			<TooltipButton label={describeInterestCost(cost, formatter)} className="text-base font-medium text-content-secondary" isLabelledByContent>
 				{`${formatter.wholeMoney(cost.monthly)} a month in interest`}
 			</TooltipButton>
 			<WingspanMark />
