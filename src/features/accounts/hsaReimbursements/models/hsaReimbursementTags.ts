@@ -16,14 +16,14 @@ export const emptyHsaReimbursementTags = (): HsaReimbursementTags => ({ toReimbu
 
 export const hasChosenHsaReimbursementTags = (tags: HsaReimbursementTags): boolean => tags.toReimburseTagId !== '' || tags.reimbursedTagId !== '';
 
-/** The chosen tags that still exist, else tags named for it, like "HSA – Reimburse" and "HSA – Reimbursed". */
+/** Tags named for it, like "HSA – Reimburse" and "HSA – Reimbursed", until the household chooses. Then each chosen tag that still exists, so None sticks. */
 export function resolveHsaReimbursementTags(saved: HsaReimbursementTags, tags: TransactionTag[]): HsaReimbursementTags {
-	const exists = (tagId: string) => tags.some(tag => tag.id === tagId);
+	const existingOrNone = (tagId: string) => (tags.some(tag => tag.id === tagId) ? tagId : '');
+	if (hasChosenHsaReimbursementTags(saved)) return { toReimburseTagId: existingOrNone(saved.toReimburseTagId), reimbursedTagId: existingOrNone(saved.reimbursedTagId) };
+
 	const hsaTags = tags.filter(tag => /\bhsa\b/i.test(tag.name));
-	const namedReimbursed = hsaTags.find(tag => /reimbursed/i.test(tag.name));
-	const namedToReimburse = hsaTags.find(tag => /reimburse(?!d)/i.test(tag.name));
 	return {
-		toReimburseTagId: exists(saved.toReimburseTagId) ? saved.toReimburseTagId : (namedToReimburse?.id ?? ''),
-		reimbursedTagId: exists(saved.reimbursedTagId) ? saved.reimbursedTagId : (namedReimbursed?.id ?? '')
+		toReimburseTagId: hsaTags.find(tag => /reimburse(?!d)/i.test(tag.name))?.id ?? '',
+		reimbursedTagId: hsaTags.find(tag => /reimbursed/i.test(tag.name))?.id ?? ''
 	};
 }

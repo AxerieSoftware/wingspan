@@ -57,11 +57,12 @@ export class BusinessEntityView {
 	}
 
 	private currentScope(): EntityScope {
-		const businesses = this.businessList.value ?? [];
-		const monarchFilter = this.monarchFilter.value;
-		if (monarchFilter) return this.businessList.value ? EntityScope.fromFilter(monarchFilter, businesses) : EntityScope.assumed(monarchFilter);
+		const businesses = this.businessList.value;
 		const workspace = this.workspace.value;
-		return workspace ? EntityScope.fromFilter([workspace], businesses) : EntityScope.everything(businesses);
+		const entityIds = this.monarchFilter.value ?? (workspace ? [workspace] : null);
+		if (!entityIds) return EntityScope.everything(businesses ?? []);
+		// Until Monarch's businesses load, the filter or saved workspace is assumed to still exist, so pages don't show everything first.
+		return businesses ? EntityScope.fromFilter(entityIds, businesses) : EntityScope.assumed(entityIds);
 	}
 
 	/** Null until businesses load from Monarch. */

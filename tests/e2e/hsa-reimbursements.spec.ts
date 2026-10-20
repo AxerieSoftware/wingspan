@@ -69,6 +69,24 @@ test('tags named differently are chosen once, then the expenses show', async ({ 
 	await expect(page.getByRole('group', { name: 'HSA reimbursements' }).getByText('$597.85', { exact: true })).toBeVisible();
 });
 
+test('choosing None for reimbursed expenses hides that section, even with a tag named for it', async ({ page, household, open }) => {
+	household.addHsaExpenses();
+	const card = await openHsa(page, open);
+	await expect(card.getByRole('button', { name: /Reimbursed · 1 expense/ })).toBeVisible();
+
+	await card.getByRole('button', { name: 'Choose tags' }).click();
+	const dialog = page.getByRole('dialog', { name: 'HSA tags' });
+	await dialog.getByRole('combobox', { name: 'Reimbursed expenses' }).click();
+	await page.getByRole('option', { name: 'None' }).click();
+	await dialog.getByRole('button', { name: 'Save' }).click();
+
+	await expect(dialog).toHaveCount(0);
+	await expect(card.getByRole('button', { name: /Reimbursed/ })).toHaveCount(0);
+	await page.reload();
+	await expect(page.getByRole('group', { name: 'HSA reimbursements' }).getByText('$597.85', { exact: true })).toBeVisible();
+	await expect(page.getByRole('group', { name: 'HSA reimbursements' }).getByRole('button', { name: /Reimbursed/ })).toHaveCount(0);
+});
+
 test("other accounts' pages don't get the card", async ({ page, household, open }) => {
 	household.addHsaExpenses();
 
