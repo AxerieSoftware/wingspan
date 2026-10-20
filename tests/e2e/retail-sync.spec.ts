@@ -210,7 +210,8 @@ test('a first sync with nothing to send says how far back it looked', async ({ p
 
 test('a sync skips purchases another browser sent after this page loaded', async ({ page, context, open, apiLog, household }) => {
 	await open({ path: '/transactions/receipts', waitForRows: false });
-	await expect.poll(() => household.wingspanAccounts.length).toBe(1);
+	// The account is created before its notes hold the saved data, so wait for the data itself.
+	await expect.poll(() => household.wingspanAccounts[0]?.notes?.includes('{') ?? false).toBe(true);
 	await settled(apiLog);
 	const account = household.wingspanAccounts[0];
 	const saved = JSON.parse(account?.notes?.slice(account.notes.indexOf('{')) ?? '{}');
