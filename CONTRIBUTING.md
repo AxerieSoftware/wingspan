@@ -111,8 +111,10 @@ status 200 for a rejected request, so look for `"errors"` in the response.
 4. Tag the merged commit: `git switch main && git pull`, then
    `git tag vX.Y.Z && git push origin vX.Y.Z`. The tag starts `release.yml`,
    which runs CI, builds zips for Chrome, Edge, Firefox and Safari, and attaches
-   all four to a draft GitHub release. Upload the Chrome zip to the Chrome Web
-   Store, which Edge installs from too. The others are for loading by hand.
+   all four to a draft GitHub release. It also uploads the Chrome zip to the
+   Chrome Web Store and submits it for review. Chrome publishes it once it's
+   approved, and Edge installs from that listing too. The other zips are for
+   loading by hand.
 5. Open the draft under Releases, write the notes and click **Publish
    release**. Nothing is public until then. GitHub fills in the merged pull
    requests, grouped by label (see `.github/release.yml`); add a short summary
@@ -120,6 +122,23 @@ status 200 for a rejected request, so look for `"errors"` in the response.
 6. Run the **Site** workflow from the Actions tab. It records the site's tour and
    feature clips again from the released code, since they aren't in git. Upload
    the tour to YouTube for the store listing.
+
+### Chrome Web Store upload
+
+`release.yml` signs in to the Chrome Web Store API with a Google Cloud service
+account. To set it up once:
+
+1. In Google Cloud, enable the Chrome Web Store API, create a service account
+   and download a JSON key for it.
+2. In the Chrome Web Store developer dashboard, add the service account's email
+   under **Account**, and copy the publisher ID shown there.
+3. In the repository's **Settings → Environments**, create
+   `chrome-web-store`, limit it to `v*` tags, and add three secrets:
+   `CHROME_PUBLISHER_ID`, `CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL` and
+   `CHROME_SERVICE_ACCOUNT_PRIVATE_KEY` (the key file's `private_key`).
+
+`npx publish-extension init` walks through the same steps, and `--dry-run`
+checks the sign-in without uploading.
 
 ## Layout
 

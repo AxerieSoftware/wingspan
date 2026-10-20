@@ -76,3 +76,39 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
+
+  # Uploads the Chrome zip and submits it for review; Chrome publishes it once approved. Edge installs from this listing too.
+  chrome-web-store:
+    needs: package
+    runs-on: ubuntu-latest
+    # The environment holds the store's secrets, so only release tags can read them.
+    environment: chrome-web-store
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download zips
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: zips
+          path: zips
+
+      - name: Upload to the Chrome Web Store
+        run: npx wxt submit --chrome-zip zips/*-chrome.zip
+        env:
+          CHROME_API_VERSION: v2
+          CHROME_EXTENSION_ID: jpbbafooilhlohnnmioddafboidfjepn
+          CHROME_PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
+          CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL: ${{ secrets.CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL }}
+          CHROME_SERVICE_ACCOUNT_PRIVATE_KEY: ${{ secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY }}
