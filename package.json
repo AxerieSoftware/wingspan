@@ -35,7 +35,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.5.15",
-		"@playwright/test": "^1.64.0",
+		"@playwright/test": "^1.64.1",
 		"@sveltejs/acorn-typescript": "^1.0.13",
 		"@types/node": "^26.6.5",
 		"@types/react": "^19.3.0",
@@ -47,19 +47,19 @@
 		"npm-run-all2": "^9.0.3",
 		"typescript": "^7.0.2",
 		"vite": "8.3.4",
-		"vitest": "^5.0.2",
+		"vitest": "^5.0.5",
 		"wxt": "^0.21.4"
 	},
 	"dependencies": {
 		"@base-ui/react": "^1.9.0",
 		"@preact/signals-core": "^1.14.4",
-		"@tanstack/query-core": "^5.104.0",
-		"react": "^19.3.0",
-		"react-dom": "^19.3.0",
+		"@tanstack/query-core": "^5.104.3",
+		"react": "^19.3.1",
+		"react-dom": "^19.3.1",
 		"react-error-boundary": "^6.1.6",
 		"tailwind-merge": "^3.7.0",
 		"tailwind-variants": "^3.3.1",
-		"temporal-polyfill": "1.0.5",
+		"temporal-polyfill": "1.0.6",
 		"valibot": "^1.5.0"
 	}
 }
