@@ -1,4 +1,5 @@
 import { type MouseEvent, type ReactNode, useState } from 'react';
+import { countOf } from '../../../../common/countOf';
 import type { TaggedTransaction } from '../../../../monarch/api/models/taggedTransaction';
 import { MerchantLogo } from '../../../../monarch/ui/components/avatar';
 import { Button } from '../../../../monarch/ui/components/button';
@@ -75,9 +76,7 @@ function CardBody({ view, formatter, transactionHref, onOpenTransaction, onChoos
 	if (view.status === 'failed') return <CardMessage action={<Button onClick={onRetry}>Try again</Button>}>Couldn't load your tagged expenses from Monarch.</CardMessage>;
 	if (view.status === 'noTag') {
 		return (
-			<CardMessage action={<Button onClick={onChooseTags}>Choose tags</Button>}>
-				Tag the medical expenses you paid yourself and plan to reimburse from your HSA, then choose that tag here. Keep each receipt and any notes on the transaction in Monarch.
-			</CardMessage>
+			<CardMessage action={<Button onClick={onChooseTags}>Choose tags</Button>}>Tag the medical expenses you paid yourself and plan to reimburse from your HSA, then choose that tag here.</CardMessage>
 		);
 	}
 
@@ -103,13 +102,12 @@ function CardBody({ view, formatter, transactionHref, onOpenTransaction, onChoos
 			) : (
 				<p className="m-0 border-t border-t-divider-primary px-lg py-default text-sm font-book text-content-secondary">{`Nothing to reimburse. Expenses tagged ${toReimburseTagName} show here, oldest first.`}</p>
 			)}
-			{hasReimbursedTag ? (
+			{hasReimbursedTag && expenses.reimbursed.length ? (
 				<>
 					<button
 						type="button"
 						aria-expanded={isShowingReimbursed}
-						disabled={!expenses.reimbursed.length}
-						className={`${SECTION_HEADER_CLASS_NAME} cursor-pointer border-0 text-left disabled:cursor-default`}
+						className={`${SECTION_HEADER_CLASS_NAME} cursor-pointer border-0 text-left`}
 						onClick={() => setIsShowingReimbursed(isShowing => !isShowing)}
 					>
 						<span className="flex items-center gap-2xs">
@@ -120,7 +118,7 @@ function CardBody({ view, formatter, transactionHref, onOpenTransaction, onChoos
 						</span>
 						<span>{formatter.money(expenses.reimbursedTotal)}</span>
 					</button>
-					{isShowingReimbursed && expenses.reimbursed.length ? (
+					{isShowingReimbursed ? (
 						<ul aria-label="Reimbursed expenses" className="m-0 list-none p-0">
 							{expenses.reimbursed.map(rowFor)}
 						</ul>
@@ -179,8 +177,4 @@ function CardMessage({ children, action }: CardMessageProps) {
 			{action}
 		</div>
 	);
-}
-
-function countOf(count: number, singular: string, plural = `${singular}s`): string {
-	return `${count} ${count === 1 ? singular : plural}`;
 }

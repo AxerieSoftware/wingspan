@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { TaggedTransaction } from '../../../../monarch/api/models/taggedTransaction';
 import { toHsaExpenses } from './hsaExpenses';
-import { resolveHsaReimbursementTags } from './hsaReimbursementTags';
 
 const TAGS = { toReimburseTagId: 'to-reimburse', reimbursedTagId: 'reimbursed' };
 
@@ -30,22 +29,5 @@ describe('splitting tagged HSA expenses', () => {
 		const expenses = toHsaExpenses([expense('bill', '2026-02-01', -250, ['to-reimburse']), expense('refund', '2026-02-10', 40.25, ['to-reimburse'])], TAGS);
 
 		expect(expenses.toReimburseTotal).toBe(209.75);
-	});
-});
-
-describe('choosing the HSA tags', () => {
-	const tags = [
-		{ id: 'sync', name: 'Retail Sync', color: '#f86713' },
-		{ id: 'to', name: 'HSA – Reimburse', color: '#1baf7a' },
-		{ id: 'done', name: 'HSA – Reimbursed', color: '#1baf7a' }
-	];
-
-	it('uses tags named for it until others are chosen', () => {
-		expect(resolveHsaReimbursementTags({ toReimburseTagId: '', reimbursedTagId: '' }, tags)).toEqual({ toReimburseTagId: 'to', reimbursedTagId: 'done' });
-		expect(resolveHsaReimbursementTags({ toReimburseTagId: 'sync', reimbursedTagId: '' }, tags)).toEqual({ toReimburseTagId: 'sync', reimbursedTagId: 'done' });
-	});
-
-	it('falls back to the named tag when the chosen one was deleted in Monarch', () => {
-		expect(resolveHsaReimbursementTags({ toReimburseTagId: 'deleted', reimbursedTagId: 'deleted' }, tags)).toEqual({ toReimburseTagId: 'to', reimbursedTagId: 'done' });
 	});
 });

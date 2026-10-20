@@ -32,7 +32,8 @@ export function WingspanSettingsPanel({ dataService, businessView, hiddenSidebar
 				<Fieldset legend="Business workspaces">
 					<SwitchRow label="Keep the household and businesses separate" checked={areWorkspacesEnabled} onChange={isEnabled => businessView.setEnabled(isEnabled)} />
 					<p className="m-0 text-sm text-content-secondary">
-						Adds a switcher to the top of the sidebar. Supported pages then show the household or one business, never both, and the rest say so in their header. Saved for this browser.
+						Adds a switcher to the top of the sidebar. Supported pages then show the household or one business, never both, and the rest say so in their header. Applies to pages you open next, and is
+						saved for this browser.
 					</p>
 				</Fieldset>
 			) : null}
