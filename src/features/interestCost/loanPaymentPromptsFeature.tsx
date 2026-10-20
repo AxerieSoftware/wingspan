@@ -1,4 +1,5 @@
 import { effect } from '@preact/signals-core';
+import { countOf } from '../../common/countOf';
 import type { SyncScheduler } from '../../common/syncScheduler';
 import type { MonarchDataService, MonarchSnapshot } from '../../data/services/monarchDataService';
 import type { Account } from '../../monarch/api/models/account';
@@ -7,12 +8,12 @@ import type { AccountsPage } from '../../monarch/pages/accounts/accountsPage';
 import type { SlotContent } from '../../monarch/pages/mountedSlot';
 import type { SidebarPage } from '../../monarch/pages/sidebar/sidebarPage';
 import type { TransactionDrawer } from '../../monarch/pages/transactions/transactionDrawer';
-import { Badge } from '../../monarch/ui/components/badge';
 import { Banner } from '../../monarch/ui/components/banner';
 import { Button } from '../../monarch/ui/components/button';
 import { InfoIcon } from '../../monarch/ui/components/icons';
 import { Island } from '../../monarch/ui/components/island';
 import type { Formatter } from '../../monarch/ui/formatter';
+import { SidebarCountBadge } from '../sidebar/sidebarCountBadge';
 import type { WingspanFeature } from '../wingspanFeature';
 import { WingspanMark } from '../wingspanMark';
 import type { ManualLoanUpdates } from './services/manualLoanUpdates';
@@ -33,22 +34,23 @@ const ACCOUNTS_PATH = '/accounts';
  */
 export class LoanPaymentPromptsFeature implements WingspanFeature {
 	private readonly subscriptions = new DisposableStack();
+	private readonly accountsBadge: SidebarCountBadge;
 	private bannerIsland: Island | null = null;
-	private badgeIsland: Island | null = null;
 	private renderedBannerKey = '';
-	private renderedBadgeCount = 0;
 	/** Sync runs on every change to the page, so the stale loans are worked out again only when Monarch's data, a link or an entered balance changes. */
 	private staleLoans: { snapshot: MonarchSnapshot; changes: unknown; byAccountId: ReadonlyMap<string, StaleLoan> } | null = null;
 
 	public constructor(
 		private readonly drawer: TransactionDrawer,
 		private readonly accountsPage: AccountsPage,
-		private readonly sidebar: SidebarPage,
+		sidebar: SidebarPage,
 		private readonly monarchData: MonarchDataService,
 		private readonly manualLoans: ManualLoanUpdates,
 		private readonly syncScheduler: SyncScheduler,
 		private readonly formatter: Formatter
-	) {}
+	) {
+		this.accountsBadge = new SidebarCountBadge(sidebar, ACCOUNTS_PATH);
+	}
 
 	/** Syncs again whenever Monarch's data, an entered balance or a link changes. */
 	public start(): void {
@@ -67,7 +69,7 @@ export class LoanPaymentPromptsFeature implements WingspanFeature {
 		const snapshot = isNeeded ? this.monarchData.snapshot.value : null;
 		const staleLoans = snapshot ? this.staleLoansIn(snapshot) : new Map<string, StaleLoan>();
 		this.syncBanner(snapshot, staleLoans);
-		this.syncBadge(staleLoans.size);
+		this.accountsBadge.show(staleLoans.size, `${countOf(staleLoans.size, 'loan balance')} to update`);
 		this.syncAccountNotes(staleLoans);
 	}
 
@@ -129,33 +131,6 @@ export class LoanPaymentPromptsFeature implements WingspanFeature {
 		};
 	}
 
-	/** Monarch's count badge, as beside Recurring. */
-	private syncBadge(staleLoanCount: number): void {
-		if (staleLoanCount === 0) {
-			this.sidebar.removeLinkBadge();
-			return;
-		}
-
-		this.sidebar.showLinkBadge(ACCOUNTS_PATH, { render: badgeEl => this.mountBadge(badgeEl) });
-		if (staleLoanCount === this.renderedBadgeCount) return;
-
-		this.renderedBadgeCount = staleLoanCount;
-		this.badgeIsland?.render(
-			<Badge tone="count" label={`${staleLoanCount} ${staleLoanCount === 1 ? 'loan balance' : 'loan balances'} to update`}>
-				{staleLoanCount}
-			</Badge>
-		);
-	}
-
-	private mountBadge(badgeEl: HTMLElement): () => void {
-		this.badgeIsland = new Island(badgeEl);
-		this.renderedBadgeCount = 0;
-		return () => {
-			this.badgeIsland?.unmount();
-			this.badgeIsland = null;
-		};
-	}
-
 	private syncAccountNotes(staleLoans: ReadonlyMap<string, StaleLoan>): void {
 		const notes = new Map<string, SlotContent>(this.accountsPage.isActive ? [...staleLoans.keys()].map(accountId => [accountId, { render: noteEl => this.renderAccountNote(noteEl) }]) : []);
 		this.accountsPage.showAccountNotes(notes);
@@ -180,6 +155,6 @@ export class LoanPaymentPromptsFeature implements WingspanFeature {
 	private clear(): void {
 		this.drawer.removeBanner();
 		this.accountsPage.removeAccountNotes();
-		this.sidebar.removeLinkBadge();
+		this.accountsBadge.remove();
 	}
 }

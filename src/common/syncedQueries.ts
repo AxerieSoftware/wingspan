@@ -19,13 +19,16 @@ export class SyncedQueries {
 		private readonly syncScheduler: SyncScheduler
 	) {}
 
-	/** The cached data, including the last good data after a failed refresh. Each call also refreshes it in the background unless it's still fresh or in its retry cooldown. */
-	public read<TData>(queryKey: readonly unknown[], fetch: () => Promise<TData>): QueryResult<TData> {
+	/**
+	 * The cached data, including the last good data after a failed refresh. Each call also refreshes it in the background
+	 * unless it's still fresh, for `staleTimeMs` or the client's default, or in its retry cooldown.
+	 */
+	public read<TData>(queryKey: readonly unknown[], fetch: () => Promise<TData>, { staleTimeMs }: { staleTimeMs?: number } = {}): QueryResult<TData> {
 		const cachedData = this.queryClient.getQueryData<TData>(queryKey);
 		const state = this.queryClient.getQueryState(queryKey);
 		if (!isCoolingDown(state)) {
 			// Kept after it goes stale, so a failed refresh still has the last good data to show.
-			void this.queryClient.query({ queryKey, queryFn: fetch, gcTime: Number.POSITIVE_INFINITY }).then(
+			void this.queryClient.query({ queryKey, queryFn: fetch, gcTime: Number.POSITIVE_INFINITY, ...(staleTimeMs === undefined ? {} : { staleTime: staleTimeMs }) }).then(
 				data => {
 					if (data !== cachedData) this.syncScheduler.request();
 				},

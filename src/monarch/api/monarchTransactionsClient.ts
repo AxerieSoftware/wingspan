@@ -1,6 +1,7 @@
 import * as v from 'valibot';
 import { logError } from '../../common/log';
 import { lenientArray } from './lenientArray';
+import type { BusinessEntitySetInput } from './models/incomeRequest';
 import type { TaggedTransaction, TransactionTag } from './models/taggedTransaction';
 import type { Transaction } from './models/transaction';
 import type { MonarchClient } from './monarchClient';
@@ -47,11 +48,19 @@ const GET_TAGGED_TRANSACTIONS_QUERY = `
 	}
 `;
 
+const GET_NEEDS_REVIEW_COUNT_QUERY = `
+	query wingspan_GetNeedsReviewCount($filters: TransactionFilterInput) {
+		allTransactions(filters: $filters) { totalCount }
+	}
+`;
+
 const GET_TRANSACTION_TAGS_QUERY = `
 	query wingspan_GetTransactionTags {
 		householdTransactionTags { id name color }
 	}
 `;
+
+const NeedsReviewCountSchema = v.object({ allTransactions: v.object({ totalCount: v.number() }) });
 
 const MonarchTransactionSchema = v.object({
 	id: v.string(),
@@ -108,6 +117,12 @@ export class MonarchTransactionsClient {
 	public async getTaggedTransactions(tagId: string): Promise<TaggedTransaction[]> {
 		const results = await this.readAllPages('wingspan_GetTaggedTransactions', GET_TAGGED_TRANSACTIONS_QUERY, GetTaggedTransactionsSchema, { tags: [tagId] }, 'with a tag');
 		return results.map(result => this.toTaggedTransaction(result));
+	}
+
+	/** How many transactions Monarch marks as needing review, within the business filter when there is one. */
+	public async getNeedsReviewCount(businessEntitySet: BusinessEntitySetInput | undefined): Promise<number> {
+		const { allTransactions } = await this.client.request('wingspan_GetNeedsReviewCount', GET_NEEDS_REVIEW_COUNT_QUERY, NeedsReviewCountSchema, { filters: { needsReview: true, businessEntitySet } });
+		return allTransactions.totalCount;
 	}
 
 	/** The household's tags, in Monarch's order. */

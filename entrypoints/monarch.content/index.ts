@@ -24,7 +24,7 @@ export default defineContentScript({
 		const recurring = createRecurring(builder);
 		// Features sync in the order they're added. Workspaces go first so the other features use the chosen workspace.
 		const businessFilter = addBusinessEntities(builder, recurring);
-		const hiddenSidebarItems = addSidebar(builder);
+		const hiddenSidebarItems = addSidebar(builder, businessFilter);
 		addSettings(builder, businessFilter, hiddenSidebarItems);
 		addRetailSync(builder);
 		const cashSettings = addCashSettings(builder, businessFilter);

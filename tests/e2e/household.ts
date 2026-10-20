@@ -154,6 +154,7 @@ export class Household {
 	private hsaTags: Record<HsaExpense['tag'], TransactionTag> | null = null;
 	private hasLoanPayment = false;
 	private isLoanPaymentLinked = false;
+	private needsReviewCount = 0;
 	private hasCardInterest = false;
 	/** When the accounts that sync with a bank last synced: two hours ago, until Refresh all syncs them now. */
 	private accountsSyncedAt = new Date(Date.now() - 2 * 60 * 60_000).toISOString();
@@ -209,6 +210,11 @@ export class Household {
 	/** Saves Monarch's Auto Loan expense as paying toward the auto loan, as choosing it under Pays toward does. */
 	public linkLoanPayment(): void {
 		this.isLoanPaymentLinked = true;
+	}
+
+	/** Marks the latest transactions as needing review in Monarch. */
+	public markForReview(count: number): void {
+		this.needsReviewCount = count;
 	}
 
 	/** Has the account's bank connection need signing in again, as Monarch shows on Accounts. */
@@ -331,7 +337,8 @@ export class Household {
 			getTransaction: ({ id }) => this.transactions().find(transaction => transaction.id === id) ?? null,
 			householdTransactionTags: () => (this.hsaTags ? [{ id: 'tag-retail', name: 'Retail Sync', color: '#f86713' }, ...Object.values(this.hsaTags)] : []),
 			allTransactions: ({ filters }) => {
-				const tagIds = (filters as { tags?: string[] } | null)?.tags;
+				const { tags: tagIds, needsReview } = (filters as { tags?: string[]; needsReview?: boolean } | null) ?? {};
+				if (needsReview) return { totalCount: this.needsReviewCount, results: this.transactions().slice(0, this.needsReviewCount) };
 				const results = tagIds?.length ? this.transactions().filter(transaction => transaction.tags.some(tag => tagIds.includes(tag.id))) : this.transactions();
 				return { totalCount: results.length, results };
 			},
