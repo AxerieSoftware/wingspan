@@ -1,5 +1,6 @@
 import type { Account } from '../../../monarch/api/models/account';
 import type { BusinessEntity } from '../../../monarch/api/models/businessEntity';
+import type { BusinessEntitySetInput } from '../../../monarch/api/models/incomeRequest';
 
 /** Monarch's id for Household in its business filter, meaning anything not owned by a business. */
 export const HOUSEHOLD_ENTITY_ID = 'business_entity_none';
@@ -33,6 +34,12 @@ export class EntityScope {
 	/** Whether that entity is shown. Everything includes every entity, even a business that hasn't loaded yet. */
 	public includes(entityId: string): boolean {
 		return this.isEverything || this.entityIds.includes(entityId);
+	}
+
+	/** Monarch's business filter for its queries, left out when every entity is shown. */
+	public toBusinessEntitySet(): BusinessEntitySetInput | undefined {
+		if (this.isEverything) return undefined;
+		return { businessEntityIds: this.entityIds.filter(entityId => entityId !== HOUSEHOLD_ENTITY_ID), includeUnassigned: this.entityIds.includes(HOUSEHOLD_ENTITY_ID) };
 	}
 
 	public get soleEntityId(): string | null {

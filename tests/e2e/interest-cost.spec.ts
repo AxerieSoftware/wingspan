@@ -18,8 +18,8 @@ const openLoan = async (page: Page, open: (options?: OpenOptions) => Promise<voi
 test("a loan's page shows what its interest costs a day, a month and a year at its rate", async ({ page, open }) => {
 	const card = await openLoan(page, open);
 
-	await expect(card).toContainText(`${DAILY} a day`);
-	await expect(card).toContainText(`${MONTHLY} a month · $593 a year, at 6.5% on $9,120.00`);
+	await expect(card).toContainText(`${MONTHLY} a month`);
+	await expect(card).toContainText(`${DAILY} a day · $593 a year, at 6.5% on $9,120.00`);
 });
 
 test("a manual loan's page shows when its balance was entered, and asks for its payment to be linked to take payments off the estimate", async ({ page, open }) => {
@@ -35,15 +35,17 @@ test("after a payment, Update balance starts at the balance plus interest since,
 	household.addLoanPayment();
 	household.linkLoanPayment();
 	const card = await openLoan(page, open);
-	await expect(card).toContainText('About $8,788.12 today, with interest since, minus $340.00 paid since.');
+	await expect(card).toContainText('About $8,788.00 today, with interest since, minus $340.00 paid since.');
 	await expect(card.locator('[data-mds="banner-description"]')).toHaveText('A $340.00 payment posted since this balance was entered. Update the balance once your servicer shows it.');
 
 	await card.getByRole('button', { name: 'Update balance' }).click();
 	const dialog = page.getByRole('dialog', { name: 'Update balance' });
 	const balance = dialog.getByRole('textbox', { name: 'Balance' });
-	await expect(balance).toHaveValue('$8,788.12');
+	await expect(balance).toHaveValue('');
+	await dialog.getByRole('button', { name: 'Use estimate, $8,788.00' }).click();
+	await expect(balance).toHaveValue('$8,788.00');
 	await balance.fill('8790.5');
-	await dialog.getByRole('button', { name: 'Save' }).click();
+	await dialog.getByRole('button', { name: 'Save to Monarch' }).click();
 
 	// Monarch's page reloads to show the new balance, entered today.
 	await expect(loanCard(page)).toContainText('on $8,790.50');
@@ -97,8 +99,8 @@ test("a linked payment's transaction details offer to update the loan's balance,
 	await expect(banner.locator('[data-wingspan-mark]')).toHaveCount(1);
 	await banner.getByRole('button', { name: 'Update balance' }).click();
 	const dialog = page.getByRole('dialog', { name: 'Update balance' });
-	await expect(dialog.getByRole('textbox', { name: 'Balance' })).toHaveValue('$8,788.12');
-	await dialog.getByRole('button', { name: 'Save' }).click();
+	await dialog.getByRole('button', { name: 'Use estimate, $8,788.00' }).click();
+	await dialog.getByRole('button', { name: 'Save to Monarch' }).click();
 
 	// The page reloads with the balance entered today, after the payment, so there's nothing left to update.
 	await expect(page.getByRole('dialog', { name: 'Transaction details' })).toBeVisible();

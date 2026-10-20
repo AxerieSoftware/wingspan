@@ -11,13 +11,13 @@ On a loan you track by hand, interest never shows up as a transaction, so it's e
 
 ## Where it shows
 
-- **Cash Flow** and **Reports**: **Interest a month**, after [Loans paid down](/features/loans-paid-down/), so you can see what you paid down next to what interest adds back. Hover it for the cost a day and a year, and each debt's rate and share.
+- **Cash Flow** and **Reports**: **Interest a month**, after [Loans paid down](/features/loans-paid-down/), so you can see what you paid down next to what interest adds back. Hover it for the cost a day and a year, and each debt's rate and share. It uses today's balances, so it's hidden for periods that have ended.
 - **Accounts**: the **Loans** and **Credit Cards** groups say what their debts cost a month.
-- **Each loan's page**: an **Interest** card with the cost a day, a month and a year.
+- **Each loan's page**: an **Interest** card with the cost a month, a day and a year.
 
 <Screenshot name="interest-cost-accounts" alt="Accounts' Loans group, with $49 a month in interest next to the group's total." />
 
-<Screenshot name="loan-interest" clip="interest-cost" alt="A loan's Interest card: $1.62 a day, $49 a month and $593 a year at 6.5%, the balance last entered, and about $8,788.12 today after a $340 payment." />
+<Screenshot name="loan-interest" clip="interest-cost" alt="A loan's Interest card: $1.62 a day, $49 a month and $593 a year at 6.5%, the balance last entered, and about $8,788.00 today after a $340 payment." />
 
 ## How it's counted
 
@@ -33,13 +33,13 @@ For a loan you track by hand in Monarch, Wingspan works out the new balance afte
 
 ### 1. Link the loan's payment on Recurring
 
-On **Recurring**, open the loan's payment (the recurring expense Monarch already tracks) and choose the loan under **Pays toward**. If Monarch doesn't track the payment yet, add it with **Add recurring** first.
+On **Recurring**, open the loan's payment (the recurring expense Monarch already tracks) and choose the loan under **Pays toward**. If Monarch doesn't track the payment yet, add it with **Add recurring → Add manually**, leaving **Type** on **Recurring merchant**. Wingspan's own bills can't pay toward a loan.
 
 <Screenshot name="pays-toward" alt="Monarch's Auto Loan expense on Recurring, with Pays toward set to the Auto Loan." />
 
 ### 2. Check the estimate after a payment
 
-Open the loan's page. The **Interest** card shows the balance you last entered and an estimate for today: that balance, plus daily interest since, minus payments since. Until its payment is linked, it adds interest only.
+Open the loan's page. The **Interest** card shows the balance you last entered and an estimate for today: daily interest on what's still owed, with each payment covering the interest so far before the principal. Without an interest rate in Monarch, it's the balance minus payments. Until its payment is linked, it adds interest only.
 
 ### 3. Update the balance
 
@@ -51,11 +51,11 @@ Once a linked payment posts, Wingspan reminds you to update the balance:
 
 <Screenshot name="payment-update-banner" alt="A $340 payment's transaction details, saying it goes toward the Auto Loan, with an Update balance button." />
 
-Choose **Update balance** there or on the loan's page. It starts at the estimate. Save it, or enter your servicer's amount if it differs. Monarch's page reloads to show the new balance, and the reminders go away.
+Choose **Update balance** there or on the loan's page. Enter your servicer's amount, or choose **Use estimate** to fill in Wingspan's. **Save to Monarch** saves it as the loan's balance for today. Monarch's page reloads to show it, and the reminders go away.
 
-<Screenshot name="update-balance" alt="The Update balance dialog, starting at Wingspan's estimate of $8,788.12." />
+<Screenshot name="update-balance" alt="The Update balance dialog, with Use estimate offering Wingspan's estimate of $8,788.00." />
 
-Wingspan changes the balance only when you save. Your servicer's amount can be a little lower, since most charge interest on the principal only.
+Wingspan changes the balance only when you save. Your servicer's amount is the one to trust if it differs.
 
 ## Good to know
 

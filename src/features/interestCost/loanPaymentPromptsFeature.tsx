@@ -89,7 +89,7 @@ export class LoanPaymentPromptsFeature implements WingspanFeature {
 		for (const account of snapshot.accounts) {
 			if (account.type.name !== MonarchAccountType.loan || !account.isManual || !this.manualLoans.hasLinkedPayment(account.id)) continue;
 			const view = this.manualLoans.view(account, snapshot);
-			if (view.status === 'ready' && view.paymentsSince.length > 0) byAccountId.set(account.id, { account, enteredDate: view.entered.date, estimate: view.estimate ?? view.entered.owed });
+			if (view.status === 'ready' && view.paymentsSince.length > 0) byAccountId.set(account.id, { account, enteredDate: view.entered.date, estimate: view.estimate });
 		}
 		// Asking for a balance not yet loaded starts loading it, which changes `changes`, so this is cached under the value it ends up with.
 		this.staleLoans = { snapshot, changes: this.manualLoans.changes.peek(), byAccountId };

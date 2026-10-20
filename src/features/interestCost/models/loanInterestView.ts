@@ -1,4 +1,5 @@
 import type { EnteredBalance } from '../../../monarch/api/models/loanBalances';
+import type { LoanPayment } from '../services/loanBalanceEstimator';
 
 /** What a loan's page shows: interest at today's balance, and for a manual loan, its balance as last entered and an estimate for today. */
 export interface LoanInterestView {
@@ -19,9 +20,9 @@ export type ManualLoanView =
 			status: 'ready';
 			entered: EnteredBalance;
 			/** Payments posted since the balance was entered, from the Monarch recurring expenses that pay toward the loan. */
-			paymentsSince: { date: string; amount: number }[];
-			/** Null without a rate. */
-			estimate: number | null;
+			paymentsSince: LoanPayment[];
+			/** The balance as entered plus interest since, at 0% without a rate, minus the payments since. */
+			estimate: number;
 			/** Whether a Monarch recurring expense pays toward this loan. */
 			hasLinkedPayment: boolean;
 	  };

@@ -9,9 +9,9 @@ import Screenshot from "../../../components/Screenshot.astro";
 
 Monarch counts loan payments as spending. A month you put an extra $1,000 toward a student loan looks the same as a month you spent $1,000, and your savings rate drops even though you're better off.
 
-Loans paid down shows how much of those payments lowered what you owe. It sits after Monarch's **Savings rate**: the amount, then its share of your income in parentheses.
+Loans paid down shows how much of those payments lowered what you owe. It sits after Monarch's **Savings rate**: the amount, with its share of your income beside the name.
 
-<Screenshot name="loans-paid-down" clip="loans-paid-down" alt="Cash Flow's totals: Income, Expenses, Total savings and Savings rate, then Loans paid down at $340 (78%) and Interest a month at $49." />
+<Screenshot name="loans-paid-down" clip="loans-paid-down" alt="Cash Flow's totals: Income, Expenses, Total savings and Savings rate, then Loans paid down at $340, 78% of income, and Interest a month at $49." />
 
 ## Where it shows
 
@@ -22,13 +22,14 @@ Hover **Loans paid down** for the dates it covers and how much each loan went do
 
 ## How it's counted
 
-- It's how much your loan balances went down over the period (through today, if the period is still going): what you paid minus interest added. It's negative when interest added more.
+- It's how much your loan balances went down over the period (through today, if the period is still going): what you paid minus interest added. It's negative when interest or new borrowing added more.
+- A loan you track by hand only changes when you enter a balance, so once its payment is linked under **Pays toward**, Wingspan counts its payments in the period minus estimated interest instead.
 - A loan paid off and closed during the period counts down to $0.
 - A loan added during the period isn't counted, so new debt doesn't show up as a negative paydown.
-- With Monarch's businesses, it counts loans for whatever the page shows: Household, a business, or both.
+- With Monarch's businesses, it counts loans for whatever the page shows: Household, a business, or both. Hidden loans aren't counted.
 
 ## Good to know
 
-- Balances come from Monarch, so a loan you track by hand counts once you update its balance. [Update balance](/features/interest-cost/#keeping-a-manual-loan-current) estimates it for you.
+- A loan you track by hand without a linked payment counts once you update its balance. [Link its payment](/features/interest-cost/#keeping-a-manual-loan-current) so each month counts what you paid that month.
 - The card is hidden when no loan shown had a balance at the start of the period.
 - **Unavailable** means Monarch's loan balances didn't load. Wingspan tries again a minute later.

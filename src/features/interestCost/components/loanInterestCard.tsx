@@ -37,7 +37,7 @@ export function LoanInterestCard({ view, formatter, onUpdateBalance, onRetry }: 
 				) : null}
 			</div>
 			<InterestRow view={view} formatter={formatter} />
-			{view.manual ? <ManualLoanRow manual={view.manual} formatter={formatter} onRetry={onRetry} /> : null}
+			{view.manual ? <ManualLoanRow manual={view.manual} hasRate={view.rate !== null} formatter={formatter} onRetry={onRetry} /> : null}
 		</section>
 	);
 }
@@ -50,13 +50,13 @@ function InterestRow({ view, formatter }: Pick<LoanInterestCardProps, 'view' | '
 	const yearly = InterestCost.yearlyOf({ owed: view.owed, rate: view.rate });
 	return (
 		<div className="flex flex-col gap-2xs px-lg py-default">
-			<span className="text-3xl font-medium text-content-primary">{`${formatter.money(yearly / DAYS_PER_YEAR)} a day`}</span>
-			<span className="text-sm font-book text-content-secondary">{`${formatter.wholeMoney(yearly / MONTHS_PER_YEAR)} a month · ${formatter.wholeMoney(yearly)} a year, at ${view.rate}% on ${formatter.money(view.owed)}`}</span>
+			<span className="text-3xl font-medium text-content-primary">{`${formatter.wholeMoney(yearly / MONTHS_PER_YEAR)} a month`}</span>
+			<span className="text-sm font-book text-content-secondary">{`${formatter.money(yearly / DAYS_PER_YEAR)} a day · ${formatter.wholeMoney(yearly)} a year, at ${view.rate}% on ${formatter.money(view.owed)}`}</span>
 		</div>
 	);
 }
 
-function ManualLoanRow({ manual, formatter, onRetry }: { manual: ManualLoanView; formatter: Formatter; onRetry(): void }) {
+function ManualLoanRow({ manual, hasRate, formatter, onRetry }: { manual: ManualLoanView; hasRate: boolean; formatter: Formatter; onRetry(): void }) {
 	if (manual.status === 'loading') {
 		return (
 			<div className="flex flex-col gap-sm border-t border-t-divider-primary px-lg py-default" aria-busy="true">
@@ -79,7 +79,7 @@ function ManualLoanRow({ manual, formatter, onRetry }: { manual: ManualLoanView;
 				</div>
 			) : null}
 			<span>{`Balance entered ${formatter.longDate(entered.date)}: ${formatter.money(entered.owed)}.`}</span>
-			{estimate !== null ? <span className="text-content-primary">{`About ${formatter.money(estimate)} today, with interest since${paymentsNote}.`}</span> : null}
+			<span className="text-content-primary">{`About ${formatter.money(estimate)} today${hasRate ? ', with interest since' : ''}${paymentsNote}.`}</span>
 			{hasLinkedPayment ? null : <span>Open this loan's payment on Recurring and choose this loan under Pays toward, so the estimate takes off what you've paid.</span>}
 		</div>
 	);

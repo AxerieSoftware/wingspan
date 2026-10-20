@@ -5,13 +5,14 @@ import type { MonarchSnapshot } from '../../../data/services/monarchDataService'
 import type { WingspanDataService } from '../../../data/services/wingspanDataService';
 import type { Account } from '../../../monarch/api/models/account';
 import type { EnteredBalance } from '../../../monarch/api/models/loanBalances';
+import type { Transaction } from '../../../monarch/api/models/transaction';
 import type { MonarchLoansClient } from '../../../monarch/api/monarchLoansClient';
 import { Layer } from '../../../monarch/ui/components/layer';
 import type { Formatter } from '../../../monarch/ui/formatter';
 import { UpdateBalanceDialog } from '../components/updateBalanceDialog';
 import { loanRateOf } from '../models/interestCost';
 import type { ManualLoanView } from '../models/loanInterestView';
-import type { LoanBalanceEstimator } from './loanBalanceEstimator';
+import type { LoanBalanceEstimator, LoanPayment } from './loanBalanceEstimator';
 
 const ENTERED_BALANCE_QUERY = 'monarchEnteredBalance';
 
@@ -62,6 +63,11 @@ export class ManualLoanUpdates implements Disposable {
 		return Object.keys(this.loanAccountIdByRecurrenceId.peek()).length > 0;
 	}
 
+	/** The loans a Monarch recurring expense is linked to. */
+	public linkedLoanAccountIds(): string[] {
+		return [...new Set(Object.values(this.loanAccountIdByRecurrenceId.peek()))];
+	}
+
 	/** Whether a Monarch recurring expense is linked to the loan. */
 	public hasLinkedPayment(loanAccountId: string): boolean {
 		return this.linkedRecurrenceIdsFor(loanAccountId).size > 0;
@@ -77,12 +83,17 @@ export class ManualLoanUpdates implements Disposable {
 
 		const { entered } = state;
 		const rate = loanRateOf(account);
-		const linkedRecurrenceIds = this.linkedRecurrenceIdsFor(account.id);
-		const paymentsSince = snapshot.transactions
-			.filter(transaction => linkedRecurrenceIds.has(transaction.recurrenceGroupId ?? '') && !transaction.pending && transaction.date > entered.date)
+		const paymentsSince = this.postedPaymentsToward(account.id, snapshot.transactions).filter(payment => payment.date > entered.date);
+		const estimate = this.estimator.estimate({ owed: entered.owed, rate: rate ?? 0, balanceDate: entered.date, payments: paymentsSince });
+		return { status: 'ready', entered, paymentsSince, estimate, hasLinkedPayment: this.hasLinkedPayment(account.id) };
+	}
+
+	/** The posted payments of the Monarch recurring expenses linked to the loan. */
+	public postedPaymentsToward(loanAccountId: string, transactions: readonly Transaction[]): LoanPayment[] {
+		const linkedRecurrenceIds = this.linkedRecurrenceIdsFor(loanAccountId);
+		return transactions
+			.filter(transaction => linkedRecurrenceIds.has(transaction.recurrenceGroupId ?? '') && !transaction.pending)
 			.map(transaction => ({ date: transaction.date, amount: Math.abs(transaction.amount) }));
-		const estimate = rate === null ? null : this.estimator.estimate({ owed: entered.owed, rate, balanceDate: entered.date, payments: paymentsSince.map(payment => payment.amount) });
-		return { status: 'ready', entered, paymentsSince, estimate, hasLinkedPayment: linkedRecurrenceIds.size > 0 };
 	}
 
 	/** Loads the balance as last entered again, after it failed to load. */
@@ -91,7 +102,7 @@ export class ManualLoanUpdates implements Disposable {
 		void this.loadEnteredBalance(accountId);
 	}
 
-	/** Starts at the estimate, or the balance as entered when the loan has no rate to estimate with. */
+	/** Offers the estimate; the household chooses to use it or enters their servicer's balance. */
 	public openUpdateDialog(accountId: string, accountName: string, estimate: number): void {
 		this.dialogLayer?.close();
 		this.dialogLayer = new Layer(this.window.document, close => (
