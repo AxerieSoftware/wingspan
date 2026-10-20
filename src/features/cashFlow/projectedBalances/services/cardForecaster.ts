@@ -5,7 +5,7 @@ import { MonarchOccurrenceStatus, MonarchRecurringType } from '../../../../monar
 import { occurrenceAccountId, type RecurringFlow } from '../../../../monarch/api/models/recurringFlow';
 import type { Transaction } from '../../../../monarch/api/models/transaction';
 import type { Occurrence } from '../../../recurring/recurringItems/models/occurrence';
-import type { RecurringItem } from '../../../recurring/recurringItems/models/recurringItem';
+import { isMarkedPaid, type RecurringItem } from '../../../recurring/recurringItems/models/recurringItem';
 import type { RecurrenceCalculator } from '../../../recurring/recurringItems/services/recurrenceCalculator';
 import type { CardPaymentKind } from '../../../recurring/statements/cardPaymentKind';
 import { aprOf, creditLimitOf, impliedAprOf, lastInterestChargesByAccountId, minimumPaymentOf } from '../models/cardTerms';
@@ -25,6 +25,8 @@ export interface PostedAmount {
 export interface MatchedPayment {
 	date: string;
 	amount: number;
+	/** The household marked the statement paid themselves, so nothing is left on it. */
+	isMarkedPaid: boolean;
 }
 
 /** A counted card in the shape the projector needs: what it owes, when it's due, and its recent statement activity. */
@@ -138,7 +140,14 @@ export class CardForecaster {
 							matchedPaymentByDueDate: Object.fromEntries(
 								trackedOccurrences
 									.filter(occurrence => occurrence.paid)
-									.map(occurrence => [occurrence.dueDate, { date: occurrence.matchedTransaction?.date ?? occurrence.dueDate, amount: Math.abs(occurrence.matchedTransaction?.amount ?? 0) }])
+									.map((occurrence): [string, MatchedPayment] => [
+										occurrence.dueDate,
+										{
+											date: occurrence.matchedTransaction?.date ?? occurrence.dueDate,
+											amount: Math.abs(occurrence.matchedTransaction?.amount ?? 0),
+											isMarkedPaid: isMarkedPaid(item, occurrence.dueDate)
+										}
+									])
 							),
 							...this.postedActivity(accountId, transactions)
 						}

@@ -44,24 +44,25 @@ export class ScheduledFlowBuilder {
 		dueDayByRecurrenceId: Readonly<Record<string, number>>,
 		endDate: string
 	): ScheduledFlow[] {
-		const monarchRecurrenceIds = this.projectedExpenseRecurrenceIds(recurringFlows, accounts);
-		// A bill Monarch also projects is counted once, from Monarch's flow.
+		const monarchRecurrenceIds = this.projectedRecurrenceIds(recurringFlows, accounts);
+		// A bill or income Monarch also projects is counted once, from Monarch's flow.
 		const isProjectedByMonarch = (item: RecurringItem) => [...(paidRecurrenceIdsByItemId.get(item.id) ?? [])].some(recurrenceId => monarchRecurrenceIds.has(recurrenceId));
 		const bills = recurringItems.filter(item => this.manualBills.owns(item) && !isProjectedByMonarch(item));
+		const incomes = recurringItems.filter(item => this.expectedIncome.owns(item) && !isProjectedByMonarch(item));
 		return [
 			...this.monarchFlows(recurringFlows, accounts, dueDayByRecurrenceId, endDate),
 			...this.billFlows(bills, outstandingOccurrences, accounts, endDate),
-			...this.incomeFlows(outstandingOccurrences, recurringItems, accounts, endDate)
+			...this.incomeFlows(incomes, outstandingOccurrences, accounts, endDate)
 		];
 	}
 
-	/** Monarch's recurring expenses with an occurrence from today on an account the projection follows. */
-	private projectedExpenseRecurrenceIds(recurringFlows: RecurringFlow[], accounts: ProjectedAccounts): Set<string> {
+	/** Monarch's recurring expenses and income with an occurrence from today on an account the projection follows. */
+	private projectedRecurrenceIds(recurringFlows: RecurringFlow[], accounts: ProjectedAccounts): Set<string> {
 		const today = this.calendar.today();
 		return new Set(
 			recurringFlows.flatMap(flow => {
 				const isProjected = flow.occurrences.some(occurrence => occurrence.date >= today && this.projectedAccount(occurrenceAccountId(flow, occurrence), accounts) !== null);
-				return flow.recurrenceGroup.recurringType === MonarchRecurringType.expense && isProjected ? [flow.recurrenceGroup.id] : [];
+				return COUNTED_FLOW_TYPES.has(flow.recurrenceGroup.recurringType) && isProjected ? [flow.recurrenceGroup.id] : [];
 			})
 		);
 	}
@@ -134,22 +135,21 @@ export class ScheduledFlowBuilder {
 	}
 
 	/**
-	 * Each income's expected amount on every due date after today, and today too if nothing has arrived yet. The amount
-	 * is an estimate, so a deposit already in the balance doesn't reduce later due dates. Income that missed an earlier
-	 * due date isn't coming.
+	 * Each income's expected amount on every due date from today on, except one whose deposit has posted, even early.
+	 * The amount is an estimate, so a smaller deposit doesn't reduce later due dates. A pending deposit isn't in the
+	 * balance yet, so its due date still counts. Income that missed an earlier due date isn't coming.
 	 */
-	private incomeFlows(outstandingOccurrences: Occurrence[], recurringItems: RecurringItem[], accounts: ProjectedAccounts, endDate: string): ScheduledFlow[] {
+	private incomeFlows(incomes: RecurringItem[], outstandingOccurrences: Occurrence[], accounts: ProjectedAccounts, endDate: string): ScheduledFlow[] {
 		const today = this.calendar.today();
+		const receivedKeys = new Set(outstandingOccurrences.filter(occurrence => occurrence.paid && !occurrence.matchedTransaction?.pending).map(occurrence => occurrence.key));
 		const flows: ScheduledFlow[] = [];
-		const receivedTodayIds = new Set(outstandingOccurrences.filter(occurrence => occurrence.dueDate === today && occurrence.paid).map(occurrence => occurrence.item.id));
 
-		for (const item of recurringItems) {
+		for (const item of incomes) {
 			const projectedAccount = this.projectedAccount(item.matchRule?.accountId, accounts);
-			if (!this.expectedIncome.owns(item) || !item.active || projectedAccount === null) continue;
+			if (!item.active || projectedAccount === null) continue;
 
-			const fromDate = receivedTodayIds.has(item.id) ? this.calendar.addDays(today, 1) : today;
-			for (const dueDate of this.recurrence.dueDates(item.recurrence, fromDate, endDate)) {
-				flows.push({ date: dueDate, amount: item.amount, label: item.name, kind: 'income', accountId: projectedAccount });
+			for (const dueDate of this.recurrence.dueDates(item.recurrence, today, endDate)) {
+				if (!receivedKeys.has(this.payments.occurrenceKey(item.id, dueDate))) flows.push({ date: dueDate, amount: item.amount, label: item.name, kind: 'income', accountId: projectedAccount });
 			}
 		}
 

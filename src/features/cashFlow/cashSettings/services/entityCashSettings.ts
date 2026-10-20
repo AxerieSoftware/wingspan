@@ -42,6 +42,7 @@ export class EntityCashSettings {
 		return {
 			checkingAccountIds: parts.flatMap(part => part.checkingAccountIds),
 			cardAccountIds: parts.flatMap(part => part.cardAccountIds),
+			borrowCardAccountIds: parts.flatMap(part => part.borrowCardAccountIds),
 			reserveAccountIds: parts.flatMap(part => part.reserveAccountIds),
 			cushion: parts.reduce((total, part) => total + part.cushion, 0),
 			safetyDays: Math.max(DEFAULT_SAFETY_DAYS, ...parts.map(part => part.safetyDays))

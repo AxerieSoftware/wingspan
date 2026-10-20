@@ -110,7 +110,7 @@ const CLIPS: Clip[] = [
 			await demo.click(card.getByRole('button', { name: 'Edit cash and cards', exact: true }));
 			const dialog = page.getByRole('dialog', { name: 'Cash and cards' });
 			await expect(dialog).toBeVisible();
-			await demo.explain('Cash Flow', 'Choose your checking, your reserves and which cards to lean on', dialog);
+			await demo.explain('Cash Flow', 'Choose your checking, your backup accounts and which cards to lean on', dialog);
 			await pause(page);
 		}
 	},

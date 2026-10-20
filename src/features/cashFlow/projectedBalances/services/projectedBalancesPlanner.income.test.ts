@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Occurrence } from '../../../recurring/recurringItems/models/occurrence';
 import type { RecurringItem } from '../../../recurring/recurringItems/models/recurringItem';
-import { account, CHECKING, input, plannerFor, spent, TODAY } from './projectedBalancesPlanner.fixtures';
+import { account, CHECKING, input, plannerFor, recurringFlow, spent, TODAY } from './projectedBalancesPlanner.fixtures';
 
 // Invariant: an expected income adds exactly its amount on each due date from today on, and nothing for earlier ones.
 // Deposits already received are in the balance, so they never reduce a later due date.
@@ -62,6 +62,38 @@ describe('expected income', () => {
 		const dueDateCount = withIncome.days.filter(day => day.flows.some(flow => flow.label === payouts.name)).length;
 		expect(without.days.some(day => day.flows.some(flow => flow.label === 'Interest'))).toBe(false);
 		expect((lastDay(withIncome)?.checking ?? 0) - (lastDay(without)?.checking ?? 0)).toBeCloseTo(430 * dueDateCount, 2);
+	});
+
+	it('skips a later due date whose deposit already posted early, since it is already in the balance', () => {
+		const nextFriday = '2026-10-09';
+		const paidEarly: Occurrence = {
+			...occurrenceToday(true),
+			dueDate: nextFriday,
+			key: `payouts@${nextFriday}`,
+			amount: 430,
+			matchedTransaction: { ...spent('2026-10-01', -430), description: 'Fabrikam transfer' }
+		};
+		const flows = incomeFlows([payouts], [occurrenceToday(false), paidEarly]);
+
+		expect(flows.slice(0, 2)).toEqual([
+			{ date: TODAY, amount: 430, kind: 'income' },
+			{ date: '2026-10-16', amount: 430, kind: 'income' }
+		]);
+	});
+
+	it('still counts a due date whose deposit is pending, since pending money in is left out of the balance', () => {
+		const pending: Occurrence = { ...occurrenceToday(true), matchedTransaction: { ...spent(TODAY, -430), description: 'Fabrikam transfer', pending: true } };
+
+		expect(incomeFlows([payouts], [pending])[0]).toEqual({ date: TODAY, amount: 430, kind: 'income' });
+	});
+
+	it('is counted once when Monarch also projects the same income', () => {
+		const monarchPayouts = recurringFlow('monarch-payouts', 'income', '2026-10-09', 430);
+		const paidRecurrenceIdsByItemId = new Map([[payouts.id, new Set(['monarch-payouts'])]]);
+		const projection = plannerFor().plan(input({ recurringItems: [payouts], recurringFlows: [monarchPayouts], paidRecurrenceIdsByItemId }));
+		const incomeOn = (date: string) => projection.days.find(day => day.date === date)?.flows.filter(flow => flow.kind === 'income') ?? [];
+
+		expect(incomeOn('2026-10-09')).toEqual([expect.objectContaining({ label: 'monarch-payouts', amount: 430 })]);
 	});
 
 	it("isn't projected while paused", () => {

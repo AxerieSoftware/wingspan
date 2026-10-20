@@ -107,8 +107,10 @@ export interface ProjectionInput {
 	cushion: number;
 	/** Free cash keeps the cushion covered for this many days, or until the next payday if that's later. */
 	safetyDays: number;
-	/** In the order they're borrowed on. Cards not listed are left out of the projection. */
+	/** Every card the projection counts: its balance, statements and spending. */
 	cardAccountIds: string[];
+	/** The counted cards checking can borrow on when it runs low, in the order they're borrowed on. */
+	borrowCardAccountIds: string[];
 	/** In the order they're drawn on. */
 	reserveAccountIds: string[];
 	dueDayByRecurrenceId: Readonly<Record<string, number>>;

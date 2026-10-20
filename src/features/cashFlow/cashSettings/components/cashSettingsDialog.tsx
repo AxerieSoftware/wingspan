@@ -11,16 +11,17 @@ import { SwitchRow } from '../../../../monarch/ui/components/switch';
 import { TooltipButton } from '../../../../monarch/ui/components/tooltip';
 import type { Formatter } from '../../../../monarch/ui/formatter';
 import { iconButtonStyles } from '../../../../monarch/ui/styles';
-import { ESTIMATED_MINIMUM_RULE } from '../../../recurring/statements/models/cardPaymentPlans';
-import { aprOf, creditLimitOf, minimumPaymentOf } from '../../projectedBalances/models/cardTerms';
+import { creditLimitOf } from '../../projectedBalances/models/cardTerms';
 import type { CashSettings } from '../models/cashSettings';
 import { SAFETY_DAY_CHOICES, type SavedCashSettings } from '../models/savedCashSettings';
 
 const CUSHION_STEP = 50;
+/** Spans every column of the form grid. */
+const FULL_WIDTH: CSSProperties = { gridColumn: '1 / -1' };
 type CashRole = 'checking' | 'reserve' | 'none';
 const CASH_ROLES: readonly SelectOption<CashRole>[] = [
 	['checking', 'Checking'],
-	['reserve', 'Reserve'],
+	['reserve', 'Backup'],
 	['none', 'Not counted']
 ];
 
@@ -37,6 +38,8 @@ export interface CashSettingsDialogProps {
 	cashAccounts: Account[];
 	cardAccounts: Account[];
 	settings: CashSettings;
+	/** True until these settings are saved, so they're still Wingspan's defaults. */
+	isDefault: boolean;
 	formatter: Formatter;
 	onSave(settings: SavedCashSettings): Promise<void>;
 	onClose(): void;
@@ -58,18 +61,19 @@ interface MoveButtonsProps {
 	onMove(index: number, by: number): void;
 }
 
-/** Lets the household choose which cash accounts are checking or reserves, which cards count and in what order, the cushion, and the safety days. */
-export function CashSettingsDialog({ ownerChoice, cashAccounts, cardAccounts, settings, formatter, onSave, onClose }: CashSettingsDialogProps) {
+/** Lets the household choose which cash accounts are checking or backup, which cards to borrow on and in what order, the cushion, and the safety days. */
+export function CashSettingsDialog({ ownerChoice, cashAccounts, cardAccounts, settings, isDefault, formatter, onSave, onClose }: CashSettingsDialogProps) {
 	const [roles, setRoles] = useState<ReadonlyMap<string, CashRole>>(() => new Map(cashAccounts.map(account => [account.id, savedRoleOf(account.id, settings)])));
 	const idsWithRole = (role: CashRole) => cashAccounts.filter(account => roles.get(account.id) === role).map(account => account.id);
 	const checkingIds = new Set(idsWithRole('checking'));
-	const [cardIds, setCardIds] = useState<ReadonlySet<string>>(() => new Set(settings.cardAccountIds));
-	const [orderedCards, setOrderedCards] = useState(() => chosenFirst(cardAccounts, settings.cardAccountIds));
+	const [cardIds, setCardIds] = useState<ReadonlySet<string>>(() => new Set(settings.borrowCardAccountIds));
+	const [orderedCards, setOrderedCards] = useState(() => chosenFirst(cardAccounts, settings.borrowCardAccountIds));
 	const [cushion, setCushion] = useState<number | null>(settings.cushion);
 	const [safetyDays, setSafetyDays] = useState(settings.safetyDays);
 	// Include a saved value this version doesn't offer, such as one from a newer Wingspan, so opening the dialog doesn't change it.
 	const safetyOptions: SelectOption<string>[] = [...new Set<number>([...SAFETY_DAY_CHOICES, settings.safetyDays])].sort((a, b) => a - b).map(days => [String(days), `${days} days`]);
 	const [isSaving, setIsSaving] = useState(false);
+	const [saveError, setSaveError] = useState<string | null>(null);
 	const cushionAmount = cushion ?? 0;
 	const checkingProblem = checkingIds.size === 0 ? 'Choose at least one checking account.' : null;
 	const cushionProblem = !Number.isFinite(cushionAmount) || cushionAmount < 0 ? "The amount to keep can't be less than $0." : null;
@@ -80,16 +84,19 @@ export function CashSettingsDialog({ ownerChoice, cashAccounts, cardAccounts, se
 		(checkingIds.size > 0 && cushionAmount > checkingNow ? `This is more than checking has now (${formatter.money(checkingNow)}), so there's no free cash until checking reaches it.` : null);
 	const saveSettings = async () => {
 		setIsSaving(true);
+		setSaveError(null);
 		try {
 			await onSave({
 				checkingAccountIds: [...checkingIds],
-				cardAccountIds: orderedCards.filter(account => cardIds.has(account.id)).map(account => account.id),
+				borrowCardAccountIds: orderedCards.filter(account => cardIds.has(account.id)).map(account => account.id),
 				knownCardAccountIds: orderedCards.map(account => account.id),
 				reserveAccountIds: idsWithRole('reserve'),
 				cushion: cushionAmount,
 				safetyDays
 			});
 			onClose();
+		} catch {
+			setSaveError("Couldn't save. Try again.");
 		} finally {
 			setIsSaving(false);
 		}
@@ -109,6 +116,11 @@ export function CashSettingsDialog({ ownerChoice, cashAccounts, cardAccounts, se
 			}
 		>
 			<FormGrid>
+				{isDefault ? (
+					<p className="my-0 text-sm font-book text-content-secondary" style={FULL_WIDTH}>
+						These are Wingspan's starting guesses: accounts named checking, your other cash accounts as backup, and every card. Save to keep them or change them.
+					</p>
+				) : null}
 				{ownerChoice ? (
 					<Field label="Settings for">
 						<Select options={ownerChoice.options} value={ownerChoice.value} label="Settings for" onChange={ownerChoice.onChange} />
@@ -139,7 +151,9 @@ export function CashSettingsDialog({ ownerChoice, cashAccounts, cardAccounts, se
 							{checkingProblem}
 						</p>
 					) : null}
-					<p className="my-0 text-xs text-content-secondary">When checking runs low, Wingspan borrows on the cards first, then draws from reserves, then uses the amount you always keep.</p>
+					<p className="my-0 text-xs text-content-secondary">
+						If checking runs low, the plan borrows on your cards first, then moves money from backup accounts, then dips into the amount you always keep.
+					</p>
 				</Fieldset>
 				<Field label="Always keep">
 					<MoneyInput value={cushion} step={CUSHION_STEP} formatter={formatter} onChange={setCushion} />
@@ -155,16 +169,22 @@ export function CashSettingsDialog({ ownerChoice, cashAccounts, cardAccounts, se
 						Free cash leaves enough to cover the amount you keep, every bill, and each card payment this far ahead, or until the next paycheck if that's later.
 					</p>
 				</Field>
-				<Fieldset legend="Cards counted as debt, borrowed on in order from the top" wide>
+				<Fieldset legend="Cards to borrow on if checking runs low, top first" wide>
+					<p className="my-0 text-xs text-content-secondary">Every card's balance, statements and spending are always counted. Turn a card off to never borrow on it.</p>
 					<AccountSwitches
 						accounts={orderedCards}
 						chosenIds={cardIds}
 						emptyText="No cards in Monarch."
-						warningFor={missingTermsWarning}
+						warningFor={missingLimitWarning}
 						onMove={(index, by) => setOrderedCards(current => moved(current, index, by))}
 						onToggle={(accountId, isChosen) => setCardIds(toggled(cardIds, accountId, isChosen))}
 					/>
 				</Fieldset>
+				{saveError ? (
+					<p className="my-0 text-sm font-book text-content-danger" style={FULL_WIDTH} role="alert">
+						{saveError}
+					</p>
+				) : null}
 			</FormGrid>
 		</Dialog>
 	);
@@ -251,12 +271,9 @@ function Warning({ text }: { text: string }) {
 	);
 }
 
-function missingTermsWarning(card: Account): string | null {
-	const notes: string[] = [];
-	if (creditLimitOf(card) === null) notes.push("No credit limit, so Wingspan won't borrow on this card when checking runs low, and can't tell when it would max out.");
-	if (aprOf(card) === null) notes.push("No APR, so it's paid down after the cards that have one, and starts at the bottom of this list.");
-	if (minimumPaymentOf(card) === null) notes.push(`No minimum payment, so Wingspan estimates one: ${ESTIMATED_MINIMUM_RULE}.`);
-	return notes.length ? `${notes.join(' ')} Add ${notes.length === 1 ? 'it' : 'them'} in the account's details in Monarch.` : null;
+/** Only a missing credit limit changes what the plan can do; a missing APR or minimum payment is estimated. */
+function missingLimitWarning(card: Account): string | null {
+	return creditLimitOf(card) === null ? "No credit limit in Monarch, so the plan can't borrow on this card or tell when it would max out. Add the limit in the account's details in Monarch." : null;
 }
 
 function savedRoleOf(accountId: string, settings: CashSettings): CashRole {

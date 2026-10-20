@@ -7,6 +7,7 @@ import type { Formatter } from '../../../../monarch/ui/formatter';
 import { HOUSEHOLD_ENTITY_ID } from '../../../businessEntities/models/entityScope';
 import type { BusinessEntityView } from '../../../businessEntities/services/businessEntityView';
 import { CashSettingsDialog } from '../components/cashSettingsDialog';
+import { hasChosenCashSettings } from '../models/savedCashSettings';
 import type { CashSettingsResolver } from './cashSettingsResolver';
 import type { EntityCashSettings } from './entityCashSettings';
 
@@ -73,6 +74,7 @@ function OwnedCashSettingsDialog({ accounts, businesses, initialOwnerId, dataSer
 			cashAccounts={cashSettingsResolver.cashAccounts(ownAccounts)}
 			cardAccounts={cashSettingsResolver.cardAccounts(ownAccounts)}
 			settings={entityCashSettings.forEntity(accounts, dataService.data.peek(), ownerId)}
+			isDefault={!hasChosenCashSettings(entityCashSettings.savedFor(dataService.data.peek(), ownerId))}
 			formatter={formatter}
 			onSave={settings => dataService.update(data => entityCashSettings.withSaved(data, ownerId, settings))}
 			onClose={onClose}

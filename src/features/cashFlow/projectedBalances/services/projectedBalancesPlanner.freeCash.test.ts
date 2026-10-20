@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Calendar } from '../../../../common/calendar';
 import { FreeCashSplitter } from '../../freeCash/services/freeCashSplitter';
-import { account, CARD, CHECKING, input, monthlyPaychecks, plannerFor, recurringFlow, SIX_MONTHS, spent, TODAY } from './projectedBalancesPlanner.fixtures';
+import { account, CARD, CHECKING, cardItem, input, monthlyPaychecks, plannerFor, recurringFlow, SIX_MONTHS, spent, TODAY } from './projectedBalancesPlanner.fixtures';
 
 describe('pending transactions', () => {
 	it('takes pending money out of checking right away, and adds pending money in only once it posts', () => {
@@ -56,6 +56,15 @@ describe('monthly surplus', () => {
 		const projection = plannerFor().plan(input({ recurringFlows: [...monthlyPaychecks(3000), ...rent, overdue], transactions }));
 
 		expect(projection.monthlySurplus).toBe(3000 - 1450 - 400);
+	});
+
+	it("counts a card outside Monarch's typical payment as spending, but not payments to Monarch's cards", () => {
+		const outsideMonarch = { ...cardItem(20, 'store'), accountId: undefined, amount: 200, matchRule: { matchText: 'Fabrikam Store Card' } };
+		const accounts = [account(CHECKING, 'depository', 5000), account(CARD, 'credit', -900)];
+
+		const projection = plannerFor().plan(input({ accounts, recurringFlows: monthlyPaychecks(3000), recurringItems: [outsideMonarch, cardItem(15)] }));
+
+		expect(projection.monthlySurplus).toBe(3000 - 200);
 	});
 
 	it('is below $0 when spending outruns income', () => {

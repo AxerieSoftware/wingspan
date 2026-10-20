@@ -55,7 +55,7 @@ npm run build:edge
 
 and load `.output/edge-mv3` as above. `npm run build:chrome`, `build:firefox` and `build:safari` build the others into `.output/chrome-mv3`, `firefox-mv3` and `safari-mv3` respectively.
 
-Wingspan adds to Monarch's newer Recurring page, so turn on **Recurring 2.0** in Monarch under **Settings → Early Access**. The [quick start](https://wingspan.axerie.com/quick-start/) walks through adding your first card payment.
+Wingspan adds to Monarch's newer Recurring page, so turn on **Recurring 2.0** in Monarch under **Settings → Early Access**. If the sidebar's Recurring still opens the older page, go to app.monarch.com/recurring-v2. The [quick start](https://wingspan.axerie.com/quick-start/) walks through adding your first card payment.
 
 ## Your data
 

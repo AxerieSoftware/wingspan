@@ -1,4 +1,5 @@
 import { type MouseEvent, useId, useLayoutEffect, useRef, useState } from 'react';
+import { roundToCents } from '../../../../common/money';
 import type { Formatter } from '../../../../monarch/ui/formatter';
 import { afterCardsOf, type ProjectedDay, type ProjectionEvent, type ProjectionEventKind, type ScheduledFlow } from '../models/projection';
 
@@ -18,12 +19,13 @@ const TOOLTIP_TALLEST = 200;
 /** Beyond about two months there are too many paydays and card payments to mark. */
 const MAX_MARKED_DAYS = 62;
 
-/** cushion is the amount kept in checking; freeCash is drawn as a band above it. */
+/** cushion is the amount kept in checking; freeCash is drawn as a band above it through `freeCashThrough`, the window it's safe for. */
 export interface BalanceChartProps {
 	days: ProjectedDay[];
 	events: ProjectionEvent[];
 	cushion: number;
 	freeCash: number;
+	freeCashThrough: string;
 	formatter: Formatter;
 }
 
@@ -41,10 +43,15 @@ const MARKER_COLORS: Record<Marker['kind'], { background: string; foreground: st
 	outOfCash: ALERT
 };
 const COMPACT_FROM = 1000;
+const LABEL_HEIGHT = 16;
+/** From the low point's dot to the middle of its label. */
+const LOW_LABEL_GAP = 16;
+/** About half the low point's label, so it isn't centered past the plot's edge. */
+const LOW_LABEL_HALF_WIDTH = 60;
 const AFTER_CARDS_COLOR = 'var(--content-purple)';
 
 /** Styled like Monarch's forecast chart. The green band is free cash above the cushion; the dashed line is checking minus what the cards owe. */
-export function BalanceChart({ days, events, cushion, freeCash, formatter }: BalanceChartProps) {
+export function BalanceChart({ days, events, cushion, freeCash, freeCashThrough, formatter }: BalanceChartProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const width = useElementWidth(containerRef);
 	const [hover, setHover] = useState<{ index: number; y: number } | null>(null);
@@ -91,6 +98,10 @@ export function BalanceChart({ days, events, cushion, freeCash, formatter }: Bal
 	const lowest = days[lowestIndex];
 	const lowestDate = lowest?.date ?? '';
 	const markers = markersOf(days, events);
+	const freeCashEndIndex = days.findLastIndex(day => day.date <= freeCashThrough);
+	const freeCashRight = freeCashEndIndex === -1 ? plotRight : xOf(freeCashEndIndex);
+	// The two line labels sit at the right edge; when the lines are close, the cushion's label goes below its line.
+	const areLineLabelsCrowded = freeCash > 0 && cushion > 0 && Math.abs(yOf(cushion) - yOf(cushion + freeCash)) < LABEL_HEIGHT;
 	const xTickEvery = Math.max(1, Math.ceil(days.length / TARGET_X_TICKS));
 	const hoverDay = hoverIndex !== null ? days[hoverIndex] : undefined;
 
@@ -135,16 +146,16 @@ export function BalanceChart({ days, events, cushion, freeCash, formatter }: Bal
 						{domainLow < 0 ? <rect x={PLOT_LEFT} y={yOf(0)} width={plotRight - PLOT_LEFT} height={plotBottom - yOf(0)} fill={`url(#${idPrefix}-negative)`} fillOpacity={0.5} /> : null}
 						{freeCash > 0 ? (
 							<>
-								<rect x={PLOT_LEFT} y={yOf(cushion + freeCash)} width={plotRight - PLOT_LEFT} height={yOf(cushion) - yOf(cushion + freeCash)} fill="var(--chart-fill-green)" fillOpacity={0.14} />
-								<line x1={PLOT_LEFT} x2={plotRight} y1={yOf(cushion + freeCash)} y2={yOf(cushion + freeCash)} stroke="var(--content-success)" strokeOpacity={0.5} />
-								<LineLabel x={plotRight} y={yOf(cushion + freeCash)} fill="var(--content-success)">{`Free cash ${lineLabelMoney(freeCash)}`}</LineLabel>
+								<rect x={PLOT_LEFT} y={yOf(cushion + freeCash)} width={freeCashRight - PLOT_LEFT} height={yOf(cushion) - yOf(cushion + freeCash)} fill="var(--chart-fill-green)" fillOpacity={0.14} />
+								<line x1={PLOT_LEFT} x2={freeCashRight} y1={yOf(cushion + freeCash)} y2={yOf(cushion + freeCash)} stroke="var(--content-success)" strokeOpacity={0.5} />
+								<LineLabel x={freeCashRight} y={yOf(cushion + freeCash)} fill="var(--content-success)">{`Free cash ${lineLabelMoney(freeCash)}`}</LineLabel>
 							</>
 						) : null}
 						<line x1={PLOT_LEFT} x2={plotRight} y1={yOf(0)} y2={yOf(0)} stroke="var(--chart-label)" />
 						{cushion > 0 ? (
 							<>
 								<line x1={PLOT_LEFT} x2={plotRight} y1={yOf(cushion)} y2={yOf(cushion)} stroke="var(--chart-label)" strokeDasharray="4 4" />
-								<LineLabel x={plotRight} y={yOf(cushion)} fill="var(--chart-label)">{`Kept ${lineLabelMoney(cushion)}`}</LineLabel>
+								<LineLabel x={plotRight} y={yOf(cushion)} below={areLineLabelsCrowded} fill="var(--chart-label)">{`Kept ${lineLabelMoney(cushion)}`}</LineLabel>
 							</>
 						) : null}
 
@@ -164,9 +175,14 @@ export function BalanceChart({ days, events, cushion, freeCash, formatter }: Bal
 							) : null
 						)}
 
-						<Dot x={xOf(0)} y={yOf(days[0]?.lowestChecking ?? 0)} fill="var(--content-brand)" />
-						{lowest && lowestIndex > 0 ? (
-							<Dot x={lowXOf(lowestIndex)} y={yOf(lowest.lowestChecking)} fill={lowest.lowestChecking < cushion ? 'var(--content-danger)' : 'var(--content-primary)'} />
+						{lowest ? (
+							<LowPoint
+								x={lowXOf(lowestIndex)}
+								y={yOf(lowest.lowestChecking)}
+								plotRight={plotRight}
+								plotBottom={plotBottom}
+								fill={lowest.lowestChecking < cushion ? 'var(--content-danger)' : 'var(--content-primary)'}
+							>{`Low ${lineLabelMoney(lowest.lowestChecking)} · ${lowestIndex === 0 ? 'Today' : formatter.shortDate(lowestDate)}`}</LowPoint>
 						) : null}
 
 						{hoverDay && hoverIndex !== null ? (
@@ -191,16 +207,18 @@ export function BalanceChart({ days, events, cushion, freeCash, formatter }: Bal
 			</div>
 			<div className="flex flex-wrap items-center gap-lg pl-2xl text-xs font-medium text-content-secondary">
 				<LegendItem color="var(--content-primary)" label="Checking" />
-				{afterCardsPath ? <LegendItem color={AFTER_CARDS_COLOR} label="After cards" dashed /> : null}
-				{freeCash > 0 ? <LegendItem color="var(--chart-fill-green)" label="Free" block /> : null}
+				{afterCardsPath ? <LegendItem color={AFTER_CARDS_COLOR} label="If cards were paid off" dashed /> : null}
+				{freeCash > 0 ? <LegendItem color="var(--chart-fill-green)" label="Free cash" block /> : null}
+				{markers.some(marker => marker.kind === 'income') ? <MarkerLegendItem kind="income" label="Payday" /> : null}
+				{markers.some(marker => marker.kind === 'cardPayment') ? <MarkerLegendItem kind="cardPayment" label="Card payment" /> : null}
 			</div>
 		</div>
 	);
 }
 
-function LineLabel({ x, y, fill, children }: { x: number; y: number; fill: string; children: string }) {
+function LineLabel({ x, y, fill, below = false, children }: { x: number; y: number; fill: string; below?: boolean; children: string }) {
 	return (
-		<text x={x - 4} y={y - 6} textAnchor="end" fontSize={12} fontWeight={500} fill={fill} pointerEvents="none">
+		<text x={x - 4} y={below ? y + 14 : y - 6} textAnchor="end" fontSize={12} fontWeight={500} fill={fill} pointerEvents="none">
 			{children}
 		</text>
 	);
@@ -218,6 +236,34 @@ function LegendItem({ color, label, dashed = false, block = false }: { color: st
 			</svg>
 			{label}
 		</span>
+	);
+}
+
+function MarkerLegendItem({ kind, label }: { kind: 'income' | 'cardPayment'; label: string }) {
+	return (
+		<span className="flex items-center gap-2xs">
+			<svg width={MARKER_SIZE} height={MARKER_SIZE} aria-hidden="true">
+				<EventMarker marker={{ kind, index: 0 }} x={MARKER_SIZE / 2} y={0} plotBottom={MARKER_SIZE} />
+			</svg>
+			{label}
+		</span>
+	);
+}
+
+/** The lowest checking gets in the range, labeled below it, or above it near the bottom of the chart. */
+function LowPoint({ x, y, plotRight, plotBottom, fill, children }: { x: number; y: number; plotRight: number; plotBottom: number; fill: string; children: string }) {
+	const labelY = y + LOW_LABEL_GAP + LABEL_HEIGHT < plotBottom ? y + LOW_LABEL_GAP : y - LOW_LABEL_GAP;
+	// Kept inside the plot: starts at the dot near the left edge and ends at it near the right.
+	let textAnchor: 'start' | 'middle' | 'end' = 'middle';
+	if (x - PLOT_LEFT < LOW_LABEL_HALF_WIDTH) textAnchor = 'start';
+	else if (plotRight - x < LOW_LABEL_HALF_WIDTH) textAnchor = 'end';
+	return (
+		<>
+			<Dot x={x} y={y} fill={fill} />
+			<text x={x} y={labelY} dy="0.35em" textAnchor={textAnchor} fontSize={12} fontWeight={500} fill={fill} stroke="var(--background-primary)" strokeWidth={3} paintOrder="stroke" pointerEvents="none">
+				{children}
+			</text>
+		</>
 	);
 }
 
@@ -266,7 +312,7 @@ function DayTooltip({ day, events, left, top, width, formatter }: { day: Project
 				<span className="text-xs font-medium text-content-secondary">{formatter.longDate(day.date)}</span>
 				<span className="text-base font-medium">{formatter.money(day.checking)}</span>
 				{day.lowestChecking < day.checking ? <FlowRow label="Lowest during the day" amount={day.lowestChecking} formatter={formatter} plain /> : null}
-				{day.cardsOwed > 0 ? <FlowRow label="After cards" amount={afterCardsOf(day)} formatter={formatter} plain /> : null}
+				{day.cardsOwed > 0 ? <FlowRow label="If cards were paid off" amount={afterCardsOf(day)} formatter={formatter} plain /> : null}
 				{events.map(event => (
 					<span key={`${event.kind}-${event.label}-${event.date}`} className="text-xs font-medium text-content-danger">
 						{event.label}
@@ -317,8 +363,13 @@ function niceTicks(low: number, high: number): number[] {
 	const magnitude = 10 ** Math.floor(Math.log10(rawStep));
 	const step = ([1, 2, 2.5, 5, 10].find(multiple => multiple * magnitude >= rawStep) ?? 10) * magnitude;
 	const ticks: number[] = [];
-	for (let tick = Math.floor(low / step) * step; tick <= high + step / 2; tick += step) ticks.push(Math.round(tick * 100) / 100);
-	return ticks.length > 1 ? ticks : [ticks[0] ?? 0, (ticks[0] ?? 0) + step];
+	// The last tick is at or above the highest value, so the line never runs above the top gridline.
+	let tick = Math.floor(low / step) * step;
+	while (ticks.length < 2 || tick - step < high) {
+		ticks.push(roundToCents(tick));
+		tick += step;
+	}
+	return ticks;
 }
 
 function useElementWidth(ref: React.RefObject<HTMLElement | null>): number {

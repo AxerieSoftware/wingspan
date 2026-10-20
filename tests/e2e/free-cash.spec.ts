@@ -11,6 +11,29 @@ test("the summary's Statements line shows how much of this month's statements is
 	await expect(summary(page).getByText('Coming soon')).toBeHidden();
 });
 
+test("statements left is what's left on each statement, matching the Statements footer, not the cards' whole balances", async ({ page, open }) => {
+	await open();
+	const statementsCard = page.locator('[data-wingspan-statements]');
+	const dollars = (text: string | null) => Number((text ?? '').replace(/[$,]/g, ''));
+	const footer = statementsCard.getByText(/^\$[\d,]+\.\d\d due/);
+	await expect(footer).toBeVisible();
+	const due = dollars((await footer.textContent())?.match(/\$[\d,]+\.\d\d/)?.[0] ?? null);
+	const left = summary(page)
+		.locator('[data-wingspan-summary-statements]')
+		.getByText(/\$[\d,]+ left/);
+	expect(dollars((await left.textContent())?.match(/\$[\d,]+/)?.[0] ?? null)).toBe(Math.round(due));
+
+	// Unpaid rows show the statement due, so the footer is their total.
+	const unpaidAmounts = await statementsCard.locator('[data-external-id="recurring-amount-with-delta"] > span').allTextContents();
+	const statusTexts = await statementsCard.locator('[data-external-id="status-copy-text"]').allTextContents();
+	const unpaidTotal = unpaidAmounts
+		.filter((_, index) => !/^(Paid|Nothing owed)/.test(statusTexts[index] ?? ''))
+		.map(dollars)
+		.filter(Number.isFinite)
+		.reduce((total, amount) => total + amount, 0);
+	expect(due).toBeCloseTo(unpaidTotal, 2);
+});
+
 test("the summary shows today's free cash and links to the projection on Cash Flow", async ({ page, open }) => {
 	await open();
 	await expect(summary(page)).toContainText(/Free cash today\s*\$[\d,]+\.\d\d/);
@@ -41,7 +64,7 @@ test('cash accounts, cards and the minimum balance are set in a modal', async ({
 	const dialog = page.getByRole('dialog', { name: 'Cash and cards' });
 	const countsAs = (name: string) => dialog.getByRole('combobox', { name: `${name} counts as` });
 	await expect(countsAs('Everyday Checking')).toHaveText('Checking');
-	await expect(countsAs('High-Yield Savings')).toHaveText('Reserve');
+	await expect(countsAs('High-Yield Savings')).toHaveText('Backup');
 	await expect(dialog.getByRole('switch', { name: 'Rewards Card (...1234)' })).toHaveAttribute('aria-checked', 'true');
 
 	await dialog.getByRole('textbox', { name: 'Always keep' }).fill('2500');
@@ -75,7 +98,7 @@ test('cards are used in the order the household sets', async ({ page, open }) =>
 	await open();
 	await page.getByRole('button', { name: 'Edit cash and cards', exact: true }).click();
 	const dialog = page.getByRole('dialog', { name: 'Cash and cards' });
-	const cards = dialog.getByRole('group', { name: /^Cards counted as debt/ });
+	const cards = dialog.getByRole('group', { name: /^Cards to borrow on/ });
 	const names = () => cards.locator('[data-mds="switch-label"]').allTextContents();
 	expect(await names()).toEqual(['Rewards Card (...1234)', 'Flex Card (...5678)']);
 	await expect(cards.getByRole('button', { name: 'Move Rewards Card (...1234) up' })).toBeHidden();
@@ -88,16 +111,27 @@ test('cards are used in the order the household sets', async ({ page, open }) =>
 	expect(await names()).toEqual(['Flex Card (...5678)', 'Rewards Card (...1234)']);
 });
 
-test("a card without a credit limit, APR or minimum payment in Monarch is flagged, with a note on how it's handled", async ({ page, open }) => {
+test("a card without a credit limit in Monarch is flagged, since the plan can't borrow on it", async ({ page, open }) => {
 	await open();
 	await page.getByRole('button', { name: 'Edit cash and cards', exact: true }).click();
-	const cards = page.getByRole('dialog', { name: 'Cash and cards' }).getByRole('group', { name: /^Cards counted as debt/ });
-	await expect(
-		cards.getByRole('button', {
-			name: /No credit limit, so Wingspan won't borrow on this card.*No APR, so it's paid down after the cards that have one.*No minimum payment, so Wingspan estimates one/
-		})
-	).toHaveCount(1);
+	const cards = page.getByRole('dialog', { name: 'Cash and cards' }).getByRole('group', { name: /^Cards to borrow on/ });
+	await expect(cards.getByRole('button', { name: /^No credit limit in Monarch, so the plan can't borrow on this card/ })).toHaveCount(1);
 	await expect(cards.getByRole('button', { name: /^No / })).toHaveCount(1);
+});
+
+test('a card switched off is still counted but never borrowed on', async ({ page, open }) => {
+	await open();
+	await page.getByRole('button', { name: 'Edit cash and cards', exact: true }).click();
+	const dialog = page.getByRole('dialog', { name: 'Cash and cards' });
+	await expect(dialog.getByText("These are Wingspan's starting guesses")).toBeVisible();
+	await dialog.getByRole('switch', { name: 'Rewards Card (...1234)' }).click();
+	await dialog.getByRole('switch', { name: 'Flex Card (...5678)' }).click();
+	await dialog.getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(dialog).toBeHidden();
+
+	await expect(itemRow(page.locator('[data-wingspan-statements]'), 'Store Card')).toContainText(/Can pay/);
+	await page.getByRole('button', { name: 'Edit cash and cards', exact: true }).click();
+	await expect(dialog.getByText("These are Wingspan's starting guesses")).toHaveCount(0);
 });
 
 test('the free cash editor shows only for the current month', async ({ page, open }) => {

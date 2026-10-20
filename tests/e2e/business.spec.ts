@@ -92,16 +92,16 @@ test.describe("with Monarch's Plus plan", () => {
 
 	test("Cash Flow's projection starts from only the workspace's checking, and follows Monarch's filter while it's changed there", async ({ page, open }) => {
 		await open({ path: '/cash-flow', waitForRows: false });
-		const netChange = page.getByRole('button', { name: /minus checking now/ });
-		await expect(netChange).toHaveAccessibleName(/minus checking now \(\$4,210\.55\)/);
+		const netChange = page.getByRole('button', { name: /net by/ });
+		await expect(netChange).toHaveAccessibleDescription(/minus checking now \(\$4,210\.55\)/);
 
 		await chooseOnCashFlow(page, 'Contoso Pottery');
-		await expect(netChange).toHaveAccessibleName(/minus checking now \(\$10,610\.55\)/);
+		await expect(netChange).toHaveAccessibleDescription(/minus checking now \(\$10,610\.55\)/);
 		// Changing Monarch's filter on the page doesn't switch the workspace.
 		await expect(switcher(page)).toHaveAccessibleName('Workspace: Household');
 
 		await switchTo(page, 'Contoso Pottery');
-		await expect(netChange).toHaveAccessibleName(/minus checking now \(\$6,400\.00\)/);
+		await expect(netChange).toHaveAccessibleDescription(/minus checking now \(\$6,400\.00\)/);
 		await page.getByRole('button', { name: 'Edit cash and cards', exact: true }).click();
 		await expect(page.getByRole('dialog', { name: 'Cash and cards' }).getByRole('combobox', { name: 'Settings for' })).toHaveText('Contoso Pottery');
 	});

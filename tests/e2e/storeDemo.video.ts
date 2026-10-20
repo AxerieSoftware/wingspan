@@ -77,7 +77,7 @@ test('a walk through Wingspan for the stores', async ({ page, household, open },
 	await demo.click(projectedBalances.getByRole('button', { name: 'Edit cash and cards', exact: true }));
 	const cashAndCards = page.getByRole('dialog', { name: 'Cash and cards' });
 	await expect(cashAndCards).toBeVisible();
-	await demo.explain('Cash Flow', 'Choose your checking, your reserves and which cards to lean on', cashAndCards);
+	await demo.explain('Cash Flow', 'Choose your checking, your backup accounts and which cards to lean on', cashAndCards);
 	await pause(page);
 	await demo.click(cashAndCards.getByRole('button', { name: 'Cancel' }));
 

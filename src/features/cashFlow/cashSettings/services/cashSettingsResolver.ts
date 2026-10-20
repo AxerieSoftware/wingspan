@@ -13,7 +13,8 @@ export class CashSettingsResolver {
 		const checkingAccountIds = this.checkingAccountIds(accounts, saved.checkingAccountIds);
 		return {
 			checkingAccountIds,
-			cardAccountIds: this.cardAccountIds(accounts, saved.cardAccountIds, saved.knownCardAccountIds),
+			cardAccountIds: this.cardAccounts(accounts).map(account => account.id),
+			borrowCardAccountIds: this.borrowCardAccountIds(accounts, saved.borrowCardAccountIds, saved.knownCardAccountIds),
 			reserveAccountIds: this.reserveAccountIds(accounts, checkingAccountIds, saved.reserveAccountIds),
 			cushion: saved.cushion,
 			safetyDays: saved.safetyDays ?? DEFAULT_SAFETY_DAYS
@@ -45,16 +46,16 @@ export class CashSettingsResolver {
 	}
 
 	/**
-	 * Defaults to every card, lowest APR first and cards without an APR last. A card added after the household chose is
-	 * also counted, at the end.
+	 * Defaults to every card, lowest APR first and cards without an APR last. A card added after the household chose can
+	 * also be borrowed on, at the end.
 	 */
-	private cardAccountIds(accounts: Account[], chosenAccountIds: string[] | undefined, knownAccountIds: string[] | undefined): string[] {
+	private borrowCardAccountIds(accounts: Account[], chosenAccountIds: string[] | undefined, knownAccountIds: string[] | undefined): string[] {
 		const sortableApr = (account: Account) => aprOf(account) ?? Number.POSITIVE_INFINITY;
 		const cardsByApr = this.cardAccounts(accounts).toSorted((a, b) => sortableApr(a) - sortableApr(b));
 		if (!chosenAccountIds) return cardsByApr.map(account => account.id);
 
 		const newCardIds = knownAccountIds ? cardsByApr.filter(account => !knownAccountIds.includes(account.id)).map(account => account.id) : [];
-		// A chosen card that has since been closed or hidden in Monarch isn't counted or borrowed on.
+		// A chosen card that has since been closed or hidden in Monarch isn't borrowed on.
 		const cardIds = new Set(cardsByApr.map(account => account.id));
 		return [...chosenAccountIds.filter(accountId => cardIds.has(accountId)), ...newCardIds];
 	}

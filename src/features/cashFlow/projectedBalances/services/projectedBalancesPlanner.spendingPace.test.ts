@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { RecurringFlow } from '../../../../monarch/api/models/recurringFlow';
 import { account, CARD, CHECKING, input, plannerFor, recurringFlow, SIX_MONTHS, spent } from './projectedBalancesPlanner.fixtures';
 
+const CARD_PAYMENT = { id: 'card-payment', name: 'Credit Card Payment', icon: null, groupType: 'transfer' };
+const TRANSFER = { id: 'transfer', name: 'Transfer', icon: null, groupType: 'transfer' };
+
 describe('spending pace', () => {
 	it('is the median of the last three completed months, with months that spent nothing counting as zero', () => {
 		// June is past the three months; August spent nothing; October is this month, not yet complete.
@@ -18,16 +21,40 @@ describe('spending pace', () => {
 			spent(`${month}-06`, -20),
 			spent(`${month}-07`, 1450, CHECKING, { recurrenceGroupId: 'Rent' }),
 			spent(`${month}-08`, -3200, CHECKING, { category: { id: 'pay', name: 'Paychecks', icon: null, groupType: 'income' } }),
-			spent(`${month}-09`, 500, CHECKING, { category: { id: 'card', name: 'Credit Card Payment', icon: null, groupType: 'transfer' } }),
+			spent(`${month}-09`, 500, CHECKING, { category: CARD_PAYMENT }),
+			spent(`${month}-11`, -500, CARD, { category: CARD_PAYMENT }),
 			spent(`${month}-10`, 70, CHECKING, { hideFromReports: true }),
 			spent(`${month}-11`, 140, CHECKING, { id: `lesson-${month}` })
 		]);
 
 		const recurringFlows = [recurringFlow('Rent', 'expense', '2026-10-07', -1450)];
 
-		const { pace } = plannerFor().plan(input({ transactions, recurringFlows, itemTransactionIds: new Set(SIX_MONTHS.map(month => `lesson-${month}`)) }));
+		const accounts = [account(CHECKING, 'depository', 5000), account(CARD, 'credit', -200)];
+		const { pace } = plannerFor().plan(input({ accounts, transactions, recurringFlows, itemTransactionIds: new Set(SIX_MONTHS.map(month => `lesson-${month}`)) }));
 
 		expect(pace.monthlyByAccountId.get(CHECKING)).toBe(80);
+		expect(pace.monthlyByAccountId.get(CARD) ?? 0).toBe(0);
+	});
+
+	// Invariant: money checking moves to an account the projection doesn't follow leaves checking for good, net of what comes back.
+	it('counts transfers between checking and accounts the projection does not follow, net of transfers back', () => {
+		const SAVINGS = 'savings';
+		const OTHER_CHECKING = 'joint';
+		const transfer = (date: string, amount: number, accountId: string) => spent(date, amount, accountId, { category: TRANSFER });
+		const transactions = SIX_MONTHS.flatMap(month => [
+			transfer(`${month}-01`, 500, CHECKING),
+			transfer(`${month}-01`, -500, SAVINGS),
+			transfer(`${month}-15`, -120, CHECKING),
+			transfer(`${month}-15`, 120, SAVINGS),
+			transfer(`${month}-20`, 300, CHECKING),
+			transfer(`${month}-21`, -300, OTHER_CHECKING)
+		]);
+		const accounts = [account(CHECKING, 'depository', 5000), account(OTHER_CHECKING, 'depository', 900), account(SAVINGS, 'depository', 8000)];
+
+		const { pace } = plannerFor().plan(input({ accounts, checkingAccountIds: [CHECKING, OTHER_CHECKING], transactions }));
+
+		expect(pace.monthlyByAccountId.get(CHECKING)).toBe(380);
+		expect(pace.monthlyByAccountId.get(OTHER_CHECKING) ?? 0).toBe(0);
 	});
 
 	it('keeps payments Monarch tied to a recurring item it no longer projects, since nothing else counts them', () => {
