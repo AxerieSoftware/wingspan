@@ -1,5 +1,8 @@
 import * as v from 'valibot';
 
+/** How far back a store's first sync looks. */
+export const FIRST_SYNC_DAYS = 90;
+
 /** Which of a store's purchases were sent to Monarch, so none are sent twice from any browser. */
 export interface RetailSyncData {
 	uploadedOrderIds: string[];

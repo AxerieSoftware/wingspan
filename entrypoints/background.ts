@@ -4,6 +4,8 @@ import type { CollectorWindow, ListedOrder, PrepareResult } from '@/src/features
 
 const ORDERS_PER_BATCH = 5;
 const PAGE_LOAD_TIMEOUT_MS = 30_000;
+/** Failures the user fixes in the store's tab, so it stays open. */
+const FAILURES_FIXED_IN_STORE_TAB: RetailSyncFailure[] = ['retailerSignedOut', 'retailerChallenge'];
 
 export default defineBackground(() => {
 	browser.runtime.onMessage.addListener((message: RetailSyncRequest, sender, sendResponse: (response: unknown) => void) => {
@@ -37,20 +39,26 @@ export default defineBackground(() => {
 		const storeTabId = storeTab.id;
 		if (storeTabId === undefined) return void fail('retailerTabClosed');
 
-		// Once the collector is injected, its overlay covers the page, so any stop after that hides the overlay first.
+		const returnToMonarch = async () => {
+			await browser.tabs.remove(storeTabId).catch(() => undefined);
+			await browser.tabs.update(monarchTabId, { active: true }).catch(() => undefined);
+		};
+		// Once the collector is injected, its overlay covers the page, so a stop that leaves the tab open hides it first.
 		let isCollectorInPage = false;
 		const stop = async (reason: RetailSyncFailure) => {
-			if (isCollectorInPage) await hideOverlay(storeTabId, request.retailer);
+			const isFixedInStoreTab = FAILURES_FIXED_IN_STORE_TAB.includes(reason);
+			if (isFixedInStoreTab && isCollectorInPage) await hideOverlay(storeTabId, request.retailer);
 			await fail(reason);
+			if (!isFixedInStoreTab) await returnToMonarch();
 		};
 		// Unexpected errors are reported as a closed tab only if the tab is actually gone.
 		const unexpectedStop = async () => stop((await isTabOpen(storeTabId)) ? 'retailerError' : 'retailerTabClosed');
 
 		try {
 			const pageLoad = await waitForPageLoad(storeTabId);
-			if (pageLoad !== 'loaded') return void (await fail(pageLoad === 'timedOut' ? 'retailerTimedOut' : 'retailerTabClosed'));
+			if (pageLoad !== 'loaded') return void (await stop(pageLoad === 'timedOut' ? 'retailerTimedOut' : 'retailerTabClosed'));
 			// Costco redirects signed-out users to a separate sign-in site that Wingspan can't access. Walmart's collector detects sign-out itself.
-			if (!(await isOnSite(storeTabId, store.startUrl))) return void (await fail('retailerSignedOut'));
+			if (!(await isOnSite(storeTabId, store.startUrl))) return void (await stop('retailerSignedOut'));
 
 			await browser.scripting.executeScript({ target: { tabId: storeTabId }, files: [store.collectorFile], world: 'MAIN' });
 			isCollectorInPage = true;
@@ -61,7 +69,7 @@ export default defineBackground(() => {
 			);
 
 			if (!prepared) return void (await unexpectedStop());
-			if (prepared.status === 'failed') return void (await fail(prepared.reason));
+			if (prepared.status === 'failed') return void (await stop(prepared.reason));
 
 			let fetched = 0;
 			await notifyMonarchTab({ type: 'retailSync:progress', retailer: request.retailer, found: prepared.orders.length, fetched });
@@ -77,14 +85,14 @@ export default defineBackground(() => {
 
 				if (!orders) return void (await stop('retailerFormatChanged'));
 
-				fetched += orders.length;
+				// Canceled orders are read but not returned.
+				fetched += batch.length;
 				await notifyMonarchTab({ type: 'retailSync:orders', retailer: request.retailer, orders });
 				await notifyMonarchTab({ type: 'retailSync:progress', retailer: request.retailer, found: prepared.orders.length, fetched });
 			}
 
 			await notifyMonarchTab({ type: 'retailSync:done', retailer: request.retailer, found: prepared.orders.length });
-			await browser.tabs.remove(storeTabId).catch(() => undefined);
-			await browser.tabs.update(monarchTabId, { active: true }).catch(() => undefined);
+			await returnToMonarch();
 		} catch {
 			await unexpectedStop();
 		}
