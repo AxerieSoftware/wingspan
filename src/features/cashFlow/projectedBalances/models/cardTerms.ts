@@ -12,8 +12,8 @@ const MAX_IMPLIED_APR = 36;
 /** The credit limit the household entered in Monarch, falling back to the bank's. A limit of $0 is treated as unknown. */
 export const creditLimitOf = (account: Account): number | null => [account.limit, account.dataProviderCreditLimit].find(limit => !!limit && limit > 0) ?? null;
 
-/** The card's APR as a percentage, or null when Monarch has none. */
-export const aprOf = (account: Account): number | null => account.apr ?? account.interestRate ?? null;
+/** The card's APR as a percentage, or null when Monarch has none. Monarch's 0 means it doesn't know the rate. */
+export const aprOf = (account: Account): number | null => account.apr || account.interestRate || null;
 
 /** Monarch's minimum payment on the card's latest statement, or null when it doesn't know it. */
 export const minimumPaymentOf = (account: Account): number | null => account.minimumPayment ?? null;

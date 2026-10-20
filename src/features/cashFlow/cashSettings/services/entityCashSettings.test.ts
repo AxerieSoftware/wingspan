@@ -33,13 +33,18 @@ describe('cash and cards for each part of the household', () => {
 			cashSettings: {
 				cushion: 0,
 				checkingAccountIds: ['joint', 'studioChecking'],
-				cardAccountIds: ['visa', 'studioCard'],
+				borrowCardAccountIds: ['visa', 'studioCard'],
 				knownCardAccountIds: ['visa'],
 				reserveAccountIds: ['savings', 'studioSavings']
 			}
 		};
 
-		expect(settings.forEntity(accounts, data, HOUSEHOLD_ENTITY_ID)).toMatchObject({ checkingAccountIds: ['joint'], cardAccountIds: ['visa'], reserveAccountIds: ['savings'] });
+		expect(settings.forEntity(accounts, data, HOUSEHOLD_ENTITY_ID)).toMatchObject({
+			checkingAccountIds: ['joint'],
+			cardAccountIds: ['visa'],
+			borrowCardAccountIds: ['visa'],
+			reserveAccountIds: ['savings']
+		});
 		// With everything shown, it isn't drawn on twice either: once as the business's own and once as the household's choice.
 		expect(settings.forScope(accounts, data, EntityScope.fromFilter([], [{ id: STUDIO }])).reserveAccountIds).toEqual(['savings', 'studioSavings']);
 	});

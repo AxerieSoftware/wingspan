@@ -1,5 +1,5 @@
 import { Tooltip as BaseTooltip } from '@base-ui/react/tooltip';
-import type { ReactElement, ReactNode } from 'react';
+import { type ReactElement, type ReactNode, useId } from 'react';
 import { usePortalPlacement } from '../portalContainer';
 import { tooltipStyles } from '../styles';
 
@@ -13,15 +13,28 @@ export interface TooltipProps {
 export interface TooltipButtonProps {
 	label: string;
 	className?: string;
+	/** Set when the children show text: the button keeps that text as its name, and the tooltip describes it. Otherwise the tooltip names an icon. */
+	isLabelledByContent?: boolean;
 	children: ReactNode;
 }
 
-/** An icon with a keyboard-accessible tooltip: focusing it shows the tooltip, and screen readers read the label. */
-export function TooltipButton({ label, className = '', children }: TooltipButtonProps) {
+/** An icon or text with a keyboard-accessible tooltip: focusing it shows the tooltip, and screen readers read it too. */
+export function TooltipButton({ label, className = '', isLabelledByContent = false, children }: TooltipButtonProps) {
+	const descriptionId = useId();
 	return (
 		<Tooltip label={label}>
-			<button type="button" className={`inline-flex shrink-0 cursor-default border-0 bg-transparent p-0 text-inherit ${className}`.trim()} aria-label={label}>
+			<button
+				type="button"
+				className={`inline-flex shrink-0 cursor-default border-0 bg-transparent p-0 text-inherit ${className}`.trim()}
+				aria-label={isLabelledByContent ? undefined : label}
+				aria-describedby={isLabelledByContent ? descriptionId : undefined}
+			>
 				{children}
+				{isLabelledByContent ? (
+					<span id={descriptionId} hidden>
+						{label}
+					</span>
+				) : null}
 			</button>
 		</Tooltip>
 	);

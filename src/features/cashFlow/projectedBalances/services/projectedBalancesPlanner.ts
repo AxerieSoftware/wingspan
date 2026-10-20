@@ -35,7 +35,14 @@ export class ProjectedBalancesPlanner {
 			.reduce((total, transaction) => total - transaction.amount, 0);
 		const checkingBalance = input.accounts.filter(account => checkingAccountIds.has(account.id)).reduce((total, account) => total + (account.currentBalance ?? 0), 0) - pendingOut;
 
-		const pace = this.paceCalculator.pace(input.transactions, new Set([...checkingAccountIds, ...cardAccountIds]), input.itemTransactionIds, input.recurringFlows, input.unassignedAccountIds);
+		const pace = this.paceCalculator.pace(
+			input.transactions,
+			checkingAccountIds,
+			new Set([...checkingAccountIds, ...cardAccountIds]),
+			input.itemTransactionIds,
+			input.recurringFlows,
+			input.unassignedAccountIds
+		);
 		const flows = this.flowBuilder.flows(
 			input.recurringFlows,
 			input.outstandingOccurrences,
@@ -55,7 +62,7 @@ export class ProjectedBalancesPlanner {
 			monthlySpendingByAccountId,
 			startDate: today,
 			endDate,
-			cardOrder: input.cardAccountIds
+			cardOrder: input.borrowCardAccountIds
 		};
 		const { payments: paymentPlan, spare: cardPaymentSpare } = this.cardPaymentPlanner.plan(projectorInput, input.cushion, reversibleEnd);
 		const { days, cards } = this.balanceProjector.project({ ...projectorInput, paymentPlan });
@@ -81,27 +88,33 @@ export class ProjectedBalancesPlanner {
 			days,
 			reversible,
 			freeCash,
-			monthlySurplus: this.monthlySurplus(flows, monthlySpendingByAccountId),
+			monthlySurplus: this.monthlySurplus(flows, projectorInput.cards, monthlySpendingByAccountId),
 			shortfall: reversible.firstShortDate ? roundToCents(input.cushion - reversible.lowestChecking) : 0,
-			creditLimit: this.creditLimit(projectorInput.cards),
+			creditLimit: this.creditLimit(projectorInput.cards, new Set(input.borrowCardAccountIds)),
 			burndown: { days: burndown.days, events: burndown.events }
 		};
 	}
 
-	/** Average monthly income minus bills and everyday spending over the next year. Card payments only move money between checking and cards, and interest isn't counted. */
-	private monthlySurplus(flows: ScheduledFlow[], monthlySpending: ReadonlyMap<string | undefined, number>): number {
+	/**
+	 * Average monthly income minus bills and everyday spending over the next year. Payments to Monarch's cards only move
+	 * money between checking and the cards, whose spending is already counted, and interest isn't counted. A card outside
+	 * Monarch has no spending of its own, so its typical payment is its spending.
+	 */
+	private monthlySurplus(flows: ScheduledFlow[], cards: CardSchedule[], monthlySpending: ReadonlyMap<string | undefined, number>): number {
 		const today = this.calendar.today();
 		const yearAhead = this.calendar.addDays(today, PROJECTED_DAYS);
 		// Starts tomorrow, so overdue bills carried to today from earlier months aren't counted.
-		const scheduled = flows.filter(flow => (flow.kind === 'income' || flow.kind === 'bill') && flow.date > today && flow.date <= yearAhead).reduce((total, flow) => total + flow.amount, 0);
-		const scheduledPerMonth = (scheduled * DAYS_PER_YEAR) / MONTHS_PER_YEAR / PROJECTED_DAYS;
+		const isInYear = (date: string) => date > today && date <= yearAhead;
+		const scheduled = flows.filter(flow => (flow.kind === 'income' || flow.kind === 'bill') && isInYear(flow.date)).reduce((total, flow) => total + flow.amount, 0);
+		const cardsOutsideMonarch = cards.filter(card => !card.accountId).reduce((total, card) => total + card.dueDates.filter(isInYear).length * card.typicalPayment, 0);
+		const scheduledPerMonth = ((scheduled - cardsOutsideMonarch) * DAYS_PER_YEAR) / MONTHS_PER_YEAR / PROJECTED_DAYS;
 		const everyday = [...monthlySpending.values()].reduce((total, monthly) => total + monthly, 0);
 		return roundToCents(scheduledPerMonth - everyday);
 	}
 
-	/** Uses the same cards the projection can borrow on: Monarch cards with a known limit. */
-	private creditLimit(cards: CardSchedule[]): number | null {
-		const limits = cards.flatMap(card => (card.accountId && card.limit !== null ? [card.limit] : []));
+	/** Uses the same cards the projection can borrow on: the household's borrowing cards with a known limit. */
+	private creditLimit(cards: CardSchedule[], borrowCardAccountIds: ReadonlySet<string>): number | null {
+		const limits = cards.flatMap(card => (card.accountId && borrowCardAccountIds.has(card.accountId) && card.limit !== null ? [card.limit] : []));
 		return limits.length ? limits.reduce((total, limit) => total + limit, 0) : null;
 	}
 

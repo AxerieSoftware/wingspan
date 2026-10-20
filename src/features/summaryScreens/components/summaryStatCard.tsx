@@ -19,7 +19,7 @@ export function SummaryStatCard({ look, name, value, label, info }: SummaryStatC
 		<div role="group" aria-label={name} data-testid={`${name.toLowerCase().replaceAll(' ', '-')}-card`} className={look.cardClassName}>
 			{value === null ? <SkeletonText className="text-xl" style={{ width: 96 }} /> : <span className={look.valueClassName}>{value}</span>}
 			<div className={look.labelRowClassName}>
-				<TooltipButton label={info} className={`${look.labelClassName} cursor-help`}>
+				<TooltipButton label={info} className={`${look.labelClassName} cursor-help`} isLabelledByContent>
 					{label}
 				</TooltipButton>
 				<WingspanMark />

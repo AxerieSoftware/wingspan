@@ -1,6 +1,7 @@
 import type { Calendar } from '../../../../common/calendar';
 import { median } from '../../../../common/statistics';
-import { INCOME_GROUP_TYPES, MonarchRecurringType, TRANSFER_GROUP_TYPES } from '../../../../monarch/api/models/monarchValues';
+import { transferOtherSides } from '../../../../common/transferPairs';
+import { INCOME_GROUP_TYPES, isTransfer, MonarchRecurringType } from '../../../../monarch/api/models/monarchValues';
 import { occurrenceAccountId, type RecurringFlow } from '../../../../monarch/api/models/recurringFlow';
 import type { Transaction } from '../../../../monarch/api/models/transaction';
 import { isInterestCharge } from '../models/cardTerms';
@@ -10,17 +11,25 @@ const PACE_MONTHS = 3;
 /** How far a payment can be from a Monarch recurring item's expected amount and date and still be taken as that payment. */
 const RECURRING_AMOUNT_TOLERANCE = 0.1;
 const RECURRING_DATE_TOLERANCE_DAYS = 7;
+/** How far apart the two sides of a transfer between the household's own accounts can post. */
+const TRANSFER_PAIR_DAYS = 5;
 
 /**
  * Everyday spending per month by account: the median of recent completed months, with refunds netted in. Recurring
- * payments and interest charges are left out, since the projection adds them on its own.
+ * payments and interest charges are left out, since the projection adds them on its own. Transfers between checking
+ * and the counted cards are left out too, but money checking moves to or from any other account, like savings or a
+ * brokerage, is counted, since nothing else in the projection follows it.
  */
 export class SpendingPaceCalculator {
 	public constructor(private readonly calendar: Calendar) {}
 
-	/** `unassignedAccountIds`: the household's accounts, which a Monarch recurring item with no account could be paid from. */
+	/**
+	 * `spendingAccountIds` are checking and the counted cards. `unassignedAccountIds`: the household's accounts, which a
+	 * Monarch recurring item with no account could be paid from.
+	 */
 	public pace(
 		transactions: Transaction[],
+		checkingAccountIds: ReadonlySet<string>,
 		spendingAccountIds: ReadonlySet<string>,
 		recurringTransactionIds: ReadonlySet<string>,
 		recurringFlows: RecurringFlow[],
@@ -30,6 +39,7 @@ export class SpendingPaceCalculator {
 		const monarchRecurringIds = this.monarchRecurringPayments(transactions, recurringFlows, unassignedAccountIds);
 		// A payment Monarch ties to a recurring item that's still projected. One tied to an ended item stays everyday spending.
 		const projectedRecurrenceIds = new Set(recurringFlows.filter(flow => flow.recurrenceGroup.recurringType === MonarchRecurringType.expense).map(flow => flow.recurrenceGroup.id));
+		const followedTransferIds = this.followedTransferIds(transactions, checkingAccountIds, spendingAccountIds);
 		const isEveryday = (transaction: Transaction) =>
 			!!transaction.accountId &&
 			spendingAccountIds.has(transaction.accountId) &&
@@ -38,7 +48,7 @@ export class SpendingPaceCalculator {
 			!recurringTransactionIds.has(transaction.id) &&
 			!monarchRecurringIds.has(transaction.id) &&
 			!isInterestCharge(transaction) &&
-			!TRANSFER_GROUP_TYPES.has(transaction.category?.groupType ?? '') &&
+			(!isTransfer(transaction) || (checkingAccountIds.has(transaction.accountId) && !followedTransferIds.has(transaction.id))) &&
 			!INCOME_GROUP_TYPES.has(transaction.category?.groupType ?? '');
 		const monthSet = new Set(months);
 		const everyday = transactions.filter(transaction => monthSet.has(this.calendar.monthOf(transaction.date)) && isEveryday(transaction));
@@ -84,6 +94,17 @@ export class SpendingPaceCalculator {
 			}
 		}
 		return claimedIds;
+	}
+
+	/**
+	 * Checking's transfers whose other side is on checking or a counted card, like a card payment, and those other sides:
+	 * the projection already follows both.
+	 */
+	private followedTransferIds(transactions: Transaction[], checkingAccountIds: ReadonlySet<string>, spendingAccountIds: ReadonlySet<string>): Set<string> {
+		const checkingTransfers = transactions.filter(transaction => checkingAccountIds.has(transaction.accountId ?? '') && isTransfer(transaction));
+		const followed = transactions.filter(transaction => spendingAccountIds.has(transaction.accountId ?? ''));
+		const otherSides = transferOtherSides(checkingTransfers, followed, this.calendar, { maxDays: TRANSFER_PAIR_DAYS });
+		return new Set([...otherSides].flatMap(([transferId, otherSide]) => [transferId, otherSide.id]));
 	}
 
 	/** Up to three months before this one, from the first full month with transactions: recent enough to follow a real change in spending. */

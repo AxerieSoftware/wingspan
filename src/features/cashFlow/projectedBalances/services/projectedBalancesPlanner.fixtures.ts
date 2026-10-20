@@ -89,6 +89,7 @@ export const monthlyPaychecks = (amount: number, first = '2026-10-25') =>
 
 export function input(overrides: Partial<ProjectionInput> = {}): ProjectionInput {
 	const accounts = overrides.accounts ?? [account(CHECKING, 'depository', 5000)];
+	const cardAccountIds = overrides.cardAccountIds ?? accounts.filter(each => each.type.name === 'credit').map(each => each.id);
 	return {
 		accounts,
 		checkingAccountIds: [CHECKING],
@@ -102,7 +103,8 @@ export function input(overrides: Partial<ProjectionInput> = {}): ProjectionInput
 		unassignedAccountIds: new Set(accounts.map(each => each.id)),
 		cushion: 0,
 		safetyDays: 30,
-		cardAccountIds: accounts.filter(each => each.type.name === 'credit').map(each => each.id),
+		cardAccountIds,
+		borrowCardAccountIds: cardAccountIds,
 		reserveAccountIds: [],
 		dueDayByRecurrenceId: {},
 		...overrides

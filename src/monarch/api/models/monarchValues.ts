@@ -4,7 +4,7 @@ import type { Transaction } from './transaction';
 export const MonarchAccountType = { cash: 'depository', credit: 'credit', loan: 'loan' } as const;
 
 /** Transfer's category group type, by its full name or Monarch's one-letter code. */
-export const TRANSFER_GROUP_TYPES: ReadonlySet<string> = new Set(['transfer', 'T']);
+const TRANSFER_GROUP_TYPES: ReadonlySet<string> = new Set(['transfer', 'T']);
 /** Income's category group type, by its full name or Monarch's one-letter code. */
 export const INCOME_GROUP_TYPES: ReadonlySet<string> = new Set(['income', 'I']);
 

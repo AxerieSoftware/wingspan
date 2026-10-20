@@ -37,3 +37,5 @@ Expected income sits in Monarch's **Income** table:
 - Any matching deposit counts as received, whatever its size.
 - Every upcoming date adds the full expected amount. A small deposit doesn't lower the next one.
 - Missed income isn't carried over. The next date counts as normal.
+- A deposit that arrives a few days early counts for its date, so it isn't counted again when that date comes. One still pending counts once it posts.
+- If Monarch also tracks this income on Recurring, it's counted once, from Monarch's.

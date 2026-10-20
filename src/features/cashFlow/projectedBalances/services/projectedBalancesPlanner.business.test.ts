@@ -66,6 +66,7 @@ describe('a household with a business', () => {
 				accounts,
 				checkingAccountIds: settings.checkingAccountIds,
 				cardAccountIds: settings.cardAccountIds,
+				borrowCardAccountIds: settings.borrowCardAccountIds,
 				reserveAccountIds: settings.reserveAccountIds,
 				cushion: settings.cushion,
 				recurringFlows: within.recurringFlows(flows),

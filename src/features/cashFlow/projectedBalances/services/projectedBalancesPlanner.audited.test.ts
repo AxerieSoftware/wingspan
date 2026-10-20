@@ -185,6 +185,34 @@ describe('audited cases', () => {
 		expect(projection.cards[0]?.payments.find(each => each.date === '2026-11-15')?.amount ?? 0).toBe(0);
 	});
 
+	it('asks for nothing on a statement paid in full when a purchase made just before it closed posted after', () => {
+		const item = cardItem(15);
+		const payment = { id: 'full', date: '2026-11-15', amount: 1040, description: 'PAYMENT THANK YOU', accountId: CARD };
+		const november = { item, dueDate: '2026-11-15', key: `${item.id}@2026-11-15`, amount: 0, paid: true, matchedTransaction: payment, carried: false, overdue: false };
+		// The statement closed Oct 19, 27 days before it's due, at $1,040: $1,000 of purchases and $40 of interest dated the
+		// closing day. A $30 purchase dated Oct 18 posted after the close, so it's on the next statement with $300 since.
+		const interest = spent('2026-10-19', 40, CARD, { description: 'PURCHASE INTEREST CHARGE', category: { id: 'interest', name: 'Interest', icon: null, groupType: 'expense' } });
+		const transactions = [spent('2026-10-05', 1000, CARD), spent('2026-10-18', 30, CARD), interest, spent('2026-10-25', 300, CARD), payment];
+		const accounts = [account(CHECKING, 'depository', 50000), account(CARD, 'credit', -330)];
+
+		const projection = plannerFor('2026-11-17').plan(input({ accounts, transactions, recurringItems: [item], settledOccurrences: [november], outstandingOccurrences: [november] }));
+
+		expect(projection.cards[0]?.payments.find(each => each.date === '2026-11-17')?.owed ?? 0).toBe(0);
+	});
+
+	it('asks for nothing on a statement the household marked paid', () => {
+		const item = { ...cardItem(15), markedPaidDueDates: ['2026-11-15'] };
+		const november = { item, dueDate: '2026-11-15', key: `${item.id}@2026-11-15`, amount: 0, paid: true, matchedTransaction: null, carried: false, overdue: false };
+		const accounts = [account(CHECKING, 'depository', 50000), account(CARD, 'credit', -900)];
+
+		const projection = plannerFor('2026-11-17').plan(
+			input({ accounts, transactions: [spent('2026-10-05', 900, CARD)], recurringItems: [item], settledOccurrences: [november], outstandingOccurrences: [november] })
+		);
+
+		expect(projection.cards[0]?.payments.find(each => each.date === '2026-11-17')?.owed ?? 0).toBe(0);
+		expect(projection.cards[0]?.payments.find(each => each.date === '2026-12-15')?.owed).toBeGreaterThan(0);
+	});
+
 	it('still asks for a statement whose payment was returned', () => {
 		const item = cardItem(15);
 		const payment = { id: 'paid', date: '2026-11-01', amount: 1000, description: 'PAYMENT THANK YOU', accountId: CARD };

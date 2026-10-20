@@ -46,6 +46,15 @@ test("the chart shows each day's balance on hover, beside the pointer rather tha
 	}
 });
 
+test('the chart marks and labels the lowest checking gets, with only that one dot', async ({ page, open }) => {
+	await open({ path: '/cash-flow', waitForRows: false });
+	const chart = card(page).getByRole('img', { name: /^Checking from / });
+	const lowest = (await chart.getAttribute('aria-label'))?.match(/lowest (\$[\d,.]+)/)?.[1];
+	await expect(chart.locator('text', { hasText: /^Low \$[\d,.]+K? · / })).toHaveCount(1);
+	await expect(chart.locator('circle')).toHaveCount(1);
+	expect(lowest).toBeTruthy();
+});
+
 test("the chart projects as far ahead as Cash Flow's selected month, quarter or year", async ({ page, open }) => {
 	const daysOut = (days: number) => {
 		const date = Temporal.Now.plainDateISO().add({ days }).toString();
@@ -151,4 +160,11 @@ test('loans paid down covers each month of a past quarter', async ({ page, open 
 	await open({ path: `/cash-flow?timeframe=quarter&date=${quarterStart}`, waitForRows: false });
 
 	await expect(page.getByTestId('loans-paid-down-card')).toContainText('$1,020');
+});
+
+test('free cash explains how pending money counts', async ({ page, open }) => {
+	await open({ path: '/cash-flow', waitForRows: false });
+	const freeCash = card(page).locator('[data-external-id="stat-item"]').filter({ hasText: 'Free cash today' });
+
+	await expect(freeCash.getByRole('button', { name: /Pending purchases count as already spent; pending deposits count once they clear\./ })).toHaveCount(1);
 });

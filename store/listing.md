@@ -26,7 +26,7 @@ Up to 132 characters, the same as `description` in `wxt.config.ts`.
 > CASH FLOW
 > • Projected balances: checking day by day, with recurring income and expenses, bills, everyday spending and card payments.
 > • Free cash: how much you can spend from checking today and still keep a minimum balance, split into money set aside for goals and money that's actually free.
-> • Credit left: when checking runs low, which cards you'd use (in the order you choose), then your reserves.
+> • Credit left: when checking runs low, which cards you'd borrow on (in the order you choose), then your backup accounts.
 >
 > LOANS AND DEBT
 > • Loans paid down: how much your loans went down, and its share of your income, beside Monarch's savings rate on Cash Flow and Reports.

@@ -132,10 +132,10 @@ describe('burndown', () => {
 			account('uncounted', 'credit', 0, { limit: 9000 })
 		];
 
-		const projection = plannerFor().plan(input({ accounts, cardAccountIds: ['cheap', 'costly', 'unknown'] }));
+		const projection = plannerFor().plan(input({ accounts, borrowCardAccountIds: ['cheap', 'costly', 'unknown'] }));
 
 		expect(projection.creditLimit).toBe(3500);
-		expect(plannerFor().plan(input({ accounts, cardAccountIds: ['unknown'] })).creditLimit).toBeNull();
+		expect(plannerFor().plan(input({ accounts, borrowCardAccountIds: ['unknown'] })).creditLimit).toBeNull();
 	});
 
 	it('covers checking from the cards, then the reserves, then the cushion, and free cash counts none of it', () => {
@@ -162,19 +162,22 @@ describe('burndown', () => {
 		const accounts = [account(CHECKING, 'depository', 1000), account('cheap', 'credit', 0, { limit: 1000, apr: 10 }), account('costly', 'credit', 0, { limit: 1000, apr: 25 })];
 		const recurringFlows = [recurringFlow('Rent', 'expense', '2026-10-05', -1300)];
 
-		const projection = plannerFor().plan(input({ accounts, recurringFlows, cardAccountIds: ['costly', 'cheap'] }));
+		const projection = plannerFor().plan(input({ accounts, recurringFlows, borrowCardAccountIds: ['costly', 'cheap'] }));
 		const draws = projection.burndown.days.find(day => day.date === '2026-10-05')?.flows.filter(flow => flow.kind === 'draw');
 
 		expect(draws?.map(({ label, amount }) => ({ label, amount }))).toEqual([{ label: 'On costly', amount: 300 }]);
 	});
 
-	it("leaves out a card that isn't counted as debt", () => {
-		const accounts = [account(CHECKING, 'depository', 5000), account(CARD, 'credit', -400)];
+	it("still counts a card the household doesn't borrow on, but never borrows on it", () => {
+		const accounts = [account(CHECKING, 'depository', 1000), account(CARD, 'credit', -400, { limit: 5000 })];
+		const recurringFlows = [recurringFlow('Rent', 'expense', '2026-10-05', -1300)];
 
-		const projection = plannerFor().plan(input({ accounts, cardAccountIds: [] }));
+		const projection = plannerFor().plan(input({ accounts, recurringFlows, borrowCardAccountIds: [] }));
 
-		expect(projection.cards).toEqual([]);
-		expect(projection.burndown.days[0]?.cardsOwed).toBe(0);
+		expect(projection.cards.map(card => card.owedToday)).toEqual([400]);
+		expect(projection.burndown.days[0]?.cardsOwed).toBe(400);
+		expect(projection.burndown.days.flatMap(day => day.flows).some(flow => flow.kind === 'draw')).toBe(false);
+		expect(projection.creditLimit).toBeNull();
 	});
 });
 

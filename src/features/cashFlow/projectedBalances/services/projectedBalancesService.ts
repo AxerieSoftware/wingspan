@@ -59,12 +59,6 @@ export class ProjectedBalancesService implements CardPaymentPlans {
 			const { checkingAccountIds } = cashSettings;
 			const ledger = ledgerService.ledger.value;
 			const isWithin = (occurrence: Occurrence) => within.includesItem(occurrence.item);
-			// Payments Wingspan matched to a bill or card, including early payments for next month, aren't everyday spending.
-			const itemTransactionIds = new Set(
-				[...[...ledger.historiesByItemId.values()].flat().map(point => point.transaction), ...ledger.settledOccurrences.map(occurrence => occurrence.matchedTransaction)]
-					.map(transaction => transaction?.id)
-					.filter(transactionId => transactionId !== undefined)
-			);
 			const projection = checkingAccountIds.length
 				? planner.plan({
 						accounts: snapshot.accounts,
@@ -75,12 +69,14 @@ export class ProjectedBalancesService implements CardPaymentPlans {
 						recurringItems: itemRepository.data.value.recurringItems.filter(within.includesItem),
 						outstandingOccurrences: ledger.outstandingOccurrences.filter(isWithin),
 						settledOccurrences: ledger.settledOccurrences.filter(isWithin),
-						itemTransactionIds,
+						// Payments Wingspan matched to a bill or card, including early payments for next month, aren't everyday spending.
+						itemTransactionIds: ledger.matchedTransactionIds,
 						paidRecurrenceIdsByItemId: new Map([...ledger.historiesByItemId].map(([itemId, points]) => [itemId, new Set(points.flatMap(point => point.transaction?.recurrenceGroupId ?? []))])),
 						owedByAccountId: snapshot.owedByAccountId,
 						cushion: cashSettings.cushion,
 						safetyDays: cashSettings.safetyDays,
 						cardAccountIds: cashSettings.cardAccountIds,
+						borrowCardAccountIds: cashSettings.borrowCardAccountIds,
 						reserveAccountIds: cashSettings.reserveAccountIds,
 						dueDayByRecurrenceId: dataService.data.value.recurringDueDates.dueDatesByRecurrenceId
 					})
