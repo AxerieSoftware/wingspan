@@ -7,4 +7,6 @@ export interface PaymentLedger {
 	settledByKey: ReadonlyMap<string, Occurrence>;
 	outstandingOccurrences: Occurrence[];
 	historiesByItemId: ReadonlyMap<string, HistoryPoint[]>;
+	/** Every transaction that's some due date's payment, in this month or its history. */
+	matchedTransactionIds: ReadonlySet<string>;
 }

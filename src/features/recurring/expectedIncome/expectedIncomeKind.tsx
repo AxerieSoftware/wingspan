@@ -22,6 +22,7 @@ export class ExpectedIncomeKind implements RecurringItemKind {
 	public readonly paymentWindow = 'nearDueDate';
 	public readonly unpaidCarryMonths = 0;
 	public readonly showsInStatements = false;
+	public readonly separatePaymentsAdvice = 'Set Paid into or a narrower description to tell them apart.';
 
 	public constructor(
 		private readonly matcher: TransactionMatcher,

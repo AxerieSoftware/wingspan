@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { LAST_DAY_OF_MONTH } from '../../../../common/calendar';
 import type { Account } from '../../../../monarch/api/models/account';
+import { MonarchAccountType } from '../../../../monarch/api/models/monarchValues';
 import { CheckboxLabel } from '../../../../monarch/ui/components/checkbox';
 import { DayPicker } from '../../../../monarch/ui/components/dayPicker';
 import { Field, FormGrid } from '../../../../monarch/ui/components/field';
@@ -42,12 +43,12 @@ export function BillFields({ item, moneyFlow, draft, accounts, services, onChang
 	const { formatter } = services;
 	const matchRule = item.matchRule;
 	const currentPayer = accounts.find(account => account.id === matchRule?.accountId);
-	const payerAccounts = accounts.filter(account => (account.isAsset && !account.isHidden) || account === currentPayer);
+	const payerAccounts = accounts.filter(account => ((account.isAsset || account.type.name === MonarchAccountType.credit) && !account.isHidden) || account === currentPayer);
 	const payerOptions = [[ANY_ACCOUNT, 'Any account'] as const, ...payerAccounts.map(account => [account.id, account.displayName] as const)];
 	if (matchRule?.accountId && !currentPayer) payerOptions.push([matchRule.accountId, accounts.length ? 'Closed account' : "Couldn't load accounts from Monarch"]);
 
 	const changeItem = (editedField: EditedField, patch: Partial<RecurringItem>) => onChange({ ...draft, item: { ...item, ...patch } }, editedField);
-	const changeMatchRule = (patch: Partial<MerchantContainsMatchRule>) => matchRule && changeItem('matchRule', { matchRule: { ...matchRule, ...patch } });
+	const changeMatchRule = (editedField: EditedField, patch: Partial<MerchantContainsMatchRule>) => matchRule && changeItem(editedField, { matchRule: { ...matchRule, ...patch } });
 	const changeSchedule = (schedule: Schedule) => onChange({ ...draft, schedule }, 'schedule');
 
 	return (
@@ -57,7 +58,12 @@ export function BillFields({ item, moneyFlow, draft, accounts, services, onChang
 					label={isIncome ? 'Expected amount' : 'Amount'}
 					labelAside={
 						isIncome ? undefined : (
-							<CheckboxLabel label="Any amount" checked={!!matchRule?.anyAmount} disabled={!matchRule} onChange={isAnyAmount => changeMatchRule({ anyAmount: isAnyAmount || undefined })} />
+							<CheckboxLabel
+								label="Any amount"
+								checked={!!matchRule?.anyAmount}
+								disabled={!matchRule}
+								onChange={isAnyAmount => changeMatchRule('anyAmount', { anyAmount: isAnyAmount || undefined })}
+							/>
 						)
 					}
 				>
@@ -68,11 +74,16 @@ export function BillFields({ item, moneyFlow, draft, accounts, services, onChang
 					<TextInput
 						value={matchRule?.matchText ?? ''}
 						placeholder={isIncome ? 'e.g. Contoso Payroll' : 'e.g. Green Lawn Co'}
-						onChange={matchText => changeItem('matchRule', { matchRule: matchText.trim() ? { ...matchRule, matchText } : undefined })}
+						onChange={matchText => changeItem('matchText', { matchRule: { ...matchRule, matchText } })}
 					/>
 				</Field>
 				<Field label={isIncome ? 'Paid into' : 'Paid from'}>
-					<Select options={payerOptions} value={matchRule?.accountId ?? ANY_ACCOUNT} disabled={!matchRule} onChange={accountId => changeMatchRule({ accountId: accountId || undefined })} />
+					<Select
+						options={payerOptions}
+						value={matchRule?.accountId ?? ANY_ACCOUNT}
+						disabled={!matchRule}
+						onChange={accountId => changeMatchRule('payerAccount', { accountId: accountId || undefined })}
+					/>
 				</Field>
 			</FormGrid>
 		</div>

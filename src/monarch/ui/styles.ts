@@ -99,7 +99,10 @@ export const iconButtonStyles = tv({
 				BUTTON_OUTLINE,
 				'border-transparent bg-transparent not-hover:not-data-pressed:shadow-none not-disabled:not-data-pressed:hover:border-border-primary-hover not-disabled:not-data-pressed:hover:bg-background-primary disabled:border-border-primary-hover'
 			),
-			overlay: BUTTON_OVERLAY
+			overlay: BUTTON_OVERLAY,
+			/** Text-only, like the chevron that opens a recurring item's payments. */
+			ghost:
+				'border-transparent bg-transparent text-content-secondary shadow-none not-disabled:hover:text-content-primary focus-visible:-outline-offset-2 active:text-content-primary active:opacity-80 active:shadow-none data-pressed:text-content-primary data-pressed:shadow-none'
 		},
 		size: { '3xs': 'size-6', '2xs': 'size-7', xs: 'size-8', sm: 'size-9', md: 'size-10', lg: 'size-12' }
 	},

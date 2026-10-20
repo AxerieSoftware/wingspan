@@ -22,11 +22,13 @@ export function CardFields({ item, draft, accounts, services, onChange }: CardFi
 		cardOptions.push([item.accountId, cardAccounts.length ? 'Hidden or closed card' : "Couldn't load cards from Monarch"]);
 
 	const changeItem = (editedField: EditedField, patch: Partial<CardPaymentItem>) => onChange({ ...draft, item: { ...item, ...patch } }, editedField);
-	// The name follows the selected card unless the user typed their own.
+	// The name follows the selected card unless the user typed their own. A linked card's amount and payments come from Monarch.
 	const pickCard = (accountId: string) => {
 		const nameOf = (cardAccountId: string | undefined) => cardAccounts.find(account => account.id === cardAccountId)?.displayName ?? '';
 		const isPickedName = !item.name.trim() || item.name === nameOf(item.accountId);
-		changeItem('account', { accountId: accountId || undefined, name: accountId && isPickedName ? nameOf(accountId) : item.name });
+		const name = accountId && isPickedName ? nameOf(accountId) : item.name;
+		if (!accountId) return changeItem('account', { accountId: undefined, name });
+		changeItem('account', { accountId, name, amount: 0, matchRule: undefined });
 	};
 
 	return (
@@ -52,7 +54,7 @@ export function CardFields({ item, draft, accounts, services, onChange }: CardFi
 						<TextInput
 							value={item.matchRule?.matchText ?? ''}
 							placeholder="e.g. 4321"
-							onChange={matchText => changeItem('matchRule', { matchRule: matchText.trim() ? { matchText, anyAmount: true } : undefined })}
+							onChange={matchText => changeItem('matchText', { matchRule: matchText.trim() ? { matchText, anyAmount: true } : undefined })}
 						/>
 					</Field>
 					<Field label="Typical payment">

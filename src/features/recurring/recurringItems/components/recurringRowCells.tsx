@@ -1,24 +1,31 @@
-import { type ReactNode, useId, useLayoutEffect } from 'react';
+import { type ReactNode, useId, useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import type { Calendar } from '../../../../common/calendar';
 import { CENT_TOLERANCE } from '../../../../common/money';
 import type { RecurringView } from '../../../../monarch/pages/recurringV2/models/recurringView';
 import { RecurringV2Page } from '../../../../monarch/pages/recurringV2/recurringV2Page';
 import { Avatar } from '../../../../monarch/ui/components/avatar';
-import { Icon } from '../../../../monarch/ui/components/icons';
+import { ChevronIcon, Icon } from '../../../../monarch/ui/components/icons';
 import { type MenuItem, MoreMenu } from '../../../../monarch/ui/components/menu';
 import { Skeleton, SkeletonText } from '../../../../monarch/ui/components/skeleton';
 import { Sparkline, type SparkPoint } from '../../../../monarch/ui/components/sparkline';
 import { Tooltip } from '../../../../monarch/ui/components/tooltip';
 import type { Formatter } from '../../../../monarch/ui/formatter';
+import { iconButtonStyles } from '../../../../monarch/ui/styles';
 import { WingspanMark } from '../../../wingspanMark';
 import { ESTIMATED_MINIMUM_RULE, missesMinimum, type PlannedCardPayment, paysInFull } from '../../statements/models/cardPaymentPlans';
-import type { MoneyFlow } from '../kinds/recurringItemKind';
+import { type MoneyFlow, PAID_WORDS } from '../kinds/recurringItemKind';
+import type { Occurrence } from '../models/occurrence';
 import type { RecurringLine } from '../models/recurringLine';
 import type { RecurringItemServices } from '../services/recurringItemServices';
 
 const RING_CIRCUMFERENCE = 37.7;
+const CHEVRON_STYLE = { width: 12, height: 12 };
+/** Spans the row and lines its cells up with the row's own columns. */
+const OCCURRENCE_ROW_STYLE = { gridColumn: '1 / -1', gridTemplateColumns: 'subgrid' };
+/** How long a payment can take to post after its due date before the bill shows as overdue. */
+const LATE_POSTING_DAYS = 3;
 const COLUMNS_NEEDING_DATA = new Set(['status', 'history', 'amount', 'last date', 'next date']);
-const PAID_WORDS: Record<MoneyFlow, string> = { outflow: 'Paid', inflow: 'Received' };
 
 /** What one of Wingspan's rows shows in Monarch's columns. */
 export interface RowCellsProps {
@@ -96,6 +103,9 @@ function RowCells({
 	services
 }: RowCellsProps & { rowEl: HTMLElement }) {
 	const idPrefix = useId();
+	const [isExpanded, setIsExpanded] = useState(false);
+	// In a month, an item due more than once lists each due date under it, like Monarch's own items.
+	const canExpand = view === 'month' && line.occurrences.length > 1 && !isLoading;
 	const subtitleId = `${idPrefix}subtitle`;
 	const cellId = (columnLabel: string) => `${idPrefix}${columnLabel.toLowerCase().replaceAll(/\W/g, '')}`;
 	const describedBy = [subtitleId, ...columnLabels.map(cellId)].join(' ');
@@ -107,7 +117,21 @@ function RowCells({
 	return (
 		<>
 			<div className="flex min-w-0 items-center gap-sm">
-				<div className="size-6 shrink-0" />
+				<div className="size-6 shrink-0" {...{ [RecurringV2Page.rowControlAttribute]: '' }}>
+					{canExpand ? (
+						<button
+							type="button"
+							className={iconButtonStyles({ variant: 'ghost', size: '3xs' })}
+							aria-label={`${isExpanded ? 'Hide' : 'Show'} each payment for ${line.item.name}`}
+							aria-expanded={isExpanded}
+							onClick={() => setIsExpanded(!isExpanded)}
+						>
+							<span className={`inline-flex shrink-0 transition-transform${isExpanded ? '' : ' -rotate-90'}`} style={CHEVRON_STYLE}>
+								<ChevronIcon />
+							</span>
+						</button>
+					) : null}
+				</div>
 				<Avatar source={line.item} />
 				<div className="flex min-w-0 flex-col">
 					<span className="flex min-w-0 items-center gap-2xs">
@@ -134,11 +158,74 @@ function RowCells({
 					</div>
 				);
 			})}
-			<div data-external-id="recurring-section-row-menu" {...{ [RecurringV2Page.rowMenuAttribute]: '' }}>
+			<div data-external-id="recurring-section-row-menu" {...{ [RecurringV2Page.rowControlAttribute]: '' }}>
 				<MoreMenu items={menuItems} triggerClassName={menuClassName} label={`More options for ${line.item.name}`} />
 			</div>
+			{canExpand && isExpanded ? line.occurrences.map(occurrence => <OccurrenceRow key={occurrence.key} occurrence={occurrence} columnLabels={columnLabels} services={services} />) : null}
 		</>
 	);
+}
+
+/** One due date under an expanded row, in Monarch's layout for an item's payments: the date, its status and its amount. */
+function OccurrenceRow({ occurrence, columnLabels, services: { formatter, kinds, calendar } }: { occurrence: Occurrence; columnLabels: string[]; services: RecurringItemServices }) {
+	const moneyFlow = kinds.of(occurrence.item).moneyFlow;
+	const cellFor = (columnLabel: string) => {
+		switch (columnLabel.toLowerCase()) {
+			case 'status':
+				return (
+					<div key={columnLabel} className="flex min-w-0 items-center gap-1.5">
+						<OccurrenceStatus occurrence={occurrence} paidWord={PAID_WORDS[moneyFlow]} formatter={formatter} calendar={calendar} />
+					</div>
+				);
+			case 'amount':
+				return (
+					<div key={columnLabel} className="text-right">
+						<SignedAmount amount={occurrence.amount} moneyFlow={moneyFlow} size="text-sm" formatter={formatter} />
+					</div>
+				);
+			default:
+				return <div key={columnLabel} />;
+		}
+	};
+
+	return (
+		<div className="grid items-center py-2.5" style={OCCURRENCE_ROW_STYLE}>
+			<div className="flex min-w-0 items-center gap-sm">
+				<div className="size-6 shrink-0" />
+				<div className="size-8 shrink-0" />
+				<span className="text-sm font-book text-content-primary min-w-0 truncate">{formatter.weekdayDate(occurrence.dueDate)}</span>
+			</div>
+			{columnLabels.map(cellFor)}
+			<div />
+		</div>
+	);
+}
+
+function OccurrenceStatus({ occurrence, paidWord, formatter, calendar }: { occurrence: Occurrence; paidWord: string; formatter: Formatter; calendar: Calendar }) {
+	const textClassName = 'text-sm font-book min-w-0 truncate';
+	if (occurrence.paid) {
+		const paidDate = occurrence.matchedTransaction?.date;
+		return (
+			<>
+				<PaidMark />
+				<span className={`${textClassName} text-content-primary`}>{paidDate ? `${paidWord} ${formatter.shortDate(paidDate)}` : paidWord}</span>
+			</>
+		);
+	}
+	if (isWithinPostingGrace(occurrence, calendar)) return <span className={`${textClassName} text-content-primary`}>{`Not paid yet · due ${formatter.shortDate(occurrence.dueDate)}`}</span>;
+	if (occurrence.overdue) return <span className={`${textClassName} text-content-danger`}>{`Overdue ${formatter.shortDate(occurrence.dueDate)}`}</span>;
+	return <span className={`${textClassName} text-content-primary`}>{formatter.shortDate(occurrence.dueDate)}</span>;
+}
+
+/** Income in green with a plus sign, as in Monarch's amounts. */
+function SignedAmount({ amount, moneyFlow, size, formatter }: { amount: number; moneyFlow: MoneyFlow; size: 'text-sm' | 'text-base'; formatter: Formatter }) {
+	const isInflow = moneyFlow === 'inflow';
+	return <span className={`${size} font-medium ${isInflow ? 'text-content-success' : 'text-content-primary'}`}>{`${isInflow ? '+' : ''}${formatter.money(amount)}`}</span>;
+}
+
+/** A payment often posts a few days late, so a due date just past isn't flagged as overdue yet. */
+function isWithinPostingGrace(occurrence: Occurrence, calendar: Calendar): boolean {
+	return occurrence.overdue && !occurrence.carried && occurrence.dueDate >= calendar.addDays(calendar.today(), -LATE_POSTING_DAYS);
 }
 
 function subtitleFor(line: RecurringLine, view: RecurringView, { recurrence, dueLabels }: RecurringItemServices): string {
@@ -183,10 +270,12 @@ function StatusCell({ line, services: { formatter, kinds, calendar } }: StatusCe
 	const paidCount = line.occurrences.filter(occurrence => occurrence.paid).length;
 	let content: ReactNode;
 
-	if (line.overdue) {
-		const firstOverdue = line.occurrences.find(occurrence => occurrence.overdue);
+	const firstOverdue = line.occurrences.find(occurrence => occurrence.overdue);
+	const overdueCount = line.occurrences.filter(occurrence => occurrence.overdue).length;
+	if (firstOverdue && overdueCount === 1 && isWithinPostingGrace(firstOverdue, calendar)) {
+		content = <CellText tone="font-book text-content-primary">{`Not paid yet · due ${formatter.shortDate(firstOverdue.dueDate)}`}</CellText>;
+	} else if (line.overdue) {
 		const dueText = firstOverdue ? formatter.shortDate(firstOverdue.dueDate) : '';
-		const overdueCount = line.occurrences.filter(occurrence => occurrence.overdue).length;
 		let overdueText = `Overdue ${dueText}`;
 		if (overdueCount > 1) overdueText = `${overdueCount} owed since ${dueText}`;
 		else if (firstOverdue?.carried) overdueText = `Owed since ${dueText}`;
@@ -233,24 +322,23 @@ function StatusCell({ line, services: { formatter, kinds, calendar } }: StatusCe
 	);
 }
 
-/** When the statement is smaller than the card's balance, show the statement amount so "in full" isn't mistaken for the whole balance. */
-function CanPayNote({ plannedPayment, shownAmount, formatter }: { plannedPayment: PlannedCardPayment; shownAmount: number; formatter: Formatter }) {
-	const { amount, owed, minimum, minimumIsEstimated } = plannedPayment;
-	const isStatementOnly = shownAmount - owed > CENT_TOLERANCE;
+/** What checking can pay toward the statement shown above it. Neutral on an overdue statement, so it doesn't read as all clear. */
+function CanPayNote({ plannedPayment, isOverdue, formatter }: { plannedPayment: PlannedCardPayment; isOverdue: boolean; formatter: Formatter }) {
+	const { amount, minimum, minimumIsEstimated } = plannedPayment;
 	const isInFull = paysInFull(plannedPayment);
 	const isShortOfMinimum = missesMinimum(plannedPayment);
 	const minimumText = minimum === null ? '' : `${minimumIsEstimated ? '~' : ''}${formatter.money(minimum)} ${minimumIsEstimated ? 'est. ' : ''}min`;
 	let tone: string;
 	let text: string;
 	if (isInFull) {
-		tone = 'text-content-success';
-		text = isStatementOnly ? `Can pay the ${formatter.money(owed)} statement` : 'Can pay in full';
+		tone = isOverdue ? 'text-content-primary' : 'text-content-success';
+		text = isOverdue ? 'Checking can pay it in full today' : 'Can pay in full';
 	} else if (isShortOfMinimum) {
 		tone = 'text-content-danger';
 		text = `Can pay ${formatter.money(amount)} of ${minimumText}`;
 	} else {
 		tone = 'text-content-warning';
-		text = isStatementOnly ? `Can pay ${formatter.money(amount)} of the ${formatter.money(owed)} statement` : `Can pay ${formatter.money(amount)}`;
+		text = `Can pay ${formatter.money(amount)}`;
 	}
 	const note = <div className={`mt-px text-xs font-medium ${tone}`}>{text}</div>;
 	if (isInFull || !minimumIsEstimated || minimum === null) return note;
@@ -300,18 +388,19 @@ function ColumnCell({ columnLabel, line, history, accountName, plannedPayment, s
 			const itemKind = services.kinds.of(line.item);
 			const unknownNote = itemKind.linkedAccountId(line.item) === undefined ? 'Set a typical payment' : 'No balance from Monarch';
 			const amountNote = line.amountUnknown && !line.paid ? unknownNote : itemKind.amountNote(line.item, line.paid);
+			// A statement smaller than the card's balance leads with the statement, since that's what's due.
+			const statementOwed = plannedPayment && line.amount - plannedPayment.owed > CENT_TOLERANCE ? plannedPayment.owed : null;
 			let note: ReactNode = null;
-			if (plannedPayment) note = <CanPayNote plannedPayment={plannedPayment} shownAmount={line.amount} formatter={formatter} />;
+			if (plannedPayment) note = <CanPayNote plannedPayment={plannedPayment} isOverdue={line.overdue} formatter={formatter} />;
 			else if (amountNote) note = <div className="mt-px text-xs font-medium text-content-secondary">{amountNote}</div>;
 			return (
 				<div data-external-id="recurring-amount-with-delta" className="text-right">
 					{line.amountUnknown && !line.paid ? (
 						<span className="text-base font-medium text-content-primary">Unknown</span>
 					) : (
-						<span className={`text-base font-medium ${itemKind.moneyFlow === 'inflow' ? 'text-content-success' : 'text-content-primary'}`}>
-							{`${itemKind.moneyFlow === 'inflow' ? '+' : ''}${formatter.money(line.amount)}`}
-						</span>
+						<SignedAmount amount={statementOwed ?? line.amount} moneyFlow={itemKind.moneyFlow} size="text-base" formatter={formatter} />
 					)}
+					{statementOwed !== null ? <div className="mt-px text-xs font-book text-content-secondary">{`Statement · ${formatter.money(line.amount)} balance`}</div> : null}
 					{note}
 				</div>
 			);

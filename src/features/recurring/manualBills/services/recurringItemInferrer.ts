@@ -31,7 +31,7 @@ export class RecurringItemInferrer {
 		if (inferred.schedule && !editedFields.has('schedule')) schedule = inferred.schedule;
 		if (inferred.amount && !editedFields.has('amount')) item.amount = inferred.amount;
 		if (inferred.name && !editedFields.has('name') && (isNew || !item.name)) item.name = inferred.name;
-		if (inferred.matchRule?.matchText && !editedFields.has('matchRule')) item.matchRule = { ...inferred.matchRule };
+		if (inferred.matchRule?.matchText) item.matchRule = this.mergedMatchRule(item.matchRule ?? inferred.matchRule, inferred.matchRule, editedFields);
 		if (inferred.icon && !editedFields.has('icon')) item.icon = inferred.icon;
 
 		return { item, schedule };
@@ -56,6 +56,14 @@ export class RecurringItemInferrer {
 			transaction => transaction.merchantName as string
 		);
 		return [...transactionsByMerchant].sort((a, b) => b[1].length - a[1].length)[0]?.[0];
+	}
+
+	private mergedMatchRule(currentRule: MerchantContainsMatchRule, inferredRule: MerchantContainsMatchRule, editedFields: ReadonlySet<EditedField>): MerchantContainsMatchRule {
+		return {
+			matchText: editedFields.has('matchText') ? currentRule.matchText : inferredRule.matchText,
+			accountId: editedFields.has('payerAccount') ? currentRule.accountId : inferredRule.accountId,
+			anyAmount: editedFields.has('anyAmount') ? currentRule.anyAmount : inferredRule.anyAmount
+		};
 	}
 
 	private commonText(texts: string[]): string {

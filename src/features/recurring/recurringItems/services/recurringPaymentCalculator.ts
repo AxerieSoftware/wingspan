@@ -1,7 +1,8 @@
 import type { Calendar } from '../../../../common/calendar';
 import { CENT_TOLERANCE } from '../../../../common/money';
+import { transferOtherSides } from '../../../../common/transferPairs';
 import type { BalancesByAccountId } from '../../../../data/models/balancesByAccountId';
-import { TRANSFER_GROUP_TYPES } from '../../../../monarch/api/models/monarchValues';
+import { isTransfer } from '../../../../monarch/api/models/monarchValues';
 import type { Transaction } from '../../../../monarch/api/models/transaction';
 import { PAID_STATEMENT_CLOSE_DAYS_BEFORE_DUE, STATEMENT_CLOSE_DAYS_BEFORE_DUE } from '../../statements/models/statementCycle';
 import type { RecurringItemKindRegistry } from '../kinds/recurringItemKindRegistry';
@@ -9,7 +10,7 @@ import type { HistoryPoint } from '../models/historyPoint';
 import type { Occurrence } from '../models/occurrence';
 import type { PaymentLedger } from '../models/paymentLedger';
 import type { RecurringData } from '../models/recurringData';
-import type { RecurringItem } from '../models/recurringItem';
+import { isMarkedPaid, type RecurringItem } from '../models/recurringItem';
 import type { RecurrenceCalculator } from './recurrenceCalculator';
 
 /** How far ahead of its due date a payment still counts for it. */
@@ -50,16 +51,21 @@ export class RecurringPaymentCalculator {
 	/** Matches payments to due dates for every item at once, so no payment pays two. */
 	public ledger(recurringData: RecurringData, transactions: Transaction[], owedByAccountId: BalancesByAccountId): PaymentLedger {
 		const candidatesByItemId = this.candidatesByItemId(recurringData.recurringItems, transactions);
-		const settledOccurrences = this.allocate(recurringData, candidatesByItemId, owedByAccountId, transactions);
+		const transactionsById = new Map(transactions.map(transaction => [transaction.id, transaction]));
+		const settledOccurrences = this.allocate(recurringData, candidatesByItemId, owedByAccountId, transactions, transactionsById);
 		const settledByKey = new Map(settledOccurrences.map(occurrence => [occurrence.key, occurrence]));
 		const historyUsedTransactionIds = new Set(settledOccurrences.flatMap(occurrence => (occurrence.matchedTransaction ? [occurrence.matchedTransaction.id] : [])));
-		const historiesByItemId = new Map(recurringData.recurringItems.map(item => [item.id, this.historyOf(item, candidatesByItemId.get(item.id) ?? [], settledByKey, historyUsedTransactionIds)]));
+		const historiesByItemId = new Map(
+			recurringData.recurringItems.map(item => [item.id, this.historyOf(item, candidatesByItemId.get(item.id) ?? [], settledByKey, historyUsedTransactionIds, transactionsById)])
+		);
 
 		return {
 			settledOccurrences,
 			settledByKey,
 			outstandingOccurrences: settledOccurrences.filter(occurrence => !occurrence.carried || !occurrence.paid),
-			historiesByItemId
+			historiesByItemId,
+			// Building the histories added their payments to the ones the due dates in the ledger already claimed.
+			matchedTransactionIds: historyUsedTransactionIds
 		};
 	}
 
@@ -112,7 +118,7 @@ export class RecurringPaymentCalculator {
 					// A Monarch card's later statement includes this one, same as in the ledger: once it's paid, this one is settled.
 					const isSettledByLater = this.kinds.isLinked(item) && history.some(point => point.paid && point.dueDate > dueDate);
 					if (!transaction && isSettledByLater) return [this.occurrence(item, dueDate, null, 0, false, true)];
-					return [this.occurrence(item, dueDate, transaction, this.kinds.of(item).occurrenceAmount(item, transaction, owedByAccountId), false)];
+					return [this.occurrence(item, dueDate, transaction, this.kinds.of(item).occurrenceAmount(item, transaction, owedByAccountId), false, isMarkedPaid(item, dueDate))];
 				})
 			)
 			.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
@@ -129,7 +135,13 @@ export class RecurringPaymentCalculator {
 	}
 
 	/** Each payment settles at most one occurrence. */
-	private allocate(recurringData: RecurringData, candidatesByItemId: Map<string, Transaction[]>, owedByAccountId: BalancesByAccountId, transactions: Transaction[]): Occurrence[] {
+	private allocate(
+		recurringData: RecurringData,
+		candidatesByItemId: Map<string, Transaction[]>,
+		owedByAccountId: BalancesByAccountId,
+		transactions: Transaction[],
+		transactionsById: ReadonlyMap<string, Transaction>
+	): Occurrence[] {
 		const currentMonth = this.calendar.currentMonth();
 		const monthStart = `${currentMonth}-01`;
 		const monthEnd = this.calendar.lastOfMonth(currentMonth);
@@ -146,10 +158,11 @@ export class RecurringPaymentCalculator {
 		// Past due dates are matched first, within their own cycle and then to late payments, oldest first, so a late
 		// payment settles the debt it was for. Only then are upcoming due dates matched to early payments.
 		const today = this.calendar.today();
-		const matches: (Transaction | null)[] = dueDates.map(() => null);
+		// A payment the household chose is matched first, so nothing else claims it.
+		const matches: (Transaction | null)[] = dueDates.map(({ item, dueDate }) => this.claimChosenPayment(item, dueDate, transactionsById, usedTransactionIds));
 		const matchWithinCycle = (isDue: boolean) => {
 			for (const [index, { item, dueDate }] of dueDates.entries()) {
-				if (dueDate <= today === isDue) matches[index] = this.findMatch(item, dueDate, candidatesByItemId.get(item.id) ?? [], usedTransactionIds, { withinCycle: true });
+				if (!matches[index] && dueDate <= today === isDue) matches[index] = this.findMatch(item, dueDate, candidatesByItemId.get(item.id) ?? [], usedTransactionIds, { withinCycle: true });
 			}
 		};
 		matchWithinCycle(true);
@@ -163,7 +176,7 @@ export class RecurringPaymentCalculator {
 		// A Monarch card's later statement includes the earlier ones, so paying it also settles the ones before it.
 		const latestPaidByLinkedItem = new Map<string, string>();
 		for (const [index, { item, dueDate }] of dueDates.entries()) {
-			if (matches[index] && this.kinds.isLinked(item) && dueDate > (latestPaidByLinkedItem.get(item.id) ?? '')) latestPaidByLinkedItem.set(item.id, dueDate);
+			if ((matches[index] || isMarkedPaid(item, dueDate)) && this.kinds.isLinked(item) && dueDate > (latestPaidByLinkedItem.get(item.id) ?? '')) latestPaidByLinkedItem.set(item.id, dueDate);
 		}
 		const isSettledByLater = (item: RecurringItem, dueDate: string) => dueDate < (latestPaidByLinkedItem.get(item.id) ?? '');
 
@@ -174,7 +187,7 @@ export class RecurringPaymentCalculator {
 			const amount = this.kinds.of(item).occurrenceAmount(item, matchedTransaction, owedByAccountId);
 			// Settled by a later statement, or closed owing nothing. No amount is shown since the card's balance belongs to a later statement.
 			const isSettledWithoutOwing = !matchedTransaction && (isSettledByLater(item, dueDate) || this.closedOwingNothing(item, dueDate, owedByAccountId, transactions));
-			const isSettled = !matchedTransaction && (this.owesNothing(item, owedByAccountId) || isSettledWithoutOwing);
+			const isSettled = !matchedTransaction && (this.owesNothing(item, owedByAccountId) || isSettledWithoutOwing || isMarkedPaid(item, dueDate));
 			const shownAmount = isSettledWithoutOwing ? 0 : amount;
 			return [this.occurrence(item, dueDate, matchedTransaction, shownAmount, dueDate < monthStart, isSettled)];
 		});
@@ -186,6 +199,14 @@ export class RecurringPaymentCalculator {
 		const earlyDays = this.kinds.isLinked(item) ? PAID_STATEMENT_CLOSE_DAYS_BEFORE_DUE : EARLY_PAYMENT_DAYS;
 		const earlyPaidThrough = this.calendar.addDays(this.calendar.today(), earlyDays);
 		return earlyPaidThrough > monthEnd ? earlyPaidThrough : monthEnd;
+	}
+
+	/** The payment the household chose for the due date, unless it's gone from Monarch or another due date already has it. */
+	private claimChosenPayment(item: RecurringItem, dueDate: string, transactionsById: ReadonlyMap<string, Transaction>, usedTransactionIds: Set<string>): Transaction | null {
+		const chosenPayment = transactionsById.get(item.chosenPaymentIds?.[dueDate] ?? '');
+		if (!chosenPayment || usedTransactionIds.has(chosenPayment.id)) return null;
+		usedTransactionIds.add(chosenPayment.id);
+		return chosenPayment;
 	}
 
 	private isBeforeStart(item: RecurringItem, dueDate: string): boolean {
@@ -228,7 +249,7 @@ export class RecurringPaymentCalculator {
 	private candidatesByItemId(items: RecurringItem[], transactions: Transaction[]): Map<string, Transaction[]> {
 		const candidatesByItemId = new Map(items.map(item => [item.id, this.matchingTransactions(item, transactions)]));
 		const linkedItems = items.filter(item => this.kinds.isLinked(item));
-		const otherSideIds = this.transferOtherSides(
+		const otherSideIds = this.cardPaymentOtherSideIds(
 			linkedItems.flatMap(item => candidatesByItemId.get(item.id) ?? []),
 			transactions
 		);
@@ -247,30 +268,22 @@ export class RecurringPaymentCalculator {
 	 * The outflow each card payment came from: same amount, on another account, within a few days. Transfers are
 	 * preferred, then the closest date, so a nearby bill for the same amount, like rent, stays matched to the bill.
 	 */
-	private transferOtherSides(cardPayments: Transaction[], transactions: Transaction[]): Set<string> {
-		const claimedIds = new Set<string>();
-		const isTransfer = (transaction: Transaction) => TRANSFER_GROUP_TYPES.has(transaction.category?.groupType ?? '');
-		const outflows = transactions.filter(transaction => transaction.amount < 0);
+	private cardPaymentOtherSideIds(cardPayments: Transaction[], transactions: Transaction[]): Set<string> {
 		// Dedupe, since two items on one card would list its payments twice.
-		const uniquePayments = [...new Map(cardPayments.map(payment => [payment.id, payment])).values()];
-		for (const payment of uniquePayments.toSorted((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id))) {
-			const daysFrom = (transaction: Transaction) => Math.abs(this.calendar.daysBetween(payment.date, transaction.date));
-			const [otherSide] = outflows
-				.filter(
-					transaction =>
-						!claimedIds.has(transaction.id) &&
-						transaction.accountId !== payment.accountId &&
-						Math.abs(payment.amount + transaction.amount) < CENT_TOLERANCE &&
-						daysFrom(transaction) <= TRANSFER_PAIR_DAYS
-				)
-				.toSorted((a, b) => Number(isTransfer(b)) - Number(isTransfer(a)) || daysFrom(a) - daysFrom(b) || a.id.localeCompare(b.id));
-			if (otherSide) claimedIds.add(otherSide.id);
-		}
-		return claimedIds;
+		const uniquePayments = [...new Map(cardPayments.map(payment => [payment.id, payment])).values()].sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
+		const outflows = transactions.filter(transaction => transaction.amount < 0);
+		const otherSides = transferOtherSides(uniquePayments, outflows, this.calendar, { maxDays: TRANSFER_PAIR_DAYS, isPreferred: isTransfer });
+		return new Set([...otherSides.values()].map(otherSide => otherSide.id));
 	}
 
 	// Looks back before the item was added, since earlier payments are already in Monarch. Items share `usedTransactionIds` so no two items claim the same payment.
-	private historyOf(item: RecurringItem, candidates: Transaction[], settledByKey: ReadonlyMap<string, Occurrence>, usedTransactionIds: Set<string>): HistoryPoint[] {
+	private historyOf(
+		item: RecurringItem,
+		candidates: Transaction[],
+		settledByKey: ReadonlyMap<string, Occurrence>,
+		usedTransactionIds: Set<string>,
+		transactionsById: ReadonlyMap<string, Transaction>
+	): HistoryPoint[] {
 		const today = this.calendar.today();
 		const currentMonth = this.calendar.monthOf(today);
 		const fromDate = `${this.calendar.addMonths(currentMonth, -(HISTORY_MONTHS - 1))}-01`;
@@ -281,6 +294,8 @@ export class RecurringPaymentCalculator {
 		const transactions = dueDates.map(dueDate => {
 			const settledOccurrence = settledByKey.get(this.occurrenceKey(item.id, dueDate));
 			if (settledOccurrence) return settledOccurrence.matchedTransaction;
+			const chosenPayment = this.claimChosenPayment(item, dueDate, transactionsById, usedTransactionIds);
+			if (chosenPayment) return chosenPayment;
 			return dueDate > today ? null : this.findMatch(item, dueDate, candidates, usedTransactionIds, { withinCycle: true });
 		});
 		for (const [index, dueDate] of dueDates.entries()) {
@@ -294,7 +309,7 @@ export class RecurringPaymentCalculator {
 		return dueDates.flatMap((dueDate, index): HistoryPoint[] => {
 			const settledOccurrence = settledByKey.get(this.occurrenceKey(item.id, dueDate));
 			const transaction = transactions[index] ?? null;
-			const paid = settledOccurrence ? settledOccurrence.paid : transaction !== null;
+			const paid = settledOccurrence ? settledOccurrence.paid : transaction !== null || isMarkedPaid(item, dueDate);
 			// After the end of the month, only include due dates already paid early.
 			if (!paid && (this.isBeforeStart(item, dueDate) || dueDate > monthEnd)) return [];
 			const upcoming = dueDate > today && !paid;
@@ -315,13 +330,15 @@ export class RecurringPaymentCalculator {
 		const closesDate = closesWithCycle && followingDueDate ? this.calendar.addDays(this.opensDate(item, followingDueDate), -1) : null;
 		const isInWindow = (transactionDate: string) => transactionDate >= opensDate && transactionDate <= latestDate && (closesDate === null || transactionDate <= closesDate);
 
+		// On a tie in date, the amount closest to the item's wins, so two bills from one merchant each get their own payment.
+		const amountOff = (transaction: Transaction) => Math.abs(Math.abs(transaction.amount) - item.amount);
 		let closestTransaction: Transaction | null = null;
 		let closestDistance = Number.POSITIVE_INFINITY;
 		for (const transaction of candidates) {
 			if (usedTransactionIds.has(transaction.id) || !isInWindow(transaction.date)) continue;
 
 			const distance = Math.abs(this.calendar.daysBetween(dueDate, transaction.date));
-			if (distance < closestDistance) {
+			if (distance < closestDistance || (distance === closestDistance && closestTransaction && amountOff(transaction) < amountOff(closestTransaction))) {
 				closestTransaction = transaction;
 				closestDistance = distance;
 			}

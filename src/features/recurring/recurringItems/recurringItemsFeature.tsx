@@ -1,4 +1,5 @@
 import { effect } from '@preact/signals-core';
+import { countOf } from '../../../common/countOf';
 import type { SyncScheduler } from '../../../common/syncScheduler';
 import type { BalancesByAccountId } from '../../../data/models/balancesByAccountId';
 import type { MonarchDataService } from '../../../data/services/monarchDataService';
@@ -15,18 +16,26 @@ import type { MenuItem } from '../../../monarch/ui/components/menu';
 import { PortalContainerContext } from '../../../monarch/ui/portalContainer';
 import type { BusinessFilter } from '../../businessEntities/models/businessFilter';
 import type { WingspanFeature } from '../../wingspanFeature';
-import type { CardPaymentPlans } from '../statements/models/cardPaymentPlans';
+import type { CardPaymentPlans, PlannedCardPayment } from '../statements/models/cardPaymentPlans';
 import { AddRecurringChoice } from './components/addRecurringChoice';
+import { ChoosePaymentDialog } from './components/choosePaymentDialog';
 import { ItemDetails } from './components/itemDetails';
 import { ItemEditor } from './components/itemEditor';
 import { RecurringRows, type RowEntry } from './components/recurringRowCells';
+import { PAID_WORDS } from './kinds/recurringItemKind';
 import type { DefaultPayingAccount } from './models/defaultPayingAccount';
+import type { Occurrence } from './models/occurrence';
 import type { RecurringItem } from './models/recurringItem';
 import type { RecurringLine } from './models/recurringLine';
 import type { RecurringRowsData } from './models/recurringRowsData';
 import type { RecurringItemServices } from './services/recurringItemServices';
 
 const OTHER_SECTION = 'Other';
+
+/** How the household settled a due date Wingspan didn't match: marked paid, paid by a transaction they chose, or neither again. */
+type DueDateSettlement = { kind: 'markedPaid' } | { kind: 'chosenPayment'; paymentId: string } | { kind: 'unsettled' };
+/** How far before a due date Choose payment lists transactions, enough for a check written early. */
+const PAYMENT_CHOICE_DAYS_BEFORE = 45;
 
 interface RowsBuild {
 	key: string;
@@ -204,7 +213,7 @@ export class RecurringItemsFeature implements WingspanFeature {
 		};
 
 		const statementsLines = lines.filter(line => kinds.of(line.item).showsInStatements);
-		const owedInStatements = this.unpaidTotal(statementsLines, owedByAccountId);
+		const owedInStatements = this.unpaidTotal(statementsLines, owedByAccountId, plansByItemId);
 		const monarch = this.monarchData.state.value;
 		const isStale = monarch.status === 'ready' && monarch.isStale;
 		const footerText = this.owedText(owedInStatements);
@@ -248,7 +257,7 @@ export class RecurringItemsFeature implements WingspanFeature {
 						columnLabels,
 						history,
 						accountName,
-						menuItems: this.menuItemsFor(line.item),
+						menuItems: this.menuItemsFor(line.item, line.occurrences),
 						menuClassName,
 						isLoading,
 						plannedPayment: plannedPaymentFor(line),
@@ -261,27 +270,30 @@ export class RecurringItemsFeature implements WingspanFeature {
 	}
 
 	/**
-	 * Total still owed: every unpaid occurrence, except a card linked to its Monarch account counts its balance once no
-	 * matter how many statements are unpaid. Occurrences with an unknown amount are counted separately, never as $0.
+	 * Total still due: every unpaid occurrence, with a card linked to its Monarch account counting what's left on each
+	 * unpaid statement. Without a plan for the card, its balance counts once however many statements are unpaid, since
+	 * the balance includes them all. Occurrences with an unknown amount are counted separately, never as $0.
 	 */
-	private unpaidTotal(lines: RecurringLine[], owedByAccountId: BalancesByAccountId): { total: number; unknownCount: number } {
-		const linkedBalances = new Map<string, number>();
+	private unpaidTotal(lines: RecurringLine[], owedByAccountId: BalancesByAccountId, plansByItemId: ReadonlyMap<string, PlannedCardPayment[]>): { total: number; unknownCount: number } {
+		const unplannedBalances = new Map<string, number>();
 		let total = 0;
 		const unknownItemIds = new Set<string>();
 		for (const occurrence of lines.flatMap(line => line.occurrences).filter(each => !each.paid)) {
 			const itemKind = this.services.kinds.of(occurrence.item);
 			const accountId = itemKind.linkedAccountId(occurrence.item);
+			const plans = plansByItemId.get(occurrence.item.id);
 			if (itemKind.isAmountUnknown?.(occurrence.item, owedByAccountId)) unknownItemIds.add(occurrence.item.id);
 			else if (accountId === undefined) total += occurrence.amount;
-			else linkedBalances.set(accountId, occurrence.amount);
+			else if (plans) total += this.rowsData.statementLines.planFor(occurrence.dueDate, plans)?.owed ?? 0;
+			else unplannedBalances.set(accountId, occurrence.amount);
 		}
-		return { total: total + [...linkedBalances.values()].reduce((sum, balance) => sum + balance, 0), unknownCount: unknownItemIds.size };
+		return { total: total + [...unplannedBalances.values()].reduce((sum, balance) => sum + balance, 0), unknownCount: unknownItemIds.size };
 	}
 
 	private owedText({ total, unknownCount }: { total: number; unknownCount: number }): string {
-		const owed = total ? `${this.services.formatter.money(total)} owed` : null;
+		const owed = total ? `${this.services.formatter.money(total)} due` : null;
 		if (!unknownCount) return owed ?? 'All paid';
-		const unknown = `${unknownCount} ${unknownCount === 1 ? 'amount' : 'amounts'} unknown`;
+		const unknown = `${countOf(unknownCount, 'amount')} unknown`;
 		return owed ? `${owed}, plus ${unknown}` : `Unpaid, ${unknown}`;
 	}
 
@@ -305,12 +317,69 @@ export class RecurringItemsFeature implements WingspanFeature {
 		return this.rowsIsland;
 	}
 
-	private menuItemsFor(item: RecurringItem): MenuItem[] {
+	private menuItemsFor(item: RecurringItem, occurrences: readonly Occurrence[]): MenuItem[] {
 		const confirmation = this.services.factory.removalConfirmation(item);
+		const { calendar, formatter, kinds } = this.services;
+		const itemKind = kinds.of(item);
+		const paidWord = PAID_WORDS[itemKind.moneyFlow].toLowerCase();
+		const today = calendar.today();
+		const unpaid = occurrences.find(occurrence => !occurrence.paid && occurrence.dueDate <= today);
+		const lastShownDueDate = occurrences.at(-1)?.dueDate ?? '';
+		// A carried due date leaves the row once it's paid, so the one to undo can be older than those shown, back as far as unpaid ones are carried.
+		const oldestCarriedDate = `${calendar.addMonths(calendar.currentMonth(), -itemKind.unpaidCarryMonths)}-01`;
+		const settledByHousehold = [...(item.markedPaidDueDates ?? []), ...Object.keys(item.chosenPaymentIds ?? {})];
+		const lastSettled = settledByHousehold
+			.filter(dueDate => dueDate >= oldestCarriedDate && dueDate <= lastShownDueDate)
+			.sort()
+			.at(-1);
 		return [
 			{ label: 'Edit', onClick: () => void this.openEditor(item) },
+			...(unpaid
+				? [
+						{ label: `Mark as ${paidWord}`, onClick: () => void this.settle(item, unpaid.dueDate, { kind: 'markedPaid' }) },
+						{ label: 'Choose payment…', onClick: () => void this.openPaymentChooser(item, unpaid.dueDate) }
+					]
+				: []),
+			...(lastSettled ? [{ label: `Mark ${formatter.shortDate(lastSettled)} as not ${paidWord}`, onClick: () => void this.settle(item, lastSettled, { kind: 'unsettled' }) }] : []),
 			{ label: 'Remove', danger: true, onClick: () => (this.openLayer = this.confirmPrompt.ask(confirmation, () => this.removeItem(item.id))) }
 		];
+	}
+
+	/** Saves how the household settled a due date, replacing however it was settled before. */
+	private settle(item: RecurringItem, dueDate: string, settlement: DueDateSettlement): Promise<void> {
+		const { markedPaidDueDates: marked = [], chosenPaymentIds: chosen = {}, ...rest } = item;
+		const { [dueDate]: _, ...otherChosen } = chosen;
+		const otherMarked = marked.filter(markedDate => markedDate !== dueDate);
+		const markedPaidDueDates = settlement.kind === 'markedPaid' ? [...otherMarked, dueDate].sort() : otherMarked;
+		const chosenPaymentIds = settlement.kind === 'chosenPayment' ? { ...otherChosen, [dueDate]: settlement.paymentId } : otherChosen;
+		return this.rowsData.itemRepository.save({
+			...rest,
+			...(markedPaidDueDates.length ? { markedPaidDueDates } : {}),
+			...(Object.keys(chosenPaymentIds).length ? { chosenPaymentIds } : {})
+		});
+	}
+
+	/** Lists the posted transactions near the due date that flow the item's way and aren't already some due date's payment. */
+	private async openPaymentChooser(item: RecurringItem, dueDate: string): Promise<void> {
+		const accounts = await this.monarchData.getAccounts();
+		const transactions = this.monarchData.snapshot.peek()?.transactions ?? [];
+		const { matchedTransactionIds } = this.rowsData.ledgerService.ledger.peek();
+		const isInflow = this.services.kinds.of(item).moneyFlow === 'inflow';
+		const fromDate = this.services.calendar.addDays(dueDate, -PAYMENT_CHOICE_DAYS_BEFORE);
+		const candidates = transactions.filter(
+			transaction => !transaction.pending && !matchedTransactionIds.has(transaction.id) && transaction.date >= fromDate && (isInflow ? transaction.amount > 0 : transaction.amount < 0)
+		);
+		this.openLayer = new Layer(this.window.document, close => (
+			<ChoosePaymentDialog
+				itemName={item.name}
+				dueDate={dueDate}
+				transactions={candidates}
+				accounts={accounts}
+				services={this.services}
+				onChoose={paymentId => this.settle(item, dueDate, { kind: 'chosenPayment', paymentId })}
+				onClose={close}
+			/>
+		));
 	}
 
 	/** Moves focus to a neighboring row, since the removed row and its menu no longer exist. */
@@ -366,7 +435,10 @@ export class RecurringItemsFeature implements WingspanFeature {
 				owedByAccountId={snapshot?.owedByAccountId ?? {}}
 				isLoading={this.monarchData.state.value.status === 'loading'}
 				couldNotCheckPayments={this.monarchData.state.value.status === 'failed'}
-				menuItems={this.menuItemsFor(item)}
+				menuItems={this.menuItemsFor(
+					item,
+					this.rowsData.ledgerService.ledger.value.outstandingOccurrences.filter(occurrence => occurrence.item.id === item.id)
+				)}
 				services={this.services}
 				onSave={savedItem => void this.rowsData.itemRepository.save(savedItem)}
 				onClose={() => this.closeDetail()}

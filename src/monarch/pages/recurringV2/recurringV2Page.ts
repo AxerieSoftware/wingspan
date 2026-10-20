@@ -55,8 +55,8 @@ const ROW_ACTIVATION_KEYS = new Set(['Enter', ' ']);
  * the Statements card in place of "Coming soon".
  */
 export class RecurringV2Page {
-	/** Marks the menu in a Wingspan row, so clicks on it don't open the row. */
-	public static readonly rowMenuAttribute = WingspanAttribute.rowMenu;
+	/** Marks a control in a Wingspan row, like its menu, so clicks on it don't open the row. */
+	public static readonly rowControlAttribute = WingspanAttribute.rowControl;
 
 	private readonly rowsByEl = new WeakMap<HTMLElement, RecurringV2Row>();
 	private readonly rowOrderStyles = new StyleOverrides();
@@ -366,7 +366,7 @@ export class RecurringV2Page {
 
 		const open = () => this.wingspanRowOpeners.get(key)?.();
 		rowEl.addEventListener('click', event => {
-			if (!(event.target as Element).closest(`[${RecurringV2Page.rowMenuAttribute}]`)) open();
+			if (!(event.target as Element).closest(`[${RecurringV2Page.rowControlAttribute}]`)) open();
 		});
 		rowEl.addEventListener('keydown', event => {
 			if (!ROW_ACTIVATION_KEYS.has(event.key) || event.target !== rowEl) return;

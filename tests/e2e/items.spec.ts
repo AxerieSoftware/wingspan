@@ -272,3 +272,60 @@ test('typing on the Merchant button searches merchants instead of picking the fi
 	await page.keyboard.press('Enter');
 	await expect(merchantButton).toContainText('Maple Music');
 });
+
+test('picking payments after typing Transaction contains still fills in Paid from, and clearing the text keeps it', async ({ page, open }) => {
+	await open();
+	const dialog = await addRecurring(page, 'Bill');
+	const matchText = dialog.getByRole('textbox', { name: 'Transaction contains' });
+	await matchText.fill('Cafe');
+
+	await chooseMerchant(page, dialog, 'Corner Cafe');
+	await dialog
+		.getByRole('checkbox', { name: /Corner Cafe/ })
+		.first()
+		.check();
+
+	await expect(matchText).toHaveValue('Cafe');
+	const paidFrom = dialog.getByRole('combobox', { name: 'Paid from' });
+	await expect(paidFrom).toHaveText('Rewards Card (...1234)');
+	await matchText.fill('');
+	await expect(paidFrom).toHaveText('Rewards Card (...1234)');
+	await expect(paidFrom).toBeEnabled();
+});
+
+test("a bill's Paid from lists credit cards", async ({ page, open }) => {
+	await open();
+	const dialog = await addRecurring(page, 'Bill');
+	await dialog.getByRole('textbox', { name: 'Transaction contains' }).fill('Fabrikam Gym');
+
+	await dialog.getByRole('combobox', { name: 'Paid from' }).click();
+	await page.getByRole('option', { name: 'Flex Card (...5678)' }).click();
+
+	await expect(dialog.getByRole('combobox', { name: 'Paid from' })).toHaveText('Flex Card (...5678)');
+});
+
+test("linking a card clears the typical payment and description entered for a card that isn't in Monarch", async ({ page, open }) => {
+	await open();
+	const dialog = await addRecurring(page, 'Card payment');
+	await dialog.getByRole('textbox', { name: 'Payment description contains' }).fill('4321');
+	await dialog.getByRole('textbox', { name: 'Typical payment' }).fill('200');
+
+	await dialog.getByRole('combobox', { name: 'Card' }).click();
+	await page.getByRole('option', { name: 'Flex Card (...5678)' }).click();
+	await dialog.getByRole('combobox', { name: 'Card' }).click();
+	await page.getByRole('option', { name: 'Not in Monarch' }).click();
+
+	await expect(dialog.getByRole('textbox', { name: 'Payment description contains' })).toHaveValue('');
+	await expect(dialog.getByRole('textbox', { name: 'Typical payment' })).toHaveValue('');
+});
+
+test("a bill whose rule matches another item's payments says so", async ({ page, open }) => {
+	await open();
+	const dialog = await addRecurring(page, 'Bill');
+	await expect(dialog.getByText(/Also matches payments for/)).toHaveCount(0);
+
+	await dialog.getByRole('textbox', { name: 'Transaction contains' }).fill('Maple Music');
+	await dialog.getByRole('textbox', { name: 'Amount', exact: true }).fill('140');
+
+	await expect(dialog.getByText('Also matches payments for Piano Lessons. Set Paid from or a narrower description to tell them apart.')).toBeVisible();
+});

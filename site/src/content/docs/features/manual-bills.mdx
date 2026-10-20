@@ -29,19 +29,22 @@ A manual bill keeps the due date you set and stays unpaid until its payment clea
 - **Any amount**: for a bill that changes every time, like a utility.
 - **Frequency** and **Next due**: weekly up to yearly, twice a month on two set days, or **Custom** for every so many weeks, months or years.
 - **Transaction contains**: text from the payment's description, like the landlord's name. Wingspan uses it to find the payment.
-- **Paid from**: the account it comes out of. Leave it on **Any account** unless the same text shows up in payments from other accounts.
+- **Paid from**: the account or card it comes out of. **Any account** works unless the same text shows up in payments from other accounts. If you use [workspaces](/features/workspaces/), set it so the bill lands in the right one; a bill on **Any account** belongs to the household.
+
+If another bill already matches the same payments, the editor says so. Set **Paid from** or a narrower description to tell them apart.
 
 To change or stop a bill, use **Edit** or **Remove** in its menu on Recurring.
 
 ## Reading it
 
 - **Due Oct 20** under the name, or **Next Oct 20** for a bill due more than once a month.
-- **Paid Oct 18** once a payment matches. A bill due more than once a month shows **2 of 4 paid**.
-- **Overdue Oct 20** when the due date has passed with no payment. An unpaid bill from an earlier month shows **Owed since** that date for up to six months.
+- **Paid Oct 18** once a payment matches. A bill due more than once a month shows **2 of 4 paid**; open the arrow beside it to see each due date.
+- **Not paid yet** for the first few days after the due date, since payments often post late. Then **Overdue Oct 20**. An unpaid bill from an earlier month shows **Owed since** that date for up to six months.
+- If Wingspan missed the payment, like a check with a different description, use **Choose payment…** in its menu to pick the transaction. If you paid some other way, like cash, choose **Mark as paid**. **Mark Oct 1 as not paid** undoes either.
 - Its details show each payment, and **No payment found** for any due date it missed.
 
 ## Good to know
 
 - A payment counts from a few days before the due date, however late it is.
-- Each payment pays one due date, oldest first.
+- Each payment pays one due date, oldest first. When two bills could take the same payment on the same day, the one closest to its amount gets it.
 - Changing the amount, schedule or match text starts the bill fresh. Moving only the due date keeps what's owed.

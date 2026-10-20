@@ -84,7 +84,7 @@ test("when Monarch's transactions can't load, rows say payments couldn't be chec
 
 	await expect(row).toContainText("Couldn't check payments", { timeout: 20_000 });
 	await expect(page.getByText(/Owed since|Overdue/)).toHaveCount(0);
-	await expect(page.getByText(/\$[\d,]+\.\d\d owed/)).toHaveCount(0);
+	await expect(page.getByText(/\$[\d,]+\.\d\d due/)).toHaveCount(0);
 
 	await row.click();
 	const detail = page.locator('[data-wingspan-detail]');

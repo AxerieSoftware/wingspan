@@ -447,3 +447,41 @@ describe("a Monarch card's statement that closed owing nothing", () => {
 		expect(occurrenceOf(ledger, 'Sapphire', '2026-09-20')).toMatchObject({ paid: false });
 	});
 });
+
+describe('matching two bills from one merchant', () => {
+	it('gives each the payment closest to its own amount when both are due the same day', () => {
+		const electric = { ...bill('Electric', 15, 120, 'Contoso Energy'), matchRule: { matchText: 'Contoso Energy', anyAmount: true } };
+		const gas = { ...bill('Gas', 15, 60, 'Contoso Energy'), matchRule: { matchText: 'Contoso Energy', anyAmount: true } };
+		const gasPayment = transaction('2026-10-15', -58.4, CHECKING, { description: 'CONTOSO ENERGY' });
+		const electricPayment = transaction('2026-10-15', -131.9, CHECKING, { description: 'CONTOSO ENERGY' });
+
+		const ledger = ledgerOf('2026-10-20', [gas, electric], [electricPayment, gasPayment]);
+
+		expect(occurrenceOf(ledger, 'Electric', '2026-10-15')?.matchedTransaction?.id).toBe(electricPayment.id);
+		expect(occurrenceOf(ledger, 'Gas', '2026-10-15')?.matchedTransaction?.id).toBe(gasPayment.id);
+	});
+});
+
+describe('due dates the household marked paid', () => {
+	it('are paid without a matching payment, and stay unpaid otherwise', () => {
+		const tuition = { ...bill('Tuition', 1, 990, 'CHECK'), markedPaidDueDates: ['2026-10-01'] };
+
+		const ledger = ledgerOf('2026-10-20', [tuition], []);
+
+		expect(occurrenceOf(ledger, 'Tuition', '2026-10-01')).toMatchObject({ paid: true, overdue: false, matchedTransaction: null });
+		expect(ledgerOf('2026-10-20', [{ ...tuition, markedPaidDueDates: [] }], []).settledByKey.get('Tuition@2026-10-01')).toMatchObject({ paid: false, overdue: true });
+	});
+});
+
+describe('payments the household chose', () => {
+	it("settle their due date even when they don't fit the match rule, and no other bill can claim them", () => {
+		const check = transaction('2026-10-09', -990, CHECKING, { description: 'CHECK # 1153' });
+		const tuition = { ...bill('Tuition', 1, 990, 'Fabrikam School'), chosenPaymentIds: { '2026-10-01': check.id } };
+		const checks = bill('Checks', 9, 990, 'CHECK');
+
+		const ledger = ledgerOf('2026-10-20', [checks, tuition], [check]);
+
+		expect(occurrenceOf(ledger, 'Tuition', '2026-10-01')).toMatchObject({ paid: true, matchedTransaction: { id: check.id } });
+		expect(occurrenceOf(ledger, 'Checks', '2026-10-09')).toMatchObject({ paid: false });
+	});
+});

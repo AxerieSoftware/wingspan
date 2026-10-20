@@ -31,6 +31,10 @@ export interface RecurringItem {
 	matchRule?: MerchantContainsMatchRule;
 	/** Date ranges before the schedule's start whose due dates are still owed, kept when an edit only moves the due date later. */
 	owedSpans?: OwedSpan[];
+	/** Due dates the household marked paid themselves, when Wingspan couldn't find or work out the payment. */
+	markedPaidDueDates?: string[];
+	/** The payment the household chose for a due date, by due date, when Wingspan didn't match it. */
+	chosenPaymentIds?: Record<string, string>;
 }
 
 /**
@@ -75,5 +79,12 @@ export const RecurringItemSchema: v.GenericSchema<RecurringItem> = v.looseObject
 				before: v.pipe(v.string(), v.isoDate())
 			})
 		)
-	)
+	),
+	markedPaidDueDates: v.optional(v.array(v.pipe(v.string(), v.isoDate()))),
+	chosenPaymentIds: v.optional(v.record(v.pipe(v.string(), v.isoDate()), v.string()))
 });
+
+/** Whether the household marked the due date paid themselves. */
+export function isMarkedPaid(item: RecurringItem, dueDate: string): boolean {
+	return item.markedPaidDueDates?.includes(dueDate) ?? false;
+}

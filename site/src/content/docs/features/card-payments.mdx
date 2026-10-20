@@ -25,14 +25,16 @@ For a card Monarch doesn't have, like a store card you pay from checking, choose
 
 ## Reading it
 
-Each row shows the card's statement and due date. Under the amount is what checking can pay that day:
+Each row shows what's due on the card's statement and its due date. When the statement is smaller than the card's balance, the line under it says **Statement · $1,250.40 balance**. Below that is what checking can pay that day:
 
-- **Can pay in full**, in green. If the statement is smaller than the card's balance, it says **Can pay the $412.80 statement**.
+- **Can pay in full**, in green.
 - **Can pay $300**, in amber: part of it.
 - **Can pay $20 of $35 min**, in red: not even the minimum.
-- **~$35 est. min** means Monarch has no minimum for the card, so Wingspan estimates one: 1% of the statement plus a month's interest, at least $35. Add the real minimum to the card's details in Monarch to use it instead.
+- **~$35 est. min** means Monarch has no minimum for the card, so Wingspan estimates one: 1% of the statement plus a month's interest, at least $35 (2% of the balance when Monarch has no APR). Add the real minimum to the card's details in Monarch to use it instead.
 
-These come from [Projected balances](/features/projected-balances/), after bills due earlier and the amount you keep in checking. The footer adds up what's owed this month, or says **All paid**.
+These come from [Projected balances](/features/projected-balances/), after bills due earlier and the amount you keep in checking. The footer adds up what's due on this month's statements, or says **All paid**.
+
+Monarch doesn't share statement dates, so Wingspan works out each statement from the card's balance and assumes it closed about 25 days before it's due. Once a payment is matched, it allows for purchases made just before the close that posted after it.
 
 ## When a statement counts as paid
 
@@ -40,6 +42,7 @@ These come from [Projected balances](/features/projected-balances/), after bills
 - A refund on the card isn't a payment, and a payment the bank returns doesn't count.
 - An unpaid statement folds into the next one instead of being owed twice.
 - A card that owes $0 in Monarch counts as paid.
+- If a statement you paid still shows as owed, choose **Mark as paid** in its row's menu, or **Choose payment…** to pick the payment. **Mark Oct 1 as not paid** undoes either.
 
 ## Good to know
 
