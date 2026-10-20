@@ -11,6 +11,9 @@ interface PurchaseHistoryPage {
 	pageInfo?: { nextPageCursor?: string | null };
 }
 
+/** An order from `getOrder`. A canceled order has a zero total, since Walmart's order list doesn't say it was canceled. */
+type FetchedOrder = Record<string, unknown> & { priceDetails?: { grandTotal?: { value?: number | null } | null } | null };
+
 const CAPTURE_WAIT_MS = 8000;
 const POLL_MS = 200;
 const REQUEST_GAP_MS = 800;
@@ -69,22 +72,23 @@ export class WalmartCollector implements RetailCollector {
 		return { status: 'ok', orders };
 	}
 
-	/** Each order as Walmart's `getOrder` returns it, minus the user's name, email and address. */
+	/** Each order as Walmart's `getOrder` returns it, minus the user's name, email and address. Canceled orders are skipped. */
 	public async fetchOrders(orders: ListedOrder[], alreadyRead = 0, total = orders.length): Promise<{ order: unknown; isInStore: boolean }[] | null> {
 		const results: { order: unknown; isInStore: boolean }[] = [];
-		for (const listed of orders) {
-			this.overlay.show(`Reading order ${alreadyRead + results.length + 1} of ${total}…`);
+		for (const [index, listed] of orders.entries()) {
+			this.overlay.show(`Reading order ${alreadyRead + index + 1} of ${total}…`);
 			const body = await this.call('getOrder', variables => {
 				variables.orderId = listed.id;
 				variables.orderIsInStore = listed.isInStore;
 				delete variables.clickThroughGroupId;
 			});
-			const order = (body as { data?: { order?: Record<string, unknown> } } | null)?.data?.order;
+			const order = (body as { data?: { order?: FetchedOrder } } | null)?.data?.order;
 			if (!order) {
 				this.overlay.hide();
 				return null;
 			}
-			results.push({ order: this.toReceiptOrder(order), isInStore: listed.isInStore });
+			const isCharged = (order.priceDetails?.grandTotal?.value ?? 0) > 0;
+			if (isCharged) results.push({ order: this.toReceiptOrder(order), isInStore: listed.isInStore });
 			await this.pause();
 		}
 		return results;

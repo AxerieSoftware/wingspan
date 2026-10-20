@@ -29,7 +29,8 @@ Wingspan never reads your name, email or address from the store, and never chang
 
 - The first sync covers the last 90 days. Later syncs pick up where the last one left off.
 - Each purchase goes to Monarch once, whichever browser in the household syncs it, and not at all if Monarch already has its receipt.
-- An order still being delivered is sent on a later sync, once it has a final total. Returns aren't sent.
+- An order still being delivered is sent on a later sync, once it has a final total. Returns and canceled orders aren't sent.
+- Monarch matches a receipt to a transaction with the same total. An order charged in more than one payment, like one shipped in parts, may not match.
 
 ## If a sync stops
 
@@ -40,7 +41,7 @@ The summary says why, with **Try again**:
 - **The tab closed** or **took too long to load**: sync again.
 - **The purchase history changed** in a way Wingspan can't read yet: Wingspan needs an update for that store.
 
-Syncing again never resends a receipt, so it's always safe to retry.
+The summary also says how many receipts were sent before it stopped. Syncing again never resends a receipt, so it's always safe to retry.
 
 :::note
 Monarch plans to sync more stores itself. Once Monarch supports a store Wingspan syncs, Wingspan deprecates and then removes its own sync for that store.

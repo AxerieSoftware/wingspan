@@ -3,6 +3,8 @@ import { NO_OVERLAY } from '../../shared/services/retailSyncOverlay';
 import { WalmartCollector } from './walmartCollector';
 
 const HASH = 'a'.repeat(64);
+/** Walmart's order list doesn't mark a canceled order; its total is zero once fetched. */
+const CANCELED_ORDER_ID = 'o-canceled';
 const order = (id: string, orderDate: string, isActive = false) => ({ id, orderDate, isInStore: false, groups: [{ isActive }] });
 
 /** A minimal fake of walmart.com's order history page: its embedded first page, its buttons, and its API. */
@@ -17,7 +19,7 @@ function fakeWalmart() {
 		orderDate: '2026-09-01',
 		customer: { firstName: 'Shopper', email: 'shopper@example.com' },
 		groups_2101: [{ items: [], address: '1 Main St' }],
-		priceDetails: { grandTotal: { value: 10 } },
+		priceDetails: { grandTotal: { value: id === CANCELED_ORDER_ID ? 0 : 10 } },
 		paymentMethods: [{ description: 'Card', billingAddress: '1 Main St' }]
 	});
 	const elements: Record<string, string> = {
@@ -100,6 +102,19 @@ describe('reading Walmart orders from the Walmart page', () => {
 		const kept = JSON.stringify(orders);
 		expect(kept).toContain('D-o4');
 		for (const personal of ['Shopper', 'shopper@example.com', '1 Main St']) expect(kept).not.toContain(personal);
+	});
+
+	it('skips a canceled order, since Walmart charged nothing for it', async () => {
+		const walmart = fakeWalmart();
+		const collector = new WalmartCollector(walmart.window, 0, NO_OVERLAY);
+		await collector.prepare('2026-06-01', []);
+
+		const orders = await collector.fetchOrders([
+			{ id: CANCELED_ORDER_ID, isInStore: false },
+			{ id: 'o4', isInStore: false }
+		]);
+
+		expect(orders?.map(fetched => (fetched.order as { id: string }).id)).toEqual(['o4']);
 	});
 
 	it('stops when Walmart asks the shopper to sign in', async () => {

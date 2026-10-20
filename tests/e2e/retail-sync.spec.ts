@@ -171,8 +171,63 @@ test('a sync that Walmart interrupts tells the user what to do, and keeps the re
 
 	const stopped = page.getByRole('dialog', { name: 'Walmart sync stopped' });
 	await expect(stopped).toContainText(/Walmart asked to check you're not a robot\. Finish that in the Walmart tab/);
+	await expect(stopped).toContainText("Sent 1 receipt before it stopped. Trying again won't send it twice.");
 	await expect(stopped.getByRole('button', { name: 'Try again' })).toBeVisible();
 	expect(apiLog.uploads).toHaveLength(1);
+});
+
+test('when Monarch rejects receipts mid-sync, nothing more is sent, and the failure shows once Walmart is done', async ({ page, context, open, apiLog }) => {
+	await open({ path: '/transactions/receipts', waitForRows: false });
+	await page.route('https://api.monarch.com/retail-sync/**', route => route.fulfill({ status: 500, contentType: 'application/json', body: '{}' }));
+	// Enough orders to fill one upload, so it goes out while Walmart is still being read.
+	const orders = Array.from({ length: 10 }, (_, index) => walmartOrder(`2000150000001${String(index).padStart(2, '0')}`, 'Bananas', 3 + index));
+
+	await sendFromBackground(context, [
+		{ type: 'retailSync:progress', retailer: 'walmart', found: 20, fetched: 10 },
+		{ type: 'retailSync:orders', retailer: 'walmart', orders }
+	]);
+	const stopped = page.getByRole('dialog', { name: 'Walmart sync stopped' });
+	await expect(syncMenu(page)).toBeDisabled();
+	await expect(stopped).toHaveCount(0);
+
+	await sendFromBackground(context, [
+		{ type: 'retailSync:progress', retailer: 'walmart', found: 20, fetched: 20 },
+		{ type: 'retailSync:orders', retailer: 'walmart', orders: [walmartOrder('200015000000200', 'Milk', 5)] },
+		{ type: 'retailSync:done', retailer: 'walmart', found: 20 }
+	]);
+	await expect(stopped).toContainText("Couldn't send receipts to Monarch.");
+	await expect(page.getByRole('dialog', { name: 'Walmart synced' })).toHaveCount(0);
+	expect(apiLog.uploads).toHaveLength(0);
+});
+
+test('a first sync with nothing to send says how far back it looked', async ({ page, context, open }) => {
+	await open({ path: '/transactions/receipts', waitForRows: false });
+
+	await sendFromBackground(context, [{ type: 'retailSync:done', retailer: 'walmart', found: 0 }]);
+
+	await expect(page.getByRole('dialog', { name: 'Walmart synced' })).toContainText('No new Walmart purchases in the last 90 days.');
+});
+
+test('a sync skips purchases another browser sent after this page loaded', async ({ page, context, open, apiLog, household }) => {
+	await open({ path: '/transactions/receipts', waitForRows: false });
+	await expect.poll(() => household.wingspanAccounts.length).toBe(1);
+	await settled(apiLog);
+	const account = household.wingspanAccounts[0];
+	const saved = JSON.parse(account?.notes?.slice(account.notes.indexOf('{')) ?? '{}');
+	saved.etag = 'other-browser';
+	saved.value.walmartSync = { uploadedOrderIds: ['200015000000301'], lastSyncedOn: '2026-09-25' };
+	if (account) account.notes = `${account.notes?.slice(0, account.notes.indexOf('{'))}${JSON.stringify(saved)}`;
+
+	const accessPage = context.waitForEvent('page');
+	await chooseStore(page, 'Walmart');
+	await (await accessPage).close();
+	await sendFromBackground(context, [
+		{ type: 'retailSync:orders', retailer: 'walmart', orders: [walmartOrder('200015000000301', 'Bread', 4), walmartOrder('200015000000302', 'Butter', 7)] },
+		{ type: 'retailSync:done', retailer: 'walmart', found: 2 }
+	]);
+
+	await expect(page.getByRole('dialog', { name: 'Walmart synced' })).toContainText('Sent 1 receipt to Monarch.');
+	expect(apiLog.uploads.map(upload => upload.fileName)).toEqual(['walmart-2026-09-20-2000150-00000302.pdf']);
 });
 
 test('receipts Monarch rejected are reported even when the sync stops afterward', async ({ page, context, open }) => {

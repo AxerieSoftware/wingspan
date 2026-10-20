@@ -8,15 +8,14 @@ import type { ReceiptsPage } from '../../../monarch/pages/transactions/receiptsP
 import { Layer } from '../../../monarch/ui/components/layer';
 import { type RetailSyncResult, RetailSyncResultDialog } from './components/retailSyncResultDialog';
 import { ExistingReceiptMatcher } from './models/existingReceiptMatcher';
-import { emptyRetailSyncData, type RetailSyncData } from './models/retailSyncData';
+import { emptyRetailSyncData, FIRST_SYNC_DAYS, type RetailSyncData } from './models/retailSyncData';
 import { RETAILERS, type Retailer, type RetailSyncFailure, type RetailSyncRequest, type RetailSyncUpdate } from './models/retailSyncMessages';
 import type { RetailSyncState } from './models/retailSyncState';
 import type { StoreReceipt } from './models/storeReceipt';
 import type { ReceiptPdf } from './services/receiptPdf';
 import type { RetailSyncChannel } from './services/retailSyncChannel';
 
-/** How far back the first sync looks. Later syncs start a little before the last sync, to catch orders that finished since. */
-const FIRST_SYNC_DAYS = 90;
+/** Later syncs start a little before the last sync, to catch orders that finished since. */
 const OVERLAP_DAYS = 14;
 
 /** The store-specific parts of a sync. */
@@ -91,7 +90,8 @@ export class RetailSyncSession implements Disposable {
 	public async sync(): Promise<void> {
 		if (this.syncState.peek().phase !== 'idle') return;
 		this.isAwaitingPermission = false;
-		await this.dataService.load();
+		// Another browser may have sent receipts since this page loaded.
+		await this.dataService.refresh();
 		const synced = this.readSyncData();
 		const today = this.calendar.today();
 		const since = synced.lastSyncedOn ? this.calendar.addDays(synced.lastSyncedOn, -OVERLAP_DAYS) : this.calendar.addDays(today, -FIRST_SYNC_DAYS);
@@ -108,7 +108,7 @@ export class RetailSyncSession implements Disposable {
 		} catch (error) {
 			logError(error);
 			const reason = error instanceof MonarchApiError ? ` ${error.message}` : '';
-			return this.showResult({ outcome: 'failed', message: `Couldn't check which receipts Monarch already has, so nothing was sent.${reason}` });
+			return this.showFailure(`Couldn't check which receipts Monarch already has, so nothing was sent.${reason}`);
 		}
 		this.request = { type: 'retailSync:start', retailer: this.store.retailer, knownOrderIds: synced.uploadedOrderIds, since };
 		await this.askBackground(this.request);
@@ -123,7 +123,7 @@ export class RetailSyncSession implements Disposable {
 			await this.channel.start(request);
 		} catch (error) {
 			logError(error);
-			this.showResult({ outcome: 'failed', message: `Wingspan couldn't open ${this.displayName}. Reload the page and try again.` });
+			this.showFailure(`Wingspan couldn't open ${this.displayName}. Reload the page and try again.`);
 		}
 	}
 
@@ -151,8 +151,8 @@ export class RetailSyncSession implements Disposable {
 			case 'retailSync:failed':
 				this.isAwaitingPermission = false;
 				// Purchases already read are still uploaded; the sync just stops there.
-				this.uploads = this.uploads.then(() => this.flush()).then(() => this.record(this.alreadyInMonarchIds));
-				void this.uploads.then(() => this.showResult({ outcome: 'failed', message: [this.failureMessage(update.reason), this.uploadFailure].filter(Boolean).join(' ') }));
+				this.uploads = this.uploads.then(() => this.flush());
+				void this.uploads.then(() => this.stop([this.failureMessage(update.reason), this.uploadFailure].filter(Boolean).join(' ')));
 				return;
 		}
 	}
@@ -167,11 +167,11 @@ export class RetailSyncSession implements Disposable {
 			case 'retailerFormatChanged':
 				return `${name}'s purchase history changed in a way Wingspan can't read yet. Nothing more was sent.`;
 			case 'retailerTabClosed':
-				return `The ${name} tab closed before the sync finished. Receipts that were already sent won't be sent again.`;
+				return `The ${name} tab closed before the sync finished.`;
 			case 'retailerTimedOut':
 				return `${name} took too long to load. Try again in a moment.`;
 			case 'retailerError':
-				return `Something went wrong while reading ${name}. Receipts that were already sent won't be sent again.`;
+				return `Something went wrong while reading ${name}.`;
 			case 'retailerPermission':
 				return `Wingspan needs permission to read ${name}'s site to sync ${name}.`;
 		}
@@ -202,6 +202,7 @@ export class RetailSyncSession implements Disposable {
 		return rest.length ? this.upload(rest) : Promise.resolve();
 	}
 
+	/** Uploads while the store is still being read. Once Monarch rejects one, the rest aren't sent, and the failure shows when the store is done. */
 	private enqueueUpload(batch: PendingReceipt[]): void {
 		this.uploads = this.uploads.then(() => this.upload(batch));
 	}
@@ -239,13 +240,24 @@ export class RetailSyncSession implements Disposable {
 	private async finish(): Promise<void> {
 		this.uploads = this.uploads.then(() => this.flush());
 		await this.uploads;
+		if (this.uploadFailure) return this.stop(this.uploadFailure);
 		const alreadyInMonarch = this.alreadyInMonarchIds.length;
 		await this.record(this.alreadyInMonarchIds);
-		if (this.uploadFailure) return this.showResult({ outcome: 'failed', message: this.uploadFailure });
+		const isFirstSync = !this.readSyncData().lastSyncedOn;
 		const today = this.calendar.today();
 		const { dataKey } = this.store;
 		await this.dataService.update(data => ({ ...data, [dataKey]: { ...(data[dataKey] ?? emptyRetailSyncData()), lastSyncedOn: today } }));
-		this.showResult({ outcome: 'done', sent: this.sentCount, alreadyInMonarch, unreadable: this.unreadableCount });
+		this.showResult({ outcome: 'done', sent: this.sentCount, alreadyInMonarch, unreadable: this.unreadableCount, isFirstSync });
+	}
+
+	/** Records what Monarch already had, then shows the failure. */
+	private async stop(message: string): Promise<void> {
+		await this.record(this.alreadyInMonarchIds);
+		this.showFailure(message);
+	}
+
+	private showFailure(message: string): void {
+		this.showResult({ outcome: 'failed', message, sent: this.sentCount });
 	}
 
 	/** Resets the button to idle and shows the sync result in a dialog. */
