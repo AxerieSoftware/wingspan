@@ -8,12 +8,17 @@ interface FirefoxContentWindow extends Window {
 	wrappedJSObject?: { Promise: PromiseConstructor };
 }
 
+/** Firefox's content-script global that makes a function callable by the page. */
+declare function exportFunction<F extends (...args: never[]) => unknown>(callback: F, target: object): F;
+
+/** Makes a content-script function one the page can call and read the result of. */
+type ExportToPage = <F extends (...args: never[]) => unknown>(callback: F) => F;
+
 /** The lock for a content script on this window's page. */
 export function createCrossTabLock(window: Window): CrossTabLock {
 	// Read rather than checked with `in`: Firefox's wrapper provides it without reporting it as a property.
 	const pageWindow = (window as FirefoxContentWindow).wrappedJSObject;
-	console.error('[Wingspan] DIAGNOSTIC lock', pageWindow ? 'firefox' : 'web', typeof pageWindow, typeof pageWindow?.Promise, typeof pageWindow?.Promise?.withResolvers, window === globalThis);
-	return pageWindow ? new FirefoxContentScriptLock(window.navigator.locks, pageWindow.Promise) : new WebLock(window.navigator.locks);
+	return pageWindow ? new FirefoxContentScriptLock(window.navigator.locks, pageWindow.Promise, callback => exportFunction(callback, pageWindow)) : new WebLock(window.navigator.locks);
 }
 
 class WebLock implements CrossTabLock {
@@ -26,28 +31,32 @@ class WebLock implements CrossTabLock {
 }
 
 /**
- * Firefox runs content scripts apart from the page, and the page's lock manager isn't allowed to read a promise the
- * content script made (Bugzilla 1873028). So the lock waits on a promise made by the page's own Promise, and the task's
- * result stays in the content script.
+ * Firefox runs content scripts apart from the page, and the page's lock manager calls the lock's callback from the page,
+ * which can't read what a content-script function returns (Bugzilla 1873028). So the callback is exported to the page
+ * and returns a promise made by the page's own Promise, and the task's result stays in the content script.
  */
 export class FirefoxContentScriptLock implements CrossTabLock {
 	public constructor(
 		private readonly locks: LockManager,
-		private readonly pagePromise: PromiseConstructor
+		private readonly pagePromise: PromiseConstructor,
+		private readonly exportToPage: ExportToPage
 	) {}
 
 	/** Waits for the lock, runs the task, and releases the lock once the task settles. */
 	public async run<T>(name: string, task: () => Promise<T>): Promise<T> {
 		let running: Promise<T> | undefined;
-		await this.locks.request(name, () => {
-			const { promise: released, resolve: release } = this.pagePromise.withResolvers<void>();
-			running = task();
-			running.then(
-				() => release(),
-				() => release()
-			);
-			return released;
-		});
+		await this.locks.request(
+			name,
+			this.exportToPage(() => {
+				const { promise: released, resolve: release } = this.pagePromise.withResolvers<void>();
+				running = task();
+				running.then(
+					() => release(),
+					() => release()
+				);
+				return released;
+			})
+		);
 		return running as Promise<T>;
 	}
 }

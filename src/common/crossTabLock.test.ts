@@ -22,7 +22,7 @@ class PageLockManager {
 	}
 }
 
-const createLock = (locks: PageLockManager) => new FirefoxContentScriptLock(locks as unknown as LockManager, PagePromise);
+const createLock = (locks: PageLockManager) => new FirefoxContentScriptLock(locks as unknown as LockManager, PagePromise, callback => callback);
 
 describe("Firefox's content-script lock", () => {
 	it("hands the page a promise it can read and returns the task's result", async () => {
