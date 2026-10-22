@@ -12,6 +12,7 @@ interface FirefoxContentWindow extends Window {
 export function createCrossTabLock(window: Window): CrossTabLock {
 	// Read rather than checked with `in`: Firefox's wrapper provides it without reporting it as a property.
 	const pageWindow = (window as FirefoxContentWindow).wrappedJSObject;
+	console.error('[Wingspan] DIAGNOSTIC lock', pageWindow ? 'firefox' : 'web', typeof pageWindow, typeof pageWindow?.Promise, typeof pageWindow?.Promise?.withResolvers, window === globalThis);
 	return pageWindow ? new FirefoxContentScriptLock(window.navigator.locks, pageWindow.Promise) : new WebLock(window.navigator.locks);
 }
 
