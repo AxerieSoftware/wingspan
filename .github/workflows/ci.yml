@@ -111,8 +111,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # The runner image ships Firefox, so its system libraries are already there and apt's slow mirror is skipped.
       - name: Install Playwright Firefox
-        run: npx playwright install --with-deps firefox
+        run: npx playwright install firefox
+        timeout-minutes: 5
 
       - name: Get today's date
         id: date
