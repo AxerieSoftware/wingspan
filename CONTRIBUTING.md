@@ -111,10 +111,10 @@ status 200 for a rejected request, so look for `"errors"` in the response.
 4. Tag the merged commit: `git switch main && git pull`, then
    `git tag vX.Y.Z && git push origin vX.Y.Z`. The tag starts `release.yml`,
    which runs CI, builds zips for Chrome, Edge, Firefox and Safari, and attaches
-   all four to a draft GitHub release. It also uploads the Chrome zip to the
-   Chrome Web Store and submits it for review. Chrome publishes it once it's
-   approved, and Edge installs from that listing too. The other zips are for
-   loading by hand.
+   all four to a draft GitHub release. It also submits the Chrome zip to the
+   Chrome Web Store and the Firefox zip, with its sources, to Firefox Add-ons.
+   Each store publishes once it approves, and Edge installs from the Chrome
+   listing. The Safari zip is for loading by hand.
 5. Open the draft under Releases, write the notes and click **Publish
    release**. Nothing is public until then. GitHub fills in the merged pull
    requests, grouped by label (see `.github/release.yml`); add a short summary
@@ -137,8 +137,15 @@ account. To set it up once:
    `CHROME_PUBLISHER_ID`, `CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL` and
    `CHROME_SERVICE_ACCOUNT_PRIVATE_KEY` (the key file's `private_key`).
 
-`npx publish-extension init` walks through the same steps, and `--dry-run`
-checks the sign-in without uploading.
+### Firefox Add-ons upload
+
+1. On addons.mozilla.org, open **Tools → Manage API Keys** and generate a JWT
+   issuer and secret.
+2. In **Settings → Environments**, create `firefox-add-ons`, limit it to `v*`
+   tags, and add `FIREFOX_JWT_ISSUER` and `FIREFOX_JWT_SECRET`.
+
+`npx publish-extension init` walks through the setup for either store, and
+`--dry-run` checks the sign-in without uploading.
 
 ## Layout
 

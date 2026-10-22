@@ -3,11 +3,11 @@ title: Quick start
 description: Install Wingspan and add your first card payment or bill.
 ---
 
-Wingspan works in Chrome and Edge on Monarch's web app. Firefox and Safari builds are experimental; the [README](https://github.com/AxerieSoftware/wingspan#install) explains how to load them.
+Wingspan works in Chrome, Edge and Firefox on Monarch's web app. A Safari build is experimental; the [README](https://github.com/AxerieSoftware/wingspan#install) explains how to load it.
 
 ## Install
 
-[Add Wingspan from the Chrome Web Store](https://chromewebstore.google.com/detail/jpbbafooilhlohnnmioddafboidfjepn), in Chrome or Edge. The first time, Edge asks you to allow extensions from other stores.
+[Add Wingspan from the Chrome Web Store](https://chromewebstore.google.com/detail/jpbbafooilhlohnnmioddafboidfjepn), in Chrome or Edge. The first time, Edge asks you to allow extensions from other stores. In Firefox, [add it from Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/wingspan-for-monarch-money/).
 
 To try changes before they're released, build it from source instead:
 
