@@ -7,11 +7,13 @@ export default defineConfig({
 	outputDir: 'tests/test-results',
 	projects: [
 		{ name: 'e2e', testDir: 'tests/e2e', use: { trace: 'retain-on-failure', viewport: { width: 1440, height: 960 } } },
-		// Needs real extension machinery: reloading from chrome://extensions, and retail sync's background script.
+		// Skips what needs real extension machinery: reloading from chrome://extensions, and retail sync's background script.
+		// WebKit compiles Monarch's bundle slowly on CI's small runners, so a cold page can take longer than the default wait.
 		{
 			name: 'e2e-webkit',
 			testDir: 'tests/e2e',
 			testIgnore: [/reload\.spec\.ts/, /retail-sync\.spec\.ts/],
+			expect: { timeout: 10_000 },
 			use: { browserName: 'webkit', trace: 'retain-on-failure', viewport: { width: 1440, height: 960 } }
 		},
 		{ name: 'e2e-firefox', testDir: 'tests/e2e', testMatch: /smoke\.spec\.ts/, use: { browserName: 'firefox', trace: 'retain-on-failure', viewport: { width: 1440, height: 960 } } },

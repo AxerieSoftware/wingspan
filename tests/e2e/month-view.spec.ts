@@ -57,7 +57,8 @@ test('without card payments, Statements says how to add one instead of Coming so
 });
 
 test('Statements shows a placeholder while card payments load, never Coming soon', async ({ page, api }) => {
-	api.delayMs = 1500;
+	const { promise: held, resolve: release } = Promise.withResolvers<void>();
+	api.held = held;
 	// Intersection is measured after each frame's sync, right before paint, so it sees what's actually drawn.
 	await page.addInitScript(() => {
 		const visibility = new IntersectionObserver(entries => {
@@ -71,6 +72,7 @@ test('Statements shows a placeholder while card payments load, never Coming soon
 
 	const statements = page.locator('[data-wingspan-statements]');
 	await expect(statements.locator('[aria-busy="true"]')).toBeVisible();
+	release();
 	await expect(statements).toContainText('No card payments yet. Add one with Add recurring.');
 	await expect(page.locator('html')).not.toHaveAttribute('data-coming-soon-shown');
 });
