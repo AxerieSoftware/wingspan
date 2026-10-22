@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { type BrowserContext, test as base, chromium, expect, firefox, type Locator, type Page, type Route, type ViewportSize } from '@playwright/test';
+import { type BrowserContext, test as base, type ConsoleMessage, chromium, expect, firefox, type Locator, type Page, type Route, type ViewportSize } from '@playwright/test';
 import type { IntrospectionQuery } from 'graphql';
 import { FIREFOX_DEBUGGING_PREFS, installTemporaryAddon } from './firefoxAddons';
 import { GraphqlMock } from './graphqlMock';
@@ -113,7 +113,7 @@ export const test = base.extend<E2eFixtures>({
 	},
 	page: async ({ context }, use) => {
 		const page = context.pages()[0] ?? (await context.newPage());
-		if (process.env.E2E_DEBUG) page.on('console', message => message.type() !== 'debug' && console.log(`[page ${message.type()}] ${message.text().slice(0, 400)}`));
+		if (process.env.E2E_DEBUG) page.on('console', message => void logConsoleMessage(message));
 		await use(page);
 	},
 	open: async ({ page, household, apiLog }, use) => {
@@ -279,6 +279,15 @@ async function answer(route: Route, graphqlMock: GraphqlMock, api: ApiBehavior, 
 	} finally {
 		if (isWingspan) apiLog.pending -= 1;
 	}
+}
+
+/** Firefox reports an error argument only as "Error", so Wingspan's errors are expanded to their message and stack. */
+async function logConsoleMessage(message: ConsoleMessage) {
+	if (message.type() === 'debug') return;
+	const text = message.text().startsWith('[Wingspan]')
+		? (await Promise.all(message.args().map(arg => arg.evaluate(value => (value instanceof Error ? `${value.name}: ${value.message}\n${value.stack}` : String(value))).catch(() => '?')))).join(' ')
+		: message.text().slice(0, 400);
+	console.log(`[page ${message.type()}] ${text}`);
 }
 
 function launchChromium(viewport: ViewportSize | null, deviceScaleFactor: number | undefined): Promise<BrowserContext> {

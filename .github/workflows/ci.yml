@@ -126,6 +126,8 @@ jobs:
 
       - name: End-to-end tests in Firefox
         run: npm run e2e:firefox
+        env:
+          E2E_DEBUG: 1
 
       - name: Upload Playwright traces
         if: failure()
