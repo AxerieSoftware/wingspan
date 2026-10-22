@@ -310,17 +310,16 @@ function writeAtomically(file: string, data: string | Buffer) {
 	fs.renameSync(temporaryFile, file);
 }
 
-/** Monarch's main bundle ships its GraphQL schema as introspection JSON. */
+/** Monarch's bundle ships its GraphQL schema as introspection JSON, in one of the scripts its app can load. */
 async function monarchSchema(): Promise<IntrospectionQuery> {
 	const cached = path.join(SNAPSHOT, 'schema.json');
 	if (fs.existsSync(cached)) return JSON.parse(fs.readFileSync(cached, 'utf8'));
 
 	const indexHtml = fs.readFileSync((await snapshotFile(`${APP}/`)) as string, 'utf8');
-	const mainScript = /https:\/\/static\.monarch\.com\/static\/js\/main\.[\w]+\.js/.exec(indexHtml)?.[0];
-	if (!mainScript) throw new Error("Monarch's index.html has no main bundle; run npm run e2e:refresh");
-	const bundle = fs.readFileSync((await snapshotFile(mainScript)) as string, 'utf8');
+	const scripts = await Promise.all(monarchScripts(indexHtml).map(async script => fs.readFileSync((await snapshotFile(script)) as string, 'utf8')));
+	const bundle = scripts.find(script => script.includes(SCHEMA_START));
+	if (!bundle) throw new Error("None of Monarch's scripts ship its schema");
 	const start = bundle.indexOf(SCHEMA_START);
-	if (start < 0) throw new Error("Monarch's main bundle doesn't ship its schema");
 
 	// The schema is a single-quoted JS string literal: find its closing quote, then let JS undo its escapes.
 	const literalStart = start + "JSON.parse('".length;
@@ -329,6 +328,18 @@ async function monarchSchema(): Promise<IntrospectionQuery> {
 	const schema: IntrospectionQuery = JSON.parse(new Function(`return '${bundle.slice(literalStart, literalEnd)}'`)());
 	writeAtomically(cached, JSON.stringify(schema));
 	return schema;
+}
+
+/** The entry scripts index.html loads, then every chunk its inline webpack runtime can load later. */
+function monarchScripts(indexHtml: string): string[] {
+	const entryScripts = indexHtml.match(/https:\/\/static\.monarch\.com\/static\/js\/[\w.]+\.js/g) ?? [];
+	if (!entryScripts.length) throw new Error("Monarch's index.html has no scripts; run npm run e2e:refresh");
+	// The runtime builds each chunk's file name as "static/js/" + (name or id) + "." + hash + ".chunk.js".
+	const runtime = /"static\/js\/"\+\(\{([^}]*)\}\[\w+\]\|\|\w+\)\+"\."\+\{([^}]*)\}\[\w+\]\+"\.chunk\.js"/.exec(indexHtml);
+	if (!runtime) return entryScripts;
+	const chunkNames = new Map(Array.from((runtime[1] ?? '').matchAll(/(\d+):"([^"]+)"/g), ([, id, name]) => [id, name]));
+	const chunkScripts = Array.from((runtime[2] ?? '').matchAll(/(\d+):"([^"]+)"/g), ([, id, hash]) => `https://static.monarch.com/static/js/${chunkNames.get(id ?? '') ?? id}.${hash}.chunk.js`);
+	return [...entryScripts, ...chunkScripts];
 }
 
 /** Reloads the extension the way a developer would. Chrome leaves the old content script running in the open tab, disconnected from the extension. */
