@@ -64,8 +64,9 @@ npm test           # Vitest unit tests
 ## Test end to end
 
 ```bash
-npx playwright install chromium
+npx playwright install chromium firefox
 npm run e2e                # the built extension in Monarch's real web app, with a made-up household
+npm run e2e:firefox        # the smoke tests against the Firefox build
 npm run screenshots        # the README's and the stores' screenshots, from the made-up household
 npm run videos             # the site's tour and feature clips, to site/public/videos (needs ffmpeg)
 ```
@@ -76,6 +77,12 @@ fetched on first run into `tests/.monarch-snapshot/` and kept out of git
 a made-up household in `tests/e2e/`, checked against the GraphQL schema
 Monarch ships in that bundle. Tests seed Wingspan's storage
 and reload the extension from `chrome://extensions`.
+
+Playwright can't load extensions into Firefox, so `e2e:firefox` installs the
+Firefox build as a temporary add-on over Firefox's remote debugging protocol.
+It runs only `smoke.spec.ts`, which seeds data through Monarch rather than
+the extension's storage. Playwright's Firefox doesn't start on every macOS
+version; CI runs it on Linux.
 
 CI also runs `e2e` every morning, so a Monarch release that breaks Wingspan
 shows up even when nothing was pushed. On CI the tests are split across four

@@ -7,6 +7,7 @@ export default defineConfig({
 	outputDir: 'tests/test-results',
 	projects: [
 		{ name: 'e2e', testDir: 'tests/e2e', use: { trace: 'retain-on-failure', viewport: { width: 1440, height: 960 } } },
+		{ name: 'e2e-firefox', testDir: 'tests/e2e', testMatch: /smoke\.spec\.ts/, use: { browserName: 'firefox', trace: 'retain-on-failure', viewport: { width: 1440, height: 960 } } },
 		{ name: 'screenshots', testDir: 'tests/e2e', testMatch: /\.shots\.ts/, workers: 1, use: { viewport: { width: 1280, height: 800 }, deviceScaleFactor: 2 } },
 		{ name: 'video', testDir: 'tests/e2e', testMatch: /\.video\.ts/ }
 	]

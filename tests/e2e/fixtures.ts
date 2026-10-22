@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { type BrowserContext, test as base, chromium, expect, type Locator, type Page, type Route } from '@playwright/test';
+import { type BrowserContext, test as base, type ConsoleMessage, chromium, expect, firefox, type Locator, type Page, type Route, type ViewportSize } from '@playwright/test';
 import type { IntrospectionQuery } from 'graphql';
+import { FIREFOX_DEBUGGING_PREFS, installTemporaryAddon } from './firefoxAddons';
 import { GraphqlMock } from './graphqlMock';
 import { Household } from './household';
 
@@ -13,6 +14,9 @@ import { Household } from './household';
 export const APP = 'https://app.monarch.com';
 const SNAPSHOT = path.resolve('tests/.monarch-snapshot');
 const EXTENSION = path.resolve('.output/chrome-mv3');
+const FIREFOX_EXTENSION = path.resolve('.output/firefox-mv3');
+// Each parallel worker's Firefox gets its own debugging port.
+const FIREFOX_DEBUGGING_BASE_PORT = 6100;
 const MONARCH_HOSTS = new Set(['app.monarch.com', 'static.monarch.com']);
 // The content script runs on this page; Monarch's app doesn't.
 const BLANK_PATH = '/__e2e/blank';
@@ -90,14 +94,8 @@ export const test = base.extend<E2eFixtures>({
 	groupBy: ['type', { option: true }],
 	api: async ({}, use) => use({ delayMs: 0, failure: null }),
 	apiLog: async ({}, use) => use(new ApiLog()),
-	context: async ({ household, api, apiLog, groupBy, viewport, deviceScaleFactor }, use) => {
-		const context = await chromium.launchPersistentContext('', {
-			channel: 'chromium',
-			headless: !process.env.HEADED,
-			viewport,
-			deviceScaleFactor,
-			args: [`--disable-extensions-except=${EXTENSION}`, `--load-extension=${EXTENSION}`]
-		});
+	context: async ({ household, api, apiLog, groupBy, viewport, deviceScaleFactor, browserName }, use, testInfo) => {
+		const context = browserName === 'firefox' ? await launchFirefox(viewport, testInfo.parallelIndex) : await launchChromium(viewport, deviceScaleFactor);
 		const graphqlMock = new GraphqlMock(await monarchSchema(), household.resolvers);
 		await context.addCookies([{ name: 'csrftoken', value: 'e2e-csrf', domain: '.monarch.com', path: '/', secure: true }]);
 		await context.addInitScript(
@@ -115,7 +113,7 @@ export const test = base.extend<E2eFixtures>({
 	},
 	page: async ({ context }, use) => {
 		const page = context.pages()[0] ?? (await context.newPage());
-		if (process.env.E2E_DEBUG) page.on('console', message => message.type() !== 'debug' && console.log(`[page ${message.type()}] ${message.text().slice(0, 400)}`));
+		if (process.env.E2E_DEBUG) page.on('console', message => void logConsoleMessage(message));
 		await use(page);
 	},
 	open: async ({ page, household, apiLog }, use) => {
@@ -281,6 +279,37 @@ async function answer(route: Route, graphqlMock: GraphqlMock, api: ApiBehavior, 
 	} finally {
 		if (isWingspan) apiLog.pending -= 1;
 	}
+}
+
+/** Firefox reports an error argument only as "Error", so Wingspan's errors are expanded to their message and stack. */
+async function logConsoleMessage(message: ConsoleMessage) {
+	if (message.type() === 'debug') return;
+	const text = message.text().startsWith('[Wingspan]')
+		? (await Promise.all(message.args().map(arg => arg.evaluate(value => (value instanceof Error ? `${value.name}: ${value.message}\n${value.stack}` : String(value))).catch(() => '?')))).join(' ')
+		: message.text().slice(0, 400);
+	console.log(`[page ${message.type()}] ${text}`);
+}
+
+function launchChromium(viewport: ViewportSize | null, deviceScaleFactor: number | undefined): Promise<BrowserContext> {
+	return chromium.launchPersistentContext('', {
+		channel: 'chromium',
+		headless: !process.env.HEADED,
+		viewport,
+		deviceScaleFactor,
+		args: [`--disable-extensions-except=${EXTENSION}`, `--load-extension=${EXTENSION}`]
+	});
+}
+
+async function launchFirefox(viewport: ViewportSize | null, parallelIndex: number): Promise<BrowserContext> {
+	const port = FIREFOX_DEBUGGING_BASE_PORT + parallelIndex;
+	const context = await firefox.launchPersistentContext('', {
+		headless: !process.env.HEADED,
+		viewport,
+		args: ['-start-debugger-server', String(port)],
+		firefoxUserPrefs: FIREFOX_DEBUGGING_PREFS
+	});
+	await installTemporaryAddon(port, FIREFOX_EXTENSION);
+	return context;
 }
 
 /** Every page route gets the app's index.html. */
