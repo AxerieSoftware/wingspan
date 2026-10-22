@@ -3,6 +3,8 @@ import { defineConfig } from 'wxt';
 export default defineConfig({
 	modules: ['@wxt-dev/module-react'],
 	manifestVersion: 3,
+	// AMO's reviewers rebuild the extension from the sources zip, which needs none of these.
+	zip: { excludeSources: ['site/**', 'tests/**', 'store/**'] },
 	manifest: ({ browser }) => ({
 		name: 'Wingspan for Monarch Money',
 		short_name: 'Wingspan',
