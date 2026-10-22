@@ -36,12 +36,12 @@ Card payments and bills in Recurring, due dates, projected balances and free cas
 
 ## Install
 
-**[Add Wingspan from the Chrome Web Store](https://chromewebstore.google.com/detail/jpbbafooilhlohnnmioddafboidfjepn)**, in Chrome or Edge 144+. Edge asks once to allow extensions from other stores.
+**[Add Wingspan from the Chrome Web Store](https://chromewebstore.google.com/detail/jpbbafooilhlohnnmioddafboidfjepn)**, in Chrome or Edge. Edge asks once to allow extensions from other stores.
 
 Each [release](https://github.com/AxerieSoftware/wingspan/releases) also has a zip per browser, for Firefox and Safari or to load a build by hand. Unzip it, then:
 
-- **Chrome or Edge 144+:** open `chrome://extensions` or `edge://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder.
-- **Firefox 141+ (experimental):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `manifest.json` in the unzipped folder. Firefox removes it when it restarts, since the build isn't signed. If Wingspan doesn't appear on Monarch, open **Extensions** in the toolbar and allow it on app.monarch.com.
+- **Chrome or Edge:** open `chrome://extensions` or `edge://extensions`, turn on **Developer mode**, click **Load unpacked** and choose the unzipped folder.
+- **Firefox 140+ (experimental):** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…** and choose `manifest.json` in the unzipped folder. Firefox removes it when it restarts, since the build isn't signed. If Wingspan doesn't appear on Monarch, open **Extensions** in the toolbar and allow it on app.monarch.com.
 - **Safari 26+ (experimental, untested):** turn on Safari's developer features, then in **Settings → Developer** click **Add Temporary Extension…** and choose the unzipped folder.
 
 Or build it from source (using Edge as an example):
