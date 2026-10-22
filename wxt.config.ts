@@ -13,16 +13,14 @@ export default defineConfig({
 		...(browser === 'firefox'
 			? {
 					browser_specific_settings: {
-						// Temporal ships natively from Firefox 139 and DisposableStack from 141.
-						gecko: { id: 'wingspan@axerie.com', strict_min_version: '141.0', data_collection_permissions: { required: ['none'] } },
+						// data_collection_permissions needs Firefox 140 on desktop and 142 on Android.
+						gecko: { id: 'wingspan@axerie.com', strict_min_version: '140.0', data_collection_permissions: { required: ['none'] } },
 						gecko_android: { strict_min_version: '142.0' }
 					}
 				}
 			: {}),
 		...(browser === 'chrome' || browser === 'edge'
 			? {
-					// Temporal ships natively from Chrome and Edge 144. Only Safari's build bundles a polyfill.
-					minimum_chrome_version: '144',
 					// Firefox and Safari don't support split.
 					incognito: 'split'
 				}

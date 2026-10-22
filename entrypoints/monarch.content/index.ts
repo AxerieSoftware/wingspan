@@ -1,4 +1,4 @@
-import '@/src/common/safariPolyfills';
+import '@/src/common/polyfills';
 import type { ContentScriptContext } from 'wxt/utils/content-script-context';
 import { addAccounts } from '@/src/features/accounts/addAccounts';
 import { addBusinessEntities } from '@/src/features/businessEntities/addBusinessEntities';
