@@ -5,12 +5,14 @@ export interface CrossTabLock {
 
 /** Firefox gives content scripts the page's own objects through `wrappedJSObject`. Other browsers don't have it. */
 interface FirefoxContentWindow extends Window {
-	wrappedJSObject: { Promise: PromiseConstructor };
+	wrappedJSObject?: { Promise: PromiseConstructor };
 }
 
 /** The lock for a content script on this window's page. */
 export function createCrossTabLock(window: Window): CrossTabLock {
-	return 'wrappedJSObject' in window ? new FirefoxContentScriptLock(window.navigator.locks, (window as FirefoxContentWindow).wrappedJSObject.Promise) : new WebLock(window.navigator.locks);
+	// Read rather than checked with `in`: Firefox's wrapper provides it without reporting it as a property.
+	const pageWindow = (window as FirefoxContentWindow).wrappedJSObject;
+	return pageWindow ? new FirefoxContentScriptLock(window.navigator.locks, pageWindow.Promise) : new WebLock(window.navigator.locks);
 }
 
 class WebLock implements CrossTabLock {

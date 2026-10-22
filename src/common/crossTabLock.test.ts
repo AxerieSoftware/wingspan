@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FirefoxContentScriptLock } from './crossTabLock';
+import { createCrossTabLock, FirefoxContentScriptLock } from './crossTabLock';
 
 /** Stands in for promises made by the page, which Firefox's lock manager can read. */
 class PagePromise<T> extends Promise<T> {}
@@ -52,5 +52,17 @@ describe("Firefox's content-script lock", () => {
 			})
 		).rejects.toThrow('save failed');
 		await expect(lock.run('data', async () => 'next')).resolves.toBe('next');
+	});
+});
+
+describe('picking the lock', () => {
+	it("uses Firefox's lock where the window gives the page's objects, even though it doesn't report having them", () => {
+		const locks = {} as LockManager;
+		const firefoxWindow = new Proxy({ navigator: { locks } } as unknown as Window, {
+			get: (target, property) => (property === 'wrappedJSObject' ? { Promise: PagePromise } : Reflect.get(target, property)),
+			has: (target, property) => property !== 'wrappedJSObject' && Reflect.has(target, property)
+		});
+		expect(createCrossTabLock(firefoxWindow)).toBeInstanceOf(FirefoxContentScriptLock);
+		expect(createCrossTabLock({ navigator: { locks } } as unknown as Window)).not.toBeInstanceOf(FirefoxContentScriptLock);
 	});
 });
