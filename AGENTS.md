@@ -7,7 +7,7 @@ How to work in this repo. [CONTRIBUTING.md](CONTRIBUTING.md) covers how Wingspan
 Before calling a change done, review the diff against this guide and clean it up:
 
 - `npm run check` passes (typecheck, lint, knip, unit tests).
-- `npm run e2e` passes, with new behavior covered by an e2e test.
+- `npm run e2e` passes, with new behavior covered by an e2e test. `npm run e2e:firefox` passes when storage, locking or content-script code changed.
 - `npm run ensure:classes` passes when UI classes changed.
 - `npm run build:edge` last, so the unpacked Edge build is current.
 - `cd site && npm run build` passes when the site changed.

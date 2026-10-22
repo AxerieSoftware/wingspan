@@ -1,4 +1,4 @@
-import { WebLock } from '../common/crossTabLock';
+import { createCrossTabLock } from '../common/crossTabLock';
 import type { MonarchAccountsClient } from '../monarch/api/monarchAccountsClient';
 import type { WingspanData } from './models/wingspanData';
 import { WingspanDataService } from './services/wingspanDataService';
@@ -20,7 +20,7 @@ export function createStorage(window: Window, scope: StorageScope, accounts: Mon
 		new MonarchAccountStore<WingspanData>(accounts),
 		new UnsavedChangesStore(() => scope.key(UNSAVED_CHANGES_KEY)),
 		new SyncedCopyStore(() => scope.key(SYNCED_COPY_KEY)),
-		new WebLock(window.navigator.locks),
+		createCrossTabLock(window),
 		() => scope.key(DATA_LOCK_KEY),
 		version
 	);
