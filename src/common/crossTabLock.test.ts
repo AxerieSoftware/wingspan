@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createCrossTabLock, FirefoxContentScriptLock } from './crossTabLock';
 
 /** Stands in for promises made by the page, which Firefox's lock manager can read. */
@@ -56,13 +56,26 @@ describe("Firefox's content-script lock", () => {
 });
 
 describe('picking the lock', () => {
-	it("uses Firefox's lock where the window gives the page's objects, even though it doesn't report having them", () => {
-		const locks = {} as LockManager;
-		const firefoxWindow = new Proxy({ navigator: { locks } } as unknown as Window, {
-			get: (target, property) => (property === 'wrappedJSObject' ? { Promise: PagePromise } : Reflect.get(target, property)),
-			has: (target, property) => property !== 'wrappedJSObject' && Reflect.has(target, property)
-		});
-		expect(createCrossTabLock(firefoxWindow)).toBeInstanceOf(FirefoxContentScriptLock);
+	const locks = {} as LockManager;
+	// Like Firefox's content-script window, it gives the page's objects without reporting that it has them.
+	const pageObjectsWindow = new Proxy({ navigator: { locks } } as unknown as Window, {
+		get: (target, property) => (property === 'wrappedJSObject' ? { Promise: PagePromise } : Reflect.get(target, property)),
+		has: (target, property) => property !== 'wrappedJSObject' && Reflect.has(target, property)
+	});
+
+	afterEach(() => vi.unstubAllGlobals());
+
+	it("uses Firefox's lock where the content script can export functions to the page", () => {
+		vi.stubGlobal('exportFunction', (callback: unknown) => callback);
+		expect(createCrossTabLock(pageObjectsWindow)).toBeInstanceOf(FirefoxContentScriptLock);
+	});
+
+	it("uses the plain lock in Orion, which gives the page's objects but can't export functions", () => {
+		expect(createCrossTabLock(pageObjectsWindow)).not.toBeInstanceOf(FirefoxContentScriptLock);
+	});
+
+	it('uses the plain lock in Chrome and Safari', () => {
+		vi.stubGlobal('exportFunction', (callback: unknown) => callback);
 		expect(createCrossTabLock({ navigator: { locks } } as unknown as Window)).not.toBeInstanceOf(FirefoxContentScriptLock);
 	});
 });

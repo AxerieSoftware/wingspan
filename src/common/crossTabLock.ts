@@ -14,11 +14,16 @@ declare function exportFunction<F extends (...args: never[]) => unknown>(callbac
 /** Makes a content-script function one the page can call and read the result of. */
 type ExportToPage = <F extends (...args: never[]) => unknown>(callback: F) => F;
 
-/** The lock for a content script on this window's page. */
+/**
+ * The lock for a content script on this window's page. Orion runs Firefox builds and gives them `wrappedJSObject` but not
+ * `exportFunction`; it doesn't keep content scripts apart from the page, so the plain lock works there.
+ */
 export function createCrossTabLock(window: Window): CrossTabLock {
 	// Read rather than checked with `in`: Firefox's wrapper provides it without reporting it as a property.
 	const pageWindow = (window as FirefoxContentWindow).wrappedJSObject;
-	return pageWindow ? new FirefoxContentScriptLock(window.navigator.locks, pageWindow.Promise, callback => exportFunction(callback, pageWindow)) : new WebLock(window.navigator.locks);
+	return pageWindow && typeof exportFunction === 'function'
+		? new FirefoxContentScriptLock(window.navigator.locks, pageWindow.Promise, callback => exportFunction(callback, pageWindow))
+		: new WebLock(window.navigator.locks);
 }
 
 class WebLock implements CrossTabLock {

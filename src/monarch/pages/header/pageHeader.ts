@@ -45,7 +45,9 @@ export class PageHeader {
 		}
 
 		const noteEls = NOTE_ORDER.flatMap(noteKey => this.notes.get(noteKey)?.hostEl ?? []);
-		const buttonRowEl = headerEl.children.length > 1 ? headerEl.lastElementChild : null;
+		// Notes placed at the header's end aren't Monarch's button row.
+		const monarchEls = [...headerEl.children].filter(childEl => !noteEls.includes(childEl as HTMLElement));
+		const buttonRowEl = monarchEls.length > 1 ? monarchEls.at(-1) : undefined;
 		if (buttonRowEl) {
 			const firstEls = [...buttonRowEl.children].slice(0, noteEls.length);
 			if (noteEls.some((noteEl, index) => noteEl !== firstEls[index])) buttonRowEl.prepend(...noteEls);

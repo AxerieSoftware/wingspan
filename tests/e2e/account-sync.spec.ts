@@ -58,3 +58,17 @@ test('the sync status shows only on Transactions', async ({ page, open }) => {
 	await expect(page).toHaveURL(/\/cash-flow/);
 	await expect(syncButton(page)).toHaveCount(0);
 });
+
+test("the sync status stays in a header without Monarch's button row", async ({ page, open }) => {
+	const wingspanErrors: string[] = [];
+	page.on('console', message => message.text().startsWith('[Wingspan]') && wingspanErrors.push(message.text()));
+	await open({ path: '/transactions', waitForRows: false });
+	await expect(syncButton(page)).toBeVisible();
+
+	// Some layouts render the header with only its title, and the note then goes at the header's end.
+	await page.locator('[data-external-id="header"] > :last-child').evaluate(buttonRowEl => buttonRowEl.remove());
+
+	await expect(page.locator('[data-external-id="header"] > [data-wingspan-header-note]')).toBeVisible();
+	await page.waitForTimeout(500);
+	expect(wingspanErrors).toEqual([]);
+});
