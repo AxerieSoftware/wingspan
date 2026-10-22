@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures';
+import { expect, gridArea, test } from './fixtures';
 
 const REPORTS_THIS_MONTH = '/reports/cash-flow?timeframeIncludeCurrent=true&timeframeUnit=month&timeframeValue=1';
 
@@ -7,7 +7,7 @@ test("loans paid down shows after Reports' Savings rate for the report's dates, 
 	const paydown = page.getByTestId('loans-paid-down-card');
 	const totalIncome = page.locator('[data-external-id="deprecated-statistic-card"]').filter({ hasText: 'Total income' });
 
-	await expect(page.locator('[style*="grid-area: chart"] > [data-external-id="flex-container-base"] > :last-child')).toHaveAttribute('data-wingspan-reports-summary-card', '');
+	await expect(gridArea(page, 'chart').locator('> [data-external-id="flex-container-base"] > :last-child')).toHaveAttribute('data-wingspan-reports-summary-card', '');
 	// The auto loan's balance drops $340 each month.
 	await expect(paydown).toContainText('$340');
 	const income = Number((await totalIncome.locator('span').first().textContent())?.replace(/[^\d.]/g, ''));

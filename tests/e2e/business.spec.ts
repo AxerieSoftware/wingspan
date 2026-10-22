@@ -106,7 +106,8 @@ test.describe("with Monarch's Plus plan", () => {
 		await expect(page.getByRole('dialog', { name: 'Cash and cards' }).getByRole('combobox', { name: 'Settings for' })).toHaveText('Contoso Pottery');
 	});
 
-	test("after an extension update disconnects Wingspan, Monarch's rows and totals are restored instead of left frozen", async ({ page, context, open }) => {
+	test("after an extension update disconnects Wingspan, Monarch's rows and totals are restored instead of left frozen", async ({ page, context, open, browserName }) => {
+		test.skip(browserName === 'webkit', 'Reloads the extension from chrome://extensions');
 		await open();
 		await expect(monarchRow(section(page, 'Expenses'), 'Kiln Lease')).toBeHidden();
 

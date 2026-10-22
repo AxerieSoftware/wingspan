@@ -64,8 +64,9 @@ npm test           # Vitest unit tests
 ## Test end to end
 
 ```bash
-npx playwright install chromium firefox
+npx playwright install chromium firefox webkit
 npm run e2e                # the built extension in Monarch's real web app, with a made-up household
+npm run e2e:webkit         # the same tests in WebKit, Safari's and Orion's engine, with the Safari build
 npm run e2e:firefox        # the smoke tests against the Firefox build
 npm run screenshots        # the README's and the stores' screenshots, from the made-up household
 npm run videos             # the site's tour and feature clips, to site/public/videos (needs ffmpeg)
@@ -78,6 +79,13 @@ a made-up household in `tests/e2e/`, checked against the GraphQL schema
 Monarch ships in that bundle. Tests seed Wingspan's storage
 and reload the extension from `chrome://extensions`.
 
+Playwright can't load extensions into WebKit, so `e2e:webkit` injects the
+Safari build's content scripts into Monarch's pages, with a stand-in for the
+extension APIs they use (`tests/e2e/webkitExtension.ts`). The scripts share
+the page's world, as in Orion. Specs that need a real extension, like reloading
+it or retail sync, are skipped there. Locators that match Monarch's grid areas
+use `gridArea`, since WebKit writes `grid-area` back as its longhands.
+
 Playwright can't load extensions into Firefox, so `e2e:firefox` installs the
 Firefox build as a temporary add-on over Firefox's remote debugging protocol.
 It runs only `smoke.spec.ts`, which seeds data through Monarch rather than
@@ -85,8 +93,9 @@ the extension's storage. Playwright's Firefox doesn't start on every macOS
 version; CI runs it on Linux.
 
 CI also runs `e2e` every morning, so a Monarch release that breaks Wingspan
-shows up even when nothing was pushed. On CI the tests are split across four
-jobs, and the snapshot is cached for the day.
+shows up even when nothing was pushed. On CI the Chromium tests are split
+across four jobs and the WebKit tests across two, which run in Playwright's
+Docker image for WebKit's system libraries. The snapshot is cached for the day.
 
 ## Load it unpacked
 

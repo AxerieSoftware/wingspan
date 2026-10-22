@@ -31,7 +31,7 @@ test("the notice's Settings link opens Wingspan's settings", async ({ page, open
 	await expect(page.getByRole('group', { name: 'Where Wingspan saves' })).toBeVisible();
 });
 
-test('About shows the version as a beta, with a link to report a problem', async ({ page, open }) => {
+test('About shows the version as a beta, with a link to report a problem', async ({ page, open, browserName }) => {
 	await openSettings(page, open);
 	const about = page.getByRole('group', { name: 'About' });
 	await expect(about).toContainText(/Wingspan \d+\.\d+\.\d+\s*Beta/);
@@ -39,7 +39,8 @@ test('About shows the version as a beta, with a link to report a problem', async
 	await expect(report).toHaveAttribute('target', '_blank');
 	const url = new URL((await report.getAttribute('href')) ?? '');
 	expect(url.pathname).toBe('/AxerieSoftware/wingspan/issues/new');
-	expect(url.searchParams.get('browser')).toMatch(/^Chrome \d+, Wingspan \d+\.\d+\.\d+$/);
+	const reportedBrowser = { chromium: 'Chrome', firefox: 'Firefox', webkit: 'Safari' }[browserName];
+	expect(url.searchParams.get('browser')).toMatch(new RegExp(`^${reportedBrowser} \\d+, Wingspan \\d+\\.\\d+\\.\\d+$`));
 });
 
 test("unchecking a sidebar item hides it from Monarch's sidebar, from the start of the next load", async ({ page, open }) => {

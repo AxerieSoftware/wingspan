@@ -1,10 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { type BrowserContext, test as base, type ConsoleMessage, chromium, expect, firefox, type Locator, type Page, type Route, type ViewportSize } from '@playwright/test';
+import { type BrowserContext, test as base, type ConsoleMessage, chromium, expect, firefox, type Locator, type Page, type Route, type ViewportSize, webkit } from '@playwright/test';
 import type { IntrospectionQuery } from 'graphql';
 import { FIREFOX_DEBUGGING_PREFS, installTemporaryAddon } from './firefoxAddons';
 import { GraphqlMock } from './graphqlMock';
 import { Household } from './household';
+import { injectWingspan } from './webkitExtension';
 
 /*
  * Monarch's real web app served from a local snapshot of its public bundle (tests/.monarch-snapshot/, out of git),
@@ -15,6 +16,8 @@ export const APP = 'https://app.monarch.com';
 const SNAPSHOT = path.resolve('tests/.monarch-snapshot');
 const EXTENSION = path.resolve('.output/chrome-mv3');
 const FIREFOX_EXTENSION = path.resolve('.output/firefox-mv3');
+/** Contexts with Wingspan injected into the page rather than loaded as an extension. */
+const injectedContexts = new WeakSet<BrowserContext>();
 // Each parallel worker's Firefox gets its own debugging port.
 const FIREFOX_DEBUGGING_BASE_PORT = 6100;
 const MONARCH_HOSTS = new Set(['app.monarch.com', 'static.monarch.com']);
@@ -95,7 +98,7 @@ export const test = base.extend<E2eFixtures>({
 	api: async ({}, use) => use({ delayMs: 0, failure: null }),
 	apiLog: async ({}, use) => use(new ApiLog()),
 	context: async ({ household, api, apiLog, groupBy, viewport, deviceScaleFactor, browserName }, use, testInfo) => {
-		const context = browserName === 'firefox' ? await launchFirefox(viewport, testInfo.parallelIndex) : await launchChromium(viewport, deviceScaleFactor);
+		const context = await launchBrowser(browserName, viewport, deviceScaleFactor, testInfo.parallelIndex);
 		const graphqlMock = new GraphqlMock(await monarchSchema(), household.resolvers);
 		await context.addCookies([{ name: 'csrftoken', value: 'e2e-csrf', domain: '.monarch.com', path: '/', secure: true }]);
 		await context.addInitScript(
@@ -107,6 +110,11 @@ export const test = base.extend<E2eFixtures>({
 			},
 			{ user: SESSION_USER, groupBy }
 		);
+		// After the session is seeded, since Wingspan's first script reads it.
+		if (browserName === 'webkit') {
+			await injectWingspan(context);
+			injectedContexts.add(context);
+		}
 		await context.route('**/*', route => answer(route, graphqlMock, api, apiLog));
 		await use(context);
 		await context.close();
@@ -143,8 +151,15 @@ export async function seedSampleItems(page: Page, household: Household) {
 	await seedExtensionStorage(page, { [storageKey('wingspan')]: { version: 1, etag: 'sample', value: household.sampleItems() } });
 }
 
+/** A Monarch grid item by its area name. WebKit writes `grid-area` back as its four longhands, so both spellings match. */
+export function gridArea(page: Page, area: string): Locator {
+	return page.locator(`[data-external-id="grid-item"]:is([style*="grid-area: ${area};"], [style*="grid-row-start: ${area};"])`);
+}
+
 /** Runs an expression in Wingspan's content-script world, which the page can't reach. */
 export async function inContentScript(page: Page, expression: string): Promise<unknown> {
+	// In WebKit, Wingspan is injected into the page itself, with its extension APIs as `browser`.
+	if (injectedContexts.has(page.context())) return page.evaluate(`(async () => { const chrome = globalThis.browser; return await (${expression}); })()`);
 	const devToolsSession = await page.context().newCDPSession(page);
 	const contextIds: number[] = [];
 	devToolsSession.on('Runtime.executionContextCreated', ({ context }) => {
@@ -298,6 +313,12 @@ function launchChromium(viewport: ViewportSize | null, deviceScaleFactor: number
 		deviceScaleFactor,
 		args: [`--disable-extensions-except=${EXTENSION}`, `--load-extension=${EXTENSION}`]
 	});
+}
+
+function launchBrowser(browserName: string, viewport: ViewportSize | null, deviceScaleFactor: number | undefined, parallelIndex: number): Promise<BrowserContext> {
+	if (browserName === 'firefox') return launchFirefox(viewport, parallelIndex);
+	if (browserName === 'webkit') return webkit.launchPersistentContext('', { headless: !process.env.HEADED, viewport, deviceScaleFactor });
+	return launchChromium(viewport, deviceScaleFactor);
 }
 
 async function launchFirefox(viewport: ViewportSize | null, parallelIndex: number): Promise<BrowserContext> {

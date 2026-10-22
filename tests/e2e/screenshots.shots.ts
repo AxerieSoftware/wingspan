@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
-import { addRecurring, chooseMerchant, expect, itemRow, monarchRow, type OpenOptions, section, test, useTheme } from './fixtures';
+import { addRecurring, chooseMerchant, expect, gridArea, itemRow, monarchRow, type OpenOptions, section, test, useTheme } from './fixtures';
 
 /*
  * The README's screenshots (assets/screenshots, at 2x), the site's feature pages' (site/src/assets/screenshots,
@@ -169,7 +169,7 @@ for (const theme of THEMES) {
 			await page.setViewportSize({ width: 1600, height: 900 });
 			await openCashFlow(page, open);
 			await useTheme(page, theme);
-			const summary = page.locator('[data-external-id="grid-item"][style*="grid-area: summary"]');
+			const summary = gridArea(page, 'summary');
 			await expect(summary.getByTestId('loans-paid-down-card')).toContainText('$340');
 			await expect(summary.getByTestId('interest-cost-card')).toContainText('$49');
 			await siteShot(page, 'loans-paid-down', theme, summary, { pad: 16 });
