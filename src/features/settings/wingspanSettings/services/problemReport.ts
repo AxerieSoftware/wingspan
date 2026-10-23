@@ -1,8 +1,11 @@
 const NEW_ISSUE_URL = 'https://github.com/AxerieSoftware/wingspan/issues/new';
 const BUG_TEMPLATE = 'bug.yml';
+/** In order: Edge's user agent also names Chrome, and Chrome's also names Safari. Orion's reads as Safari's. */
 const KNOWN_BROWSERS = [
 	{ name: 'Edge', pattern: /Edg\/(\d+)/ },
-	{ name: 'Chrome', pattern: /Chrome\/(\d+)/ }
+	{ name: 'Chrome', pattern: /Chrome\/(\d+)/ },
+	{ name: 'Firefox', pattern: /Firefox\/(\d+)/ },
+	{ name: 'Safari', pattern: /Version\/(\d+)[\d.]* .*Safari\// }
 ];
 
 /** A new GitHub issue from the bug template, with the browser and Wingspan versions filled in. */

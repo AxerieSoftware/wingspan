@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { APP, expect, test } from './fixtures';
+import { APP, expect, gridArea, test } from './fixtures';
 
 const card = (page: Page) => page.getByRole('group', { name: 'Projected balances' });
 const stat = (page: Page, label: string) => card(page).locator('[data-external-id="stat-item"]').filter({ hasText: label }).locator('span.h-9');
@@ -8,7 +8,7 @@ const amountOf = async (page: Page, label: string) => Number((await stat(page, l
 test("projected balances show below Cash Flow's bar chart, above the date and View menu, as a stat bar and a chart", async ({ page, open }) => {
 	await open({ path: '/cash-flow', waitForRows: false });
 	await expect(card(page)).toBeVisible();
-	await expect(page.locator('[style*="grid-area: chart"] [data-wingspan-cash-flow-section]')).toHaveCount(1);
+	await expect(gridArea(page, 'chart').locator('[data-wingspan-cash-flow-section]')).toHaveCount(1);
 	for (const label of ['Free cash today', 'Monthly surplus', 'Credit left', 'Checking runs out']) await expect(card(page).getByTestId('projected-balances-stat-bar')).toContainText(label);
 	await expect(card(page).getByRole('img', { name: /^Checking from / })).toBeVisible();
 });
@@ -145,7 +145,7 @@ test("when Monarch can't be reached, the card shows an error and Try again loads
 test("loans paid down shows after Monarch's Savings rate as how much the loans went down this month and its share of income", async ({ page, open }) => {
 	await open({ path: '/cash-flow', waitForRows: false });
 	const paydown = page.getByTestId('loans-paid-down-card');
-	const savingsRate = page.locator('[style*="grid-area: summary"] [data-external-id="deprecated-statistic-card"]').filter({ hasText: 'Savings rate' });
+	const savingsRate = gridArea(page, 'summary').locator('[data-external-id="deprecated-statistic-card"]').filter({ hasText: 'Savings rate' });
 
 	await expect(savingsRate.locator('xpath=following-sibling::*[1]')).toContainText('Loans paid down');
 	// The auto loan's balance drops $340 each month.

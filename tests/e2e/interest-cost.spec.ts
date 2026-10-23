@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, monarchRow, type OpenOptions, settled, test } from './fixtures';
+import { expect, gridArea, monarchRow, type OpenOptions, settled, test } from './fixtures';
 
 const LOAN_PATH = '/accounts/details/acct-loan';
 const PAYMENT_PATH = '/transactions/tx-auto-loan';
@@ -148,8 +148,8 @@ test("Cash Flow's totals end with what debt interest costs a month and a day", a
 
 	await expect(interest).toContainText(MONTHLY);
 	await expect(interest).toContainText('Interest a month');
-	await expect(page.locator('[style*="grid-area: summary"] [data-external-id="flex-container-base"] > :last-child')).toContainText('Interest a month');
-	await expect(page.locator('[style*="grid-area: summary"] [data-external-id="flex-container-base"] > :nth-last-child(2)')).toContainText('Loans paid down');
+	await expect(gridArea(page, 'summary').locator('[data-external-id="flex-container-base"] > :last-child')).toContainText('Interest a month');
+	await expect(gridArea(page, 'summary').locator('[data-external-id="flex-container-base"] > :nth-last-child(2)')).toContainText('Loans paid down');
 });
 
 test("Accounts' Loans group says what its loans cost in interest a month, and cards paid in full add none", async ({ page, open }) => {

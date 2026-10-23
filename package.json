@@ -27,6 +27,7 @@
 		"ensure:classes": "node scripts/ensureClassesExistInMonarch.ts",
 		"test": "vitest run",
 		"e2e": "wxt build && playwright test --project=e2e",
+		"e2e:webkit": "wxt build -b safari && playwright test --project=e2e-webkit",
 		"e2e:firefox": "wxt build -b firefox && playwright test --project=e2e-firefox",
 		"e2e:refresh": "rm -rf tests/.monarch-snapshot",
 		"screenshots": "wxt build && playwright test --project=screenshots",
