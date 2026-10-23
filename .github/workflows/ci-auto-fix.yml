@@ -1,0 +1,100 @@
+name: CI auto-fix
+
+# Claude fixes a failed CI run when nobody is touching the code: the daily run, when a Monarch release breaks
+# Wingspan, and Dependabot's grouped updates. It runs the branch's code with write access and secrets, which is
+# safe only because both sources are trusted: main, and Dependabot's own branches in this repo.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-auto-fix-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    # Claude's own pushes run CI as claude[bot], so a fix that still fails isn't fixed again.
+    if: >-
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      (github.event.workflow_run.event == 'schedule' ||
+      (github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.actor.login == 'dependabot[bot]'))
+    runs-on: ubuntu-latest
+    outputs:
+      open-fix-prs: ${{ steps.open-fix.outputs.count }}
+    steps:
+      - name: Count open fix PRs
+        id: open-fix
+        run: echo "count=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --json headRefName --jq '[.[] | select(.headRefName | startswith("fix/ci-"))] | length')" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  fix:
+    needs: gate
+    # A daily failure keeps failing until the fix merges, so one open fix PR is enough.
+    if: github.event.workflow_run.event != 'schedule' || needs.gate.outputs.open-fix-prs == '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: read
+      # The action trades the OIDC token for the Claude GitHub App's token, whose pushes trigger CI.
+      id-token: write
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
+          persist-credentials: false
+
+      - name: Create fix branch
+        if: github.event.workflow_run.event == 'schedule'
+        run: git checkout -b "fix/ci-$(date -u +%F)"
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+        timeout-minutes: 5
+
+      - name: Get today's date
+        id: date
+        run: echo "today=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Monarch snapshot
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: tests/.monarch-snapshot
+          key: monarch-snapshot-${{ steps.date.outputs.today }}
+
+      - name: Fix CI with Claude
+        uses: anthropics/claude-code-action@ae68417a745a5df4b2124873632bd73a2255e6f6 # v1.0.259
+        with:
+          # Set one of the two secrets.
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: --allowedTools "Edit,Write,Read,Glob,Grep,Bash(npm:*),Bash(npx:*),Bash(git:*),Bash(gh:*)"
+          prompt: |
+            CI run ${{ github.event.workflow_run.html_url }} failed on branch `${{ github.event.workflow_run.head_branch }}`, from a `${{ github.event.workflow_run.event }}` event.
+
+            1. Read the failed jobs' logs with `gh run view ${{ github.event.workflow_run.id }} --log-failed`. Playwright traces are in the run's artifacts.
+            2. Find the root cause. A daily run usually means a Monarch release changed a class, a page or a GraphQL query. A Dependabot run usually means an update changed an API or a lint rule.
+            3. Fix it, following AGENTS.md. Don't weaken, skip or delete tests to get them passing.
+            4. Run `npm run check`, `npm run ensure:classes` and the failing e2e specs (`npm run e2e -- <spec>`). WebKit isn't installed here, so leave WebKit-only failures to CI.
+            5. Commit on the current branch and push it. Never push to `main`.
+               - Daily run: open a PR into `main` titled with what Monarch changed, linking the failed run.
+               - Dependabot run: push to its PR, #${{ github.event.workflow_run.pull_requests[0].number }}.
+
+            If the failure is flaky or outside the code, such as a runner or network error, change nothing and say why.
