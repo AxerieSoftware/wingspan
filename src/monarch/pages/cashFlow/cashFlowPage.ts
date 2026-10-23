@@ -1,4 +1,5 @@
 import { ISO_DATE_PATTERN } from '../../../common/calendar';
+import { gridItem, gridItemRow } from '../monarchGrid';
 import type { MonarchNavigator } from '../monarchNavigator';
 import { MountedSlot, type SlotContent } from '../mountedSlot';
 import { type SummaryCard, type SummaryCardLook, SummaryRow, type SummaryRowPage } from '../summaryRow';
@@ -6,10 +7,10 @@ import { WingspanAttribute } from '../wingspanAttributes';
 
 const CASH_FLOW_PATH = '/cash-flow';
 const GOALS_PATH = '/goals';
-/** The grid cell holding the chart, which both the bar and Sankey views have. */
-const CHART_GRID_ITEM_SELECTOR = '[data-external-id="grid-item"][style*="grid-area: chart"]';
-/** The row of totals under the date: Income, Expenses, Total savings and Savings rate. */
-const SUMMARY_ROW_SELECTOR = '[data-external-id="grid-item"][style*="grid-area: summary"] > [data-external-id="flex-container-base"]';
+/** The grid area holding the chart, which both the bar and Sankey views have. */
+const CHART_AREA = 'chart';
+/** The grid area with the row of totals under the date: Income, Expenses, Total savings and Savings rate. */
+const SUMMARY_AREA = 'summary';
 const TIMEFRAMES = ['month', 'quarter', 'year'] as const;
 /** Monarch keeps its Cash Flow filters in the URL as you change them, one parameter per chosen business. */
 const BUSINESS_FILTER_PARAM = 'businessEntitySet';
@@ -43,7 +44,7 @@ export class CashFlowPage implements SummaryRowPage {
 		private readonly window: Window,
 		private readonly navigator: MonarchNavigator
 	) {
-		this.summaryRow = new SummaryRow(window.document, SUMMARY_ROW_SELECTOR, WingspanAttribute.cashFlowSummaryCard);
+		this.summaryRow = new SummaryRow(window.document, () => gridItemRow(window.document, SUMMARY_AREA), WingspanAttribute.cashFlowSummaryCard);
 	}
 
 	public get isActive(): boolean {
@@ -92,7 +93,7 @@ export class CashFlowPage implements SummaryRowPage {
 
 	/** Puts Wingspan's section last in the chart's cell, or removes it while the cell isn't there. */
 	public showSection(content: SlotContent): void {
-		const chartGridItemEl = this.window.document.querySelector<HTMLElement>(CHART_GRID_ITEM_SELECTOR);
+		const chartGridItemEl = gridItem(this.window.document, CHART_AREA);
 		if (!chartGridItemEl) {
 			this.removeSection();
 			return;

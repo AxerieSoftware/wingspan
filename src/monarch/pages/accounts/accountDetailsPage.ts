@@ -1,10 +1,11 @@
+import { gridItem } from '../monarchGrid';
 import type { MonarchNavigator } from '../monarchNavigator';
 import { MountedSlot, type SlotContent } from '../mountedSlot';
 import { WingspanAttribute } from '../wingspanAttributes';
 
 const ACCOUNT_DETAILS_PATH = /^\/accounts\/details\/([^/]+)$/;
-/** The main column, under the balance chart, holding the account's transactions or holdings. */
-const MAIN_COLUMN_SELECTOR = '[data-external-id="grid-item"][style*="grid-area: rec"]';
+/** The grid area of the main column, under the balance chart, holding the account's transactions or holdings. */
+const MAIN_COLUMN_AREA = 'rec';
 
 /** Wingspan's cards on an account's page. Each shows on its own kind of account, so only one is there at a time. */
 export type AccountCard = 'hsaReimbursements' | 'loanInterest';
@@ -40,7 +41,7 @@ export class AccountDetailsPage {
 
 	/** Puts the card first in the main column, or removes it while the column isn't there. */
 	public showCard(card: AccountCard, content: SlotContent): void {
-		const mainColumnEl = this.window.document.querySelector<HTMLElement>(MAIN_COLUMN_SELECTOR);
+		const mainColumnEl = gridItem(this.window.document, MAIN_COLUMN_AREA);
 		if (!mainColumnEl) {
 			this.removeCard(card);
 			return;

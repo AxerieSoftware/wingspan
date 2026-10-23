@@ -31,7 +31,7 @@ export class SummaryRow {
 
 	public constructor(
 		private readonly document: Document,
-		private readonly rowSelector: string,
+		private readonly findRow: () => HTMLElement | null,
 		private readonly ownAttribute: string
 	) {}
 
@@ -56,7 +56,7 @@ export class SummaryRow {
 
 	/** Puts the card after Monarch's and any of Wingspan's that come before it, or removes it while the row isn't there. */
 	public showCard(card: SummaryCard, content: SlotContent): void {
-		const rowEl = this.document.querySelector<HTMLElement>(this.rowSelector);
+		const rowEl = this.findRow();
 		if (!rowEl) {
 			this.removeCard(card);
 			return;
@@ -76,6 +76,6 @@ export class SummaryRow {
 	}
 
 	private monarchCards(): HTMLElement[] {
-		return [...this.document.querySelectorAll<HTMLElement>(`${this.rowSelector} > ${STATISTIC_CARD_SELECTOR}`)];
+		return [...(this.findRow()?.querySelectorAll<HTMLElement>(`:scope > ${STATISTIC_CARD_SELECTOR}`) ?? [])];
 	}
 }

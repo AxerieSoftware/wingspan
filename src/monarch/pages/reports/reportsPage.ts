@@ -1,11 +1,12 @@
+import { gridItemRow } from '../monarchGrid';
 import type { MonarchNavigator } from '../monarchNavigator';
 import type { SlotContent } from '../mountedSlot';
 import { type SummaryCard, type SummaryCardLook, SummaryRow, type SummaryRowPage } from '../summaryRow';
 import { WingspanAttribute } from '../wingspanAttributes';
 
 const REPORTS_CASH_FLOW_PATH = '/reports/cash-flow';
-/** Reports' totals sit in the chart's grid cell, above the chart card. */
-const SUMMARY_ROW_SELECTOR = '[data-external-id="grid-item"][style*="grid-area: chart"] > [data-external-id="flex-container-base"]';
+/** Reports' totals sit in the chart's grid area, above the chart card. */
+const SUMMARY_AREA = 'chart';
 /** Under the chart card's title: "Jan 1, 2026 – Oct 11, 2026", one date for a single day, or "All time". */
 const CHART_SUBTITLE_SELECTOR = '[class*="ReportsChartCard__Subtitle"]';
 const SHOWN_DATE_PATTERN = /([A-Z][a-z]{2}) (\d{1,2}), (\d{4})/g;
@@ -37,7 +38,7 @@ export class ReportsPage implements SummaryRowPage {
 		private readonly window: Window,
 		private readonly navigator: MonarchNavigator
 	) {
-		this.summaryRow = new SummaryRow(window.document, SUMMARY_ROW_SELECTOR, WingspanAttribute.reportsSummaryCard);
+		this.summaryRow = new SummaryRow(window.document, () => gridItemRow(window.document, SUMMARY_AREA), WingspanAttribute.reportsSummaryCard);
 	}
 
 	public get isActive(): boolean {
