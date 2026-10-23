@@ -62,10 +62,14 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      # An update can break the install itself, such as with a peer dependency conflict, and that's Claude's to fix.
       - name: Install dependencies
+        id: install
         run: npm ci
+        continue-on-error: true
 
       - name: Install Playwright Chromium
+        if: steps.install.outcome == 'success'
         run: npx playwright install chromium
         timeout-minutes: 5
 
@@ -85,12 +89,14 @@ jobs:
           # Set one of the two secrets.
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # The action refuses bot-started runs unless listed; the gate already limits bot runs to Dependabot.
+          allowed_bots: dependabot[bot]
           claude_args: --allowedTools "Edit,Write,Read,Glob,Grep,Bash(npm:*),Bash(npx:*),Bash(git:*),Bash(gh:*)"
           prompt: |
             CI run ${{ github.event.workflow_run.html_url }} failed on branch `${{ github.event.workflow_run.head_branch }}`, from a `${{ github.event.workflow_run.event }}` event.
 
             1. Read the failed jobs' logs with `gh run view ${{ github.event.workflow_run.id }} --log-failed`. Playwright traces are in the run's artifacts.
-            2. Find the root cause. A daily run usually means a Monarch release changed a class, a page or a GraphQL query. A Dependabot run usually means an update changed an API or a lint rule.
+            2. Find the root cause. A daily run usually means a Monarch release changed a class, a page or a GraphQL query. A Dependabot run usually means an update changed an API or a lint rule. `npm ci` ${{ steps.install.outcome == 'success' && 'succeeded' || 'failed in this job, so start there; once it installs, run `npx playwright install chromium`' }}.
             3. Fix it, following AGENTS.md. Don't weaken, skip or delete tests to get them passing.
             4. Run `npm run check`, `npm run ensure:classes` and the failing e2e specs (`npm run e2e -- <spec>`). WebKit isn't installed here, so leave WebKit-only failures to CI.
             5. Commit on the current branch and push it. Never push to `main`.
