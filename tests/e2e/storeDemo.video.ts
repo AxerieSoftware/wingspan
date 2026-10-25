@@ -37,10 +37,7 @@ test('a walk through Wingspan for the stores', async ({ page, household, open },
 	const recorder = new ScreencastRecorder(join(testInfo.outputDir, 'frames'), { width: 1920, height: 1080 });
 
 	// Recording starts once the page has loaded behind the title card, so Monarch's loading logo never shows.
-	await open({ waitForRows: false });
-	await expect(page.getByText(/now saves to your Monarch account/)).toBeVisible();
-	await page.reload();
-	await expect(page.locator('[data-wingspan-row]').first()).toBeVisible();
+	await open();
 	await recorder.start(page);
 	await pause(page, TITLE_CARD_MS);
 	await demo.hideTitleCard();

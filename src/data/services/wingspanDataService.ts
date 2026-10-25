@@ -30,14 +30,6 @@ export interface StorageStatus {
 	accountId?: string;
 }
 
-/** `accountCreated`: Wingspan just made its hidden account in Monarch. */
-export type StorageNoticeKind = 'accountCreated';
-
-/** A one-time notice to the user about where their data is saved. */
-export interface StorageNotice {
-	kind: StorageNoticeKind;
-}
-
 type DataChange = (data: WingspanData) => WingspanData;
 
 /**
@@ -47,7 +39,6 @@ type DataChange = (data: WingspanData) => WingspanData;
 export class WingspanDataService {
 	private readonly current = signal<WingspanData>(emptyWingspanData());
 	private readonly currentStatus = signal<StorageStatus>({ state: 'idle' });
-	private readonly latestNotice = signal<StorageNotice | null>(null);
 	private readonly hasLoaded = signal(false);
 	/** Why the first load failed, while nothing has been read yet. */
 	private readonly loadFailure = signal<string | null>(null);
@@ -81,10 +72,6 @@ export class WingspanDataService {
 
 	public get status(): ReadonlySignal<StorageStatus> {
 		return this.currentStatus;
-	}
-
-	public get notice(): ReadonlySignal<StorageNotice | null> {
-		return this.latestNotice;
 	}
 
 	/** True once real saved data has loaded, from this browser or from Monarch. Until then, only defaults are available. */
@@ -258,10 +245,8 @@ export class WingspanDataService {
 	}
 
 	private async storeInMonarch(data: WingspanData, baseEnvelope: Envelope<WingspanData> | undefined): Promise<void> {
-		const isCreatingAccount = !this.accountStore.linkedAccountId;
 		this.accountEnvelope = await this.accountStore.store({ version: CURRENT_SCHEMA_VERSION, wingspanVersion: this.appVersion, etag: baseEnvelope?.etag ?? '', value: data });
 		await this.adopt(data, this.accountEnvelope.etag);
-		if (isCreatingAccount) this.latestNotice.value = { kind: 'accountCreated' };
 	}
 
 	/** Shows data that Monarch now holds and keeps this browser's copies in step with it. */

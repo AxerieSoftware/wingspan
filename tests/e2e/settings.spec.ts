@@ -24,13 +24,6 @@ test("navigating to another settings page removes Wingspan's page", async ({ pag
 	await expect(page.locator('[data-wingspan-card] a')).not.toHaveAttribute('data-selected', /.*/);
 });
 
-test("the notice's Settings link opens Wingspan's settings", async ({ page, open }) => {
-	await open();
-	await page.getByRole('button', { name: 'Settings' }).click();
-	await expect(page).toHaveURL(/\/settings\/wingspan/);
-	await expect(page.getByRole('group', { name: 'Where Wingspan saves' })).toBeVisible();
-});
-
 test('About shows the version as a beta, with a link to report a problem', async ({ page, open, browserName }) => {
 	await openSettings(page, open);
 	const about = page.getByRole('group', { name: 'About' });

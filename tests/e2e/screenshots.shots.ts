@@ -15,15 +15,13 @@ const projectedBalances = (page: Page) => page.getByRole('group', { name: 'Proje
 
 type Open = (options?: OpenOptions) => Promise<void>;
 
-/** Opens a page as a household that has used Wingspan before: otherwise the first open creates the hidden account and shows a notice about it. */
-async function openAsReturning(page: Page, open: Open, path?: string) {
+/** Opens a page without waiting for Wingspan's rows, which only Recurring has. */
+async function openPage(open: Open, path?: string) {
 	await open({ path, waitForRows: false });
-	await expect(page.getByText(/now saves to your Monarch account/)).toBeVisible();
-	await page.reload();
 }
 
 async function openCashFlow(page: Page, open: Open) {
-	await openAsReturning(page, open, '/cash-flow');
+	await openPage(open, '/cash-flow');
 	await expect(projectedBalances(page).getByRole('img', { name: /^Checking from / })).toBeVisible();
 }
 
@@ -75,7 +73,7 @@ async function siteShot(page: Page, name: string, theme: string, target: Locator
 for (const theme of THEMES) {
 	test.describe(`site, ${theme}`, () => {
 		test('due dates', async ({ page, open }) => {
-			await openAsReturning(page, open);
+			await openPage(open);
 			await useTheme(page, theme);
 			const expenses = section(page, 'Expenses');
 			await expect(expenses.locator('[data-wingspan-row]').first()).toBeVisible();
@@ -83,7 +81,7 @@ for (const theme of THEMES) {
 		});
 
 		test('manual bills', async ({ page, open }) => {
-			await openAsReturning(page, open);
+			await openPage(open);
 			await useTheme(page, theme);
 			await itemRow(page, 'Piano Lessons').click();
 			const details = page.getByRole('region', { name: 'Piano Lessons details' });
@@ -92,7 +90,7 @@ for (const theme of THEMES) {
 		});
 
 		test('manual bill editor', async ({ page, open }) => {
-			await openAsReturning(page, open);
+			await openPage(open);
 			await useTheme(page, theme);
 			const dialog = await addRecurring(page, 'Bill');
 			await chooseMerchant(page, dialog, 'Maple Music');
@@ -105,7 +103,7 @@ for (const theme of THEMES) {
 		});
 
 		test('manual bill fields', async ({ page, open }) => {
-			await openAsReturning(page, open);
+			await openPage(open);
 			await useTheme(page, theme);
 			const dialog = await addRecurring(page, 'Bill');
 			await chooseMerchant(page, dialog, 'Maple Music');
@@ -118,7 +116,7 @@ for (const theme of THEMES) {
 		});
 
 		test('card payment editor', async ({ page, open }) => {
-			await openAsReturning(page, open);
+			await openPage(open);
 			await useTheme(page, theme);
 			const dialog = await addRecurring(page, 'Card payment');
 			await dialog.getByRole('combobox', { name: 'Card' }).click();
@@ -133,7 +131,7 @@ for (const theme of THEMES) {
 		test('pays toward', async ({ page, household, open }) => {
 			household.addLoanPayment();
 			household.linkLoanPayment();
-			await openAsReturning(page, open);
+			await openPage(open);
 			await useTheme(page, theme);
 			await monarchRow(page, 'Auto Loan').click();
 			await expect(page.getByRole('combobox', { name: 'Pays toward' })).toHaveText('Auto Loan');
@@ -143,7 +141,7 @@ for (const theme of THEMES) {
 		test('payment update banner', async ({ page, household, open }) => {
 			household.addLoanPayment();
 			household.linkLoanPayment();
-			await openAsReturning(page, open, '/transactions/tx-auto-loan');
+			await openPage(open, '/transactions/tx-auto-loan');
 			await useTheme(page, theme);
 			const banner = page.locator('[data-wingspan-transaction-banner]');
 			await expect(banner).toContainText('This payment goes toward Auto Loan');
@@ -153,7 +151,7 @@ for (const theme of THEMES) {
 		test('sync status', async ({ page, household, open }) => {
 			household.stallAccountSync('acct-flex', 19);
 			await page.setViewportSize({ width: 1440, height: 900 });
-			await openAsReturning(page, open, '/transactions');
+			await openPage(open, '/transactions');
 			await useTheme(page, theme);
 			await page
 				.locator('[data-wingspan-header-note]')
@@ -177,7 +175,7 @@ for (const theme of THEMES) {
 
 		test('interest cost on Accounts', async ({ page, household, open }) => {
 			household.addCardInterest();
-			await openAsReturning(page, open, '/accounts');
+			await openPage(open, '/accounts');
 			await useTheme(page, theme);
 			const loans = page.locator('[data-external-id="account-group-card"]').filter({ hasText: 'Auto Loan' });
 			await expect(loans.locator('[data-wingspan-account-group-note]')).toContainText('a month in interest');
@@ -187,7 +185,7 @@ for (const theme of THEMES) {
 		test("a loan's interest", async ({ page, household, open }) => {
 			household.addLoanPayment();
 			household.linkLoanPayment();
-			await openAsReturning(page, open, '/accounts/details/acct-loan');
+			await openPage(open, '/accounts/details/acct-loan');
 			await useTheme(page, theme);
 			const card = page.getByRole('group', { name: 'Interest', exact: true });
 			await expect(card).toContainText('paid since');
@@ -198,7 +196,7 @@ for (const theme of THEMES) {
 		test('update balance', async ({ page, household, open }) => {
 			household.addLoanPayment();
 			household.linkLoanPayment();
-			await openAsReturning(page, open, '/accounts/details/acct-loan');
+			await openPage(open, '/accounts/details/acct-loan');
 			await useTheme(page, theme);
 			await page.getByRole('group', { name: 'Interest', exact: true }).getByRole('button', { name: 'Update balance' }).click();
 			const dialog = page.getByRole('dialog', { name: 'Update balance' });
@@ -208,7 +206,7 @@ for (const theme of THEMES) {
 
 		test('HSA tags', async ({ page, household, open }) => {
 			household.addHsaExpenses();
-			await openAsReturning(page, open, '/accounts/details/acct-hsa');
+			await openPage(open, '/accounts/details/acct-hsa');
 			await useTheme(page, theme);
 			await page.getByRole('group', { name: 'HSA reimbursements' }).getByRole('button', { name: 'Choose tags' }).click();
 			const dialog = page.getByRole('dialog', { name: 'HSA tags' });
@@ -217,7 +215,7 @@ for (const theme of THEMES) {
 		});
 
 		test('expected income', async ({ page, open }) => {
-			await openAsReturning(page, open);
+			await openPage(open);
 			await useTheme(page, theme);
 			const dialog = await addRecurring(page, 'Income');
 			await chooseMerchant(page, dialog, 'Fabrikam Payouts');
@@ -233,7 +231,7 @@ for (const theme of THEMES) {
 		});
 
 		test('card payments', async ({ page, open }) => {
-			await openAsReturning(page, open);
+			await openPage(open);
 			await useTheme(page, theme);
 			const statements = page.locator('[data-wingspan-statements]');
 			await expect(itemRow(statements, 'Rewards Card')).toBeVisible();
@@ -241,7 +239,7 @@ for (const theme of THEMES) {
 		});
 
 		test('free cash in the summary', async ({ page, open }) => {
-			await openAsReturning(page, open);
+			await openPage(open);
 			await useTheme(page, theme);
 			const summary = page.locator('[data-external-id="recurring-summary-sidebar"]');
 			await expect(summary).toContainText(/Free cash today\s*\$[\d,]+\.\d\d/);
@@ -259,7 +257,7 @@ for (const theme of THEMES) {
 
 		test('HSA reimbursements', async ({ page, household, open }) => {
 			household.addHsaExpenses();
-			await openAsReturning(page, open, '/accounts/details/acct-hsa');
+			await openPage(open, '/accounts/details/acct-hsa');
 			await useTheme(page, theme);
 			const card = page.getByRole('group', { name: 'HSA reimbursements' });
 			await card.getByRole('button', { name: /^Reimbursed/ }).click();
@@ -289,7 +287,7 @@ for (const theme of THEMES) {
 
 		test('workspaces', async ({ page, open, household }) => {
 			household.addBusiness();
-			await openAsReturning(page, open);
+			await openPage(open);
 			await useTheme(page, theme);
 			await page.locator('[data-wingspan-workspace-switcher]').getByRole('button').click();
 			const menu = page.getByRole('menu');
@@ -298,7 +296,7 @@ for (const theme of THEMES) {
 		});
 
 		test('sidebar items', async ({ page, open }) => {
-			await openAsReturning(page, open, '/settings/wingspan');
+			await openPage(open, '/settings/wingspan');
 			await useTheme(page, theme);
 			const group = page.getByRole('group', { name: 'Sidebar' });
 			await group.getByRole('checkbox', { name: 'Investments' }).click();
@@ -307,7 +305,7 @@ for (const theme of THEMES) {
 		});
 
 		test('where Wingspan saves', async ({ page, open }) => {
-			await openAsReturning(page, open, '/settings/display');
+			await openPage(open, '/settings/display');
 			await useTheme(page, theme);
 			await page.locator('[data-wingspan-card]').getByRole('link', { name: 'General' }).click();
 			const group = page.getByRole('group', { name: 'Where Wingspan saves' });
@@ -322,13 +320,13 @@ test.describe('store', () => {
 	test.use({ viewport: { width: 1600, height: 1000 }, deviceScaleFactor: 0.8 });
 
 	test('recurring with statements and due dates', async ({ page, open }) => {
-		await openAsReturning(page, open);
+		await openPage(open);
 		await expect(page.locator('[data-wingspan-row]').first()).toBeVisible();
 		await storeShot(page, '1-recurring');
 	});
 
 	test("a bill's details", async ({ page, open }) => {
-		await openAsReturning(page, open);
+		await openPage(open);
 		await itemRow(page, 'Piano Lessons').click();
 		await expect(page.getByRole('region', { name: 'Piano Lessons details' })).toContainText('Transactions');
 		await storeShot(page, '2-bill-details');

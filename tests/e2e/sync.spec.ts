@@ -1,8 +1,9 @@
-import { APP, dismissFirstRunNotice, expect, inContentScript, itemRow, section, seedExtensionStorage, storageKey, test } from './fixtures';
+import { APP, expect, inContentScript, itemRow, section, seedExtensionStorage, storageKey, test } from './fixtures';
 
-test('existing items move into a hidden Wingspan account in Monarch, with a notice', async ({ page, open, household }) => {
+test('existing items move into a hidden Wingspan account in Monarch, without a notice', async ({ page, open, household }) => {
 	await open();
-	await expect(page.getByText('Wingspan now saves to your Monarch account')).toBeVisible();
+	await expect.poll(() => household.wingspanAccounts.length).toBe(1);
+	await expect(page.locator('[data-mds="toast"]')).toHaveCount(0);
 	const [account] = household.wingspanAccounts;
 	expect(account).toMatchObject({ displayName: 'wingspan', isHidden: true });
 	const json = JSON.parse(account?.notes?.slice(account.notes.indexOf('{')) ?? '{}');
@@ -39,12 +40,6 @@ test("when the account is removed from Monarch, the next load recreates it from 
 	await page.goto(`${APP}/recurring-v2/monthly`);
 	await expect(itemRow(page, 'Piano Lessons')).toBeVisible();
 	await expect.poll(() => household.wingspanAccounts[0]?.notes).toContain('Piano Lessons');
-});
-
-test('a notice closes with its close button', async ({ page, open }) => {
-	await open();
-	await expect(page.getByText('Wingspan now saves to your Monarch account')).toBeVisible();
-	await dismissFirstRunNotice(page);
 });
 
 test("when Monarch can't be reached, a notice shows and closes once Monarch is reachable again", async ({ page, open, api }) => {
