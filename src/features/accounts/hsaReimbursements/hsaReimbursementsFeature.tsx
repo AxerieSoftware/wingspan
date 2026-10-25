@@ -12,12 +12,10 @@ import type { Formatter } from '../../../monarch/ui/formatter';
 import type { WingspanFeature } from '../../wingspanFeature';
 import { HsaReimbursementsCard, type HsaReimbursementsView } from './components/hsaReimbursementsCard';
 import { HsaTagsDialog } from './components/hsaTagsDialog';
+import { isHsaAccount } from './models/hsaAccount';
 import { toHsaExpenses } from './models/hsaExpenses';
-import { type HsaReimbursementTags, resolveHsaReimbursementTags } from './models/hsaReimbursementTags';
+import { type HsaReimbursementTags, resolveHsaReimbursementTags, TRANSACTION_TAGS_QUERY } from './models/hsaReimbursementTags';
 
-/** Monarch's subtype for a health savings account. */
-const HSA_SUBTYPE = 'health_savings_account';
-const TAGS_QUERY = 'monarchTransactionTags';
 const TAGGED_TRANSACTIONS_QUERY = 'monarchTaggedTransactions';
 
 /** On an HSA's account page, the expenses tagged to pay back from it, so the household knows what it can still withdraw. */
@@ -58,14 +56,14 @@ export class HsaReimbursementsFeature implements WingspanFeature {
 
 		void this.monarchData.load();
 		const account = this.monarchData.snapshot.peek()?.accounts.find(candidate => candidate.id === accountId);
-		if (account?.subtype?.name !== HSA_SUBTYPE) {
+		if (!account || !isHsaAccount(account)) {
 			this.hideCard();
 			return;
 		}
 
 		if (this.shownAccountId !== accountId) {
 			this.shownAccountId = accountId;
-			void this.queryClient.invalidateQueries({ queryKey: [TAGS_QUERY] });
+			void this.queryClient.invalidateQueries({ queryKey: [TRANSACTION_TAGS_QUERY] });
 			void this.queryClient.invalidateQueries({ queryKey: [TAGGED_TRANSACTIONS_QUERY] });
 		}
 		this.page.showCard('hsaReimbursements', { render: cardEl => this.mountCard(cardEl) });
@@ -123,7 +121,7 @@ export class HsaReimbursementsFeature implements WingspanFeature {
 	}
 
 	private readTags(): QueryResult<TransactionTag[]> {
-		return this.syncedQueries.read([TAGS_QUERY], () => this.transactionsClient.getTransactionTags());
+		return this.syncedQueries.read([TRANSACTION_TAGS_QUERY], () => this.transactionsClient.getTransactionTags());
 	}
 
 	private readTaggedTransactions(tagId: string): QueryResult<TaggedTransaction[]> {

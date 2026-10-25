@@ -1,6 +1,9 @@
 import * as v from 'valibot';
 import type { TransactionTag } from '../../../../monarch/api/models/taggedTransaction';
 
+/** The query key for the household's Monarch tags, shared so a refresh on the HSA's page reaches Budget's notes too. */
+export const TRANSACTION_TAGS_QUERY = 'monarchTransactionTags';
+
 /** The Monarch tags that mark HSA expenses: one still to reimburse and one already reimbursed. Empty until chosen. */
 export interface HsaReimbursementTags {
 	toReimburseTagId: string;
