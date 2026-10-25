@@ -1,3 +1,4 @@
+import type { RetailSyncFailure } from '../../shared/models/retailSyncMessages';
 import type { ListedOrder, PrepareResult, RetailCollector } from '../../shared/services/retailCollector';
 import { RetailSyncOverlay, type SyncOverlay } from '../../shared/services/retailSyncOverlay';
 import { isPurchase } from '../models/costcoReceipt';
@@ -49,9 +50,10 @@ export class CostcoCollector implements RetailCollector {
 
 	/** Returns are skipped. */
 	public async prepare(since: string, knownOrderIds: string[]): Promise<PrepareResult> {
-		const page = await this.waitForOrdersPage();
-		if (page === 'signedOut') return { status: 'failed', reason: 'retailerSignedOut' };
+		// Costco's app can take several seconds to load, so the overlay shows while it does.
 		this.overlay.show('Finding new receipts…');
+		const page = await this.waitForOrdersPage();
+		if (page === 'signedOut') return this.failed('retailerSignedOut');
 		if (page === 'missing' || !(await this.ensureTemplate())) return this.failed('retailerFormatChanged');
 
 		const body = await this.request({
@@ -93,7 +95,7 @@ export class CostcoCollector implements RetailCollector {
 		this.overlay.hide();
 	}
 
-	private failed(reason: 'retailerFormatChanged'): PrepareResult {
+	private failed(reason: RetailSyncFailure): PrepareResult {
 		this.overlay.hide();
 		return { status: 'failed', reason };
 	}
@@ -109,8 +111,9 @@ export class CostcoCollector implements RetailCollector {
 		return 'missing';
 	}
 
+	/** Costco's page has lowercase labels, like "warehouse", that CSS capitalizes. */
 	private findTab(name: string): HTMLElement | undefined {
-		return [...this.window.document.querySelectorAll<HTMLElement>('button, a, [role=tab]')].find(element => element.textContent?.trim() === name);
+		return [...this.window.document.querySelectorAll<HTMLElement>('[role=tab]')].find(element => element.textContent?.trim().toLowerCase() === name.toLowerCase());
 	}
 
 	/** Opening the Warehouse tab makes the app request receipts. If it's already open, switch to Online and back. */
