@@ -27,6 +27,12 @@ Up to 132 characters, the same as `description` in `wxt.config.ts`.
 > • Projected balances: checking day by day, with recurring income and expenses, bills, everyday spending and card payments.
 > • Free cash: how much you can spend from checking today and still keep a minimum balance, split into money set aside for goals and money that's actually free.
 > • Credit left: when checking runs low, which cards you'd borrow on (in the order you choose), then your backup accounts.
+> • Month-end projection: this month's income and expense bars extended to where the month is headed, bills still due included.
+>
+> BUDGET AND GOALS
+> • Spending averages: a category's 3-month, 12-month and year-to-date averages on Budget, and its average per month on its own page.
+> • HSA spending on Budget: how much of each row was paid from your HSA, so medical bills don't read as overspending.
+> • Goal planner: how much more you can put toward goals each month, when each goal or debt finishes with an extra, and where its money goes once it's done. Save the amounts to your goals when you're happy with them.
 >
 > LOANS AND DEBT
 > • Loans paid down: how much your loans went down, and its share of your income, beside Monarch's savings rate on Cash Flow and Reports.
@@ -38,14 +44,16 @@ Up to 132 characters, the same as `description` in `wxt.config.ts`.
 >
 > TRANSACTIONS
 > • Retail receipt sync: your purchases are sent to Monarch as receipts, which Monarch matches and splits like its Amazon and Target receipts.
+> • Order items: move a synced order's items between categories, or cross out one you didn't get, and its splits and their amounts follow.
 > • Sync status: when your accounts last synced, which ones are behind or need attention, and a button to refresh them all.
+> • Transactions to review: how many still need reviewing, on Transactions in the sidebar.
 >
 > SIDEBAR
 > • Workspaces: switch between the household and a business, and supported pages show only that one's money. For households using Monarch's businesses (Plus plan).
 > • Sidebar items: hide the pages you don't use from Monarch's sidebar.
 >
 > YOUR DATA
-> Wingspan has no server, analytics or tracking. It talks to Monarch with the session you're already signed into, and to a retailer's site only when you sync receipts from it. It saves its own items in a hidden manual account named "wingspan" in your Monarch account, and changes nothing else unless you ask, like saving a loan's new balance. It never unlocks Monarch's paid features.
+> Wingspan has no server, analytics or tracking. It talks to Monarch with the session you're already signed into, and to a retailer's site only when you sync receipts from it. It saves its own items in a hidden manual account named "wingspan" in your Monarch account, and changes nothing else unless you ask, like saving a loan's new balance, new goal amounts or an order's splits. It never unlocks Monarch's paid features.
 >
 > Made by Axerie Software. Not affiliated with or endorsed by Monarch Money.
 
