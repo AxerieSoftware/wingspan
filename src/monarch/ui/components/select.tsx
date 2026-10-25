@@ -57,7 +57,7 @@ export function Select<TValue extends string>({ options, value, label, disabled,
 						const selectedItem = items.find(item => item.value === selectedValue);
 						return (
 							<>
-								<span className={selectSlots.valueLabel({ className: 'flex-none' })}>{selectedItem?.label}</span>
+								<span className={selectSlots.valueLabel({ className: 'flex-initial' })}>{selectedItem?.label}</span>
 								{selectedItem?.adornment}
 							</>
 						);

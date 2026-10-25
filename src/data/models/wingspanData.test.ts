@@ -31,13 +31,14 @@ describe('merging two copies', () => {
 		active: true,
 		since: '2026-01'
 	});
-	const dataOf = (items: RecurringItem[], dueDays: Record<string, number> = {}, cushion = 0, loanLinks: Record<string, string> = {}): WingspanData => ({
+	const dataOf = (items: RecurringItem[], dueDays: Record<string, number> = {}, cushion = 0, loanLinks: Record<string, string> = {}, rollovers: Record<string, string> = {}): WingspanData => ({
 		recurring: { trackingSince: '2026-01', recurringItems: items },
 		recurringDueDates: { dueDatesByRecurrenceId: dueDays },
 		cashSettings: { cushion },
 		businessCashSettings: {},
 		hsaReimbursementTags: { toReimburseTagId: '', reimbursedTagId: '' },
-		loanPaymentLinks: { loanAccountIdByRecurrenceId: loanLinks }
+		loanPaymentLinks: { loanAccountIdByRecurrenceId: loanLinks },
+		goalRollovers: { rollsToByGoalId: rollovers }
 	});
 	const names = (data: WingspanData) => data.recurring.recurringItems.map(each => each.name);
 
@@ -59,6 +60,14 @@ describe('merging two copies', () => {
 		const ours = dataOf([], {}, 0, { 'student-loan-payment': 'student-loan', 'car-payment': 'car-loan' });
 
 		expect(mergeWingspanData(theirs, ours, base).loanPaymentLinks.loanAccountIdByRecurrenceId).toEqual({ 'car-payment': 'car-loan' });
+	});
+
+	it("keeps each side's goal rollovers, so one browser clearing a When done and another choosing one both stick", () => {
+		const base = dataOf([], {}, 0, {}, { card: 'emergency-fund' });
+		const theirs = dataOf([], {}, 0, {}, {});
+		const ours = dataOf([], {}, 0, {}, { card: 'emergency-fund', 'emergency-fund': 'parent-plus' });
+
+		expect(mergeWingspanData(theirs, ours, base).goalRollovers.rollsToByGoalId).toEqual({ 'emergency-fund': 'parent-plus' });
 	});
 
 	it('keeps a removal from either side, unless the other side edited the item since', () => {
@@ -91,7 +100,8 @@ describe("merging each business's cash and card settings", () => {
 			cashSettings: { cushion: 0 },
 			businessCashSettings,
 			hsaReimbursementTags: { toReimburseTagId: '', reimbursedTagId: '' },
-			loanPaymentLinks: { loanAccountIdByRecurrenceId: {} }
+			loanPaymentLinks: { loanAccountIdByRecurrenceId: {} },
+			goalRollovers: { rollsToByGoalId: {} }
 		}) as WingspanData;
 
 	it("takes each business's from whichever side changed it", () => {
