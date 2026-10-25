@@ -1,6 +1,7 @@
-import { type MouseEvent, useId, useLayoutEffect, useRef, useState } from 'react';
-import { roundToCents } from '../../../../common/money';
+import { type MouseEvent, useId, useRef, useState } from 'react';
+import { niceTicks } from '../../../../monarch/ui/chartTicks';
 import type { Formatter } from '../../../../monarch/ui/formatter';
+import { useElementWidth } from '../../../../monarch/ui/hooks/useElementWidth';
 import { afterCardsOf, type ProjectedDay, type ProjectionEvent, type ProjectionEventKind, type ScheduledFlow } from '../models/projection';
 
 const HEIGHT = 320;
@@ -63,7 +64,7 @@ export function BalanceChart({ days, events, cushion, freeCash, freeCashThrough,
 	const plotRight = Math.max(PLOT_LEFT + 1, width - PLOT_RIGHT_GAP);
 	const plotBottom = HEIGHT - PLOT_BOTTOM_GAP;
 	const values = [0, cushion, ...days.flatMap(day => [day.lowestChecking, day.checking, day.lowestAfterCards])];
-	const ticks = niceTicks(Math.min(...values), Math.max(...values));
+	const ticks = niceTicks(Math.min(...values), Math.max(...values), TARGET_Y_TICKS);
 	const [domainLow, domainHigh] = [ticks[0] as number, ticks.at(-1) as number];
 	const step = days.length > 1 ? (plotRight - PLOT_LEFT) / (days.length - 1) : 0;
 	const xOf = (index: number) => PLOT_LEFT + index * step;
@@ -355,32 +356,4 @@ function markersOf(days: ProjectedDay[], events: ProjectionEvent[]): Marker[] {
 		return index === undefined ? [] : [{ kind: event.kind, index }];
 	});
 	return [...eventMarkers, ...flowMarkers];
-}
-
-function niceTicks(low: number, high: number): number[] {
-	const span = high - low || Math.abs(high) || 1;
-	const rawStep = span / (TARGET_Y_TICKS - 1);
-	const magnitude = 10 ** Math.floor(Math.log10(rawStep));
-	const step = ([1, 2, 2.5, 5, 10].find(multiple => multiple * magnitude >= rawStep) ?? 10) * magnitude;
-	const ticks: number[] = [];
-	// The last tick is at or above the highest value, so the line never runs above the top gridline.
-	let tick = Math.floor(low / step) * step;
-	while (ticks.length < 2 || tick - step < high) {
-		ticks.push(roundToCents(tick));
-		tick += step;
-	}
-	return ticks;
-}
-
-function useElementWidth(ref: React.RefObject<HTMLElement | null>): number {
-	const [width, setWidth] = useState(0);
-	useLayoutEffect(() => {
-		const element = ref.current;
-		if (!element) return;
-		setWidth(element.clientWidth);
-		const observer = new ResizeObserver(() => setWidth(element.clientWidth));
-		observer.observe(element);
-		return () => observer.disconnect();
-	}, [ref]);
-	return width;
 }

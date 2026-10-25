@@ -1,7 +1,7 @@
 import type { Calendar } from '../../../../common/calendar';
-import { CENT_TOLERANCE, DAYS_PER_YEAR, MONTHS_PER_YEAR, PERCENT } from '../../../../common/money';
+import { CENT_TOLERANCE, DAYS_PER_YEAR, PERCENT } from '../../../../common/money';
 import { PAID_STATEMENT_CLOSE_DAYS_BEFORE_DUE, STATEMENT_CLOSE_DAYS_BEFORE_DUE } from '../../../recurring/statements/models/statementCycle';
-import type { CardForecast, ProjectedDay, ProjectionEvent, ScheduledFlow } from '../models/projection';
+import { type CardForecast, dailyFromMonthly, type ProjectedDay, type ProjectionEvent, type ScheduledFlow } from '../models/projection';
 import type { CardSchedule, MatchedPayment, PostedAmount } from './cardForecaster';
 import type { MinimumPaymentEstimator } from './minimumPaymentEstimator';
 
@@ -113,7 +113,7 @@ export class BalanceProjector {
 		);
 		const lenders = this.lenders(cards, input.cardOrder);
 		const reserves = (input.burndown?.reserves ?? []).map(reserve => ({ ...reserve }));
-		const checkingDailySpending = this.dailyFromMonthly(input.monthlySpendingByAccountId.get(undefined));
+		const checkingDailySpending = dailyFromMonthly(input.monthlySpendingByAccountId.get(undefined));
 		const days: ProjectedDay[] = [];
 		const events: ProjectionEvent[] = [];
 		let checking = input.checkingBalance;
@@ -188,7 +188,7 @@ export class BalanceProjector {
 	): number {
 		const { accountId, limit } = card.schedule;
 		if (accountId) {
-			const charges = this.dailyFromMonthly(monthlySpendingByAccountId.get(accountId)) - this.sumOf(day.flows.filter(flow => flow.accountId === accountId));
+			const charges = dailyFromMonthly(monthlySpendingByAccountId.get(accountId)) - this.sumOf(day.flows.filter(flow => flow.accountId === accountId));
 			card.owed += charges;
 			// Today's balances are as Monarch has them; interest, like spending, starts tomorrow.
 			const accruesInterest = card.isRevolving && card.schedule.apr !== null && card.owed > 0 && day.date !== startDate;
@@ -379,10 +379,6 @@ export class BalanceProjector {
 	/** A credit balance doesn't add to the limit. */
 	private available(card: CardState): number {
 		return Math.max(0, (card.schedule.limit ?? 0) - Math.max(0, card.owed));
-	}
-
-	private dailyFromMonthly(monthly: number | undefined): number {
-		return ((monthly ?? 0) * MONTHS_PER_YEAR) / DAYS_PER_YEAR;
 	}
 
 	private sumOf(flows: ScheduledFlow[]): number {

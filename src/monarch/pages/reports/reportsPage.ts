@@ -1,5 +1,6 @@
 import { gridItemRow } from '../monarchGrid';
 import type { MonarchNavigator } from '../monarchNavigator';
+import { parseShortDate } from '../monarchText';
 import type { SlotContent } from '../mountedSlot';
 import { type SummaryCard, type SummaryCardLook, SummaryRow, type SummaryRowPage } from '../summaryRow';
 import { WingspanAttribute } from '../wingspanAttributes';
@@ -9,8 +10,7 @@ const REPORTS_CASH_FLOW_PATH = '/reports/cash-flow';
 const SUMMARY_AREA = 'chart';
 /** Under the chart card's title: "Jan 1, 2026 – Oct 11, 2026", one date for a single day, or "All time". */
 const CHART_SUBTITLE_SELECTOR = '[class*="ReportsChartCard__Subtitle"]';
-const SHOWN_DATE_PATTERN = /([A-Z][a-z]{2}) (\d{1,2}), (\d{4})/g;
-const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const SHOWN_DATE_PATTERN = /[A-Z][a-z]{2} \d{1,2}, \d{4}/g;
 const BUSINESS_FILTER_PARAM = 'businessEntitySet';
 const TOTAL_INCOME_LABEL = 'Total income';
 
@@ -53,7 +53,7 @@ export class ReportsPage implements SummaryRowPage {
 	/** Read from the chart card, which shows Monarch's own dates for a relative range like "This year". Null for all time or while it loads. */
 	public get dates(): ReportDates | null {
 		const subtitle = this.window.document.querySelector(CHART_SUBTITLE_SELECTOR)?.textContent ?? '';
-		const shownDates = [...subtitle.matchAll(SHOWN_DATE_PATTERN)].map(([, month, day, year]) => this.toIsoDate(month ?? '', day ?? '', year ?? ''));
+		const shownDates = [...subtitle.matchAll(SHOWN_DATE_PATTERN)].flatMap(([shownDate]) => parseShortDate(shownDate) ?? []);
 		const startDate = shownDates[0];
 		if (!startDate) return null;
 		return { startDate, endDate: shownDates[1] ?? startDate };
@@ -74,10 +74,5 @@ export class ReportsPage implements SummaryRowPage {
 
 	public removeSummaryCard(card: SummaryCard): void {
 		this.summaryRow.removeCard(card);
-	}
-
-	private toIsoDate(monthName: string, day: string, year: string): string {
-		const month = MONTH_NAMES.indexOf(monthName) + 1;
-		return `${year}-${String(month).padStart(2, '0')}-${day.padStart(2, '0')}`;
 	}
 }

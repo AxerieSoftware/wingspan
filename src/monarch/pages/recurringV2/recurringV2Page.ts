@@ -1,5 +1,6 @@
 import { readPersistedField } from '../../persistedState';
 import { StyleOverrides } from '../../ui/styleOverrides';
+import { parseMonthYear } from '../monarchText';
 import { MountedSlot, type SlotContent } from '../mountedSlot';
 import { WingspanAttribute } from '../wingspanAttributes';
 import type { RecurringV2AddDialogExtension } from './models/recurringV2AddDialogExtension';
@@ -13,7 +14,7 @@ import { RecurringV2LayoutCopier } from './recurringV2LayoutCopier';
 import { RecurringV2Row } from './recurringV2Row';
 import { RecurringV2Section } from './recurringV2Section';
 import { type RecurringV2SectionCard, RecurringV2SectionCards } from './recurringV2SectionCards';
-import { MONTH_NAMES, RECURRING_V2_SELECTORS as SELECTORS } from './recurringV2Selectors';
+import { RECURRING_V2_SELECTORS as SELECTORS } from './recurringV2Selectors';
 import { RecurringV2Sidebar } from './recurringV2Sidebar';
 import { RecurringV2StatementsCard } from './recurringV2StatementsCard';
 
@@ -21,7 +22,6 @@ const GROUP_BY_STORAGE_KEY = 'persist:recurringV2';
 const BY_TYPE = 'type';
 const FALLBACK_ROW_CLASS_NAME = 'grid cursor-pointer items-center gap-lg border-t border-t-divider-primary px-default py-sm';
 const ALL_VIEW_REFERENCE_MONTH = '2000-01';
-const YEAR_PATTERN = /^\d{4}$/;
 const ITEM_ID_PATTERN = /^\d+$/;
 const ROW_ACTIVATION_KEYS = new Set(['Enter', ' ']);
 
@@ -94,12 +94,7 @@ export class RecurringV2Page {
 
 	/** The month in the list's title as YYYY-MM, or null when it can't be read. */
 	public get shownMonth(): string | null {
-		const titleText = this.window.document.querySelector(SELECTORS.monthTitle)?.textContent?.trim() ?? '';
-		const [monthName, year] = titleText.split(' ');
-		const monthIndex = MONTH_NAMES.findIndex(name => monthName?.startsWith(name));
-		if (monthIndex < 0 || !YEAR_PATTERN.test(year ?? '')) return null;
-
-		return `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+		return parseMonthYear(this.window.document.querySelector(SELECTORS.monthTitle)?.textContent ?? '');
 	}
 
 	public isShowingMonth(month: string): boolean {
