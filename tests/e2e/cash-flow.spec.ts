@@ -168,3 +168,39 @@ test('free cash explains how pending money counts', async ({ page, open }) => {
 
 	await expect(freeCash.getByRole('button', { name: /Pending purchases count as already spent; pending deposits count once they clear\./ })).toHaveCount(1);
 });
+
+test("this month's bars extend, dashed, to where the projection ends the month, and its tooltip adds the projected totals", async ({ page, open }) => {
+	await open({ path: '/cash-flow', waitForRows: false });
+	const bars = page.locator('[data-wingspan-cash-flow-chart-overlay]').getByRole('img', { name: /^Projected by / });
+	await expect(bars).toHaveAttribute('aria-label', /^Projected by \w{3} \d{1,2}: \$[\d,]+ more income and \$[\d,]+ more expenses$/);
+	await expect(bars.locator('rect[stroke-dasharray]').first()).toBeVisible();
+	const [moreIncome, moreExpenses] = [...((await bars.getAttribute('aria-label')) ?? '').matchAll(/\$([\d,]+)/g)].map(match => Number(match[1]?.replaceAll(',', '')));
+
+	const chart = page.locator('.recharts-surface').first();
+	const box = await chart.boundingBox();
+	const monthLabel = chart.locator('.recharts-xAxis-tick-labels text').last();
+	await page.mouse.move((box?.x ?? 0) + Number(await monthLabel.getAttribute('x')), (box?.y ?? 0) + 120);
+	const tooltip = page.locator('.recharts-tooltip-wrapper');
+	const rows = tooltip.locator('[data-external-id="chart-tooltip-data-row"], [data-wingspan-cash-flow-tooltip-rows] > div');
+	const amount = async (label: string) =>
+		Number(
+			(
+				await rows
+					.filter({ hasText: new RegExp(`^${label}`) })
+					.locator('span')
+					.last()
+					.textContent()
+			)?.replace(/[^\d.]/g, '')
+		);
+	await expect(tooltip.getByText('Projected expenses:')).toBeVisible();
+
+	// Each amount is rounded to the dollar on its own, so a total can be a dollar off the sum of its rounded parts.
+	expect(Math.abs((await amount('Projected income:')) - (await amount('Income:')) - (moreIncome ?? 0))).toBeLessThanOrEqual(1);
+	expect(Math.abs((await amount('Projected expenses:')) - (await amount('Expenses:')) - (moreExpenses ?? 0))).toBeLessThanOrEqual(1);
+});
+
+test("the projection isn't drawn on Quarterly or Yearly", async ({ page, open }) => {
+	await open({ path: '/cash-flow?timeframe=year', waitForRows: false });
+	await expect(page.locator('.recharts-surface').first()).toBeVisible();
+	await expect(page.locator('[data-wingspan-cash-flow-chart-overlay]')).toHaveCount(0);
+});

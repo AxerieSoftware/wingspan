@@ -6,7 +6,8 @@ import { Parser } from 'acorn';
 type AstNode = { type: string; [key: string]: unknown };
 
 const CSS_CLASS_SELECTOR = /\.((?:\\.|[\w-])+)/g;
-const MARKER_CLASSES = /^(group|peer)(\/[\w-]+)?$/;
+// Classes with no CSS of their own: Tailwind's group and peer markers, and FullStory's, which keep amounts out of Monarch's session recordings.
+const MARKER_CLASSES = /^((group|peer)(\/[\w-]+)?|fs-(mask|exclude))$/;
 const CLASS_TOKEN = /^-?[a-z@[(*!][^\s"'`]*[-:\]][^\s"'`]*$/;
 // biome-ignore format: reads better as one line
 const SINGLE_WORD_UTILITIES = new Set(["flex", "grid", "block", "inline", "hidden", "contents", "relative", "absolute", "fixed", "sticky", "truncate", "grow", "shrink", "border", "rounded", "underline", "italic", "uppercase", "invisible", "visible"]);

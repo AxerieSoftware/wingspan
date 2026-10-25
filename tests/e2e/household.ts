@@ -58,6 +58,120 @@ const CATEGORIES = {
 	loanPayment: { id: 'cat-loan-payment', name: 'Loan Repayment', icon: '🚗', group: EXPENSES }
 } satisfies Record<string, Category>;
 
+/** An order Monarch's retail sync split by category, as `addSyncedOrder` adds it: the charge and its receipt's items. */
+const SYNCED_ORDER = {
+	id: 'tx-order',
+	amount: -139.14,
+	merchant: 'Contoso Market',
+	link: 'https://www.example.com/orders/5521',
+	items: [
+		{ line: '1 x Fabrikam Espresso Maker - $167.99', categoryId: 'cat-groceries' },
+		{ line: '2 x Contoso Paper Towels - 12 Rolls - $11.99', categoryId: 'cat-groceries' },
+		{ line: '1 x Fabrikam Coffee Pods™ - $12.99', categoryId: 'cat-coffee' },
+		{ line: '1 x Contoso Allergy Relief - $9.49', categoryId: 'cat-medical' }
+	]
+};
+/** The synced order's splits as Monarch's retail sync made them: the charge shared out by price. */
+const SYNCED_ORDER_SPLITS = [
+	{ categoryId: 'cat-groceries', amount: -124.55, itemIndexes: [0, 1] },
+	{ categoryId: 'cat-coffee', amount: -8.43, itemIndexes: [2] },
+	{ categoryId: 'cat-medical', amount: -6.16, itemIndexes: [3] }
+];
+
+/** Goals on Monarch's Save up page. `targetDate` is how many months from now it's due, if it has a date. */
+const SAVINGS_GOALS = [
+	{
+		id: 'goal-1',
+		type: 'savings',
+		name: 'Rainy Day',
+		status: 'on_track',
+		currentBalance: 1200,
+		targetAmount: 6000,
+		targetDate: null as number | null,
+		archivedAt: null,
+		completedAt: null,
+		linkedAccountId: null as string | null
+	},
+	{
+		id: 'goal-2',
+		type: 'savings',
+		name: 'Contoso Cruise',
+		status: 'at_risk',
+		currentBalance: 400,
+		targetAmount: 3000,
+		targetDate: 14 as number | null,
+		archivedAt: null,
+		completedAt: null,
+		// Held in the Vacation Fund, which grows at 4% a year.
+		linkedAccountId: 'acct-vacation' as string | null
+	}
+];
+/** Retirement goals added by `addRetirementGoals`: one held in a 401(k), paid into from the paycheck, and a Roth IRA paid from checking. */
+const RETIREMENT_GOALS = [
+	{
+		id: 'goal-3',
+		type: 'retirement',
+		name: 'Retirement – 401(k)',
+		status: 'on_track',
+		currentBalance: 42000,
+		targetAmount: 900000,
+		targetDate: 300 as number | null,
+		archivedAt: null,
+		completedAt: null,
+		linkedAccountId: 'acct-401k' as string | null
+	},
+	{
+		id: 'goal-4',
+		type: 'retirement',
+		name: 'Retirement – Roth IRA',
+		status: 'on_track',
+		currentBalance: 8000,
+		targetAmount: 200000,
+		targetDate: 300 as number | null,
+		archivedAt: null,
+		completedAt: null,
+		linkedAccountId: null as string | null
+	}
+];
+const RETIREMENT_ACCOUNT = {
+	id: 'acct-401k',
+	displayName: 'Fabrikam 401(k)',
+	currentBalance: 42000,
+	isAsset: true,
+	isHidden: false,
+	type: { name: 'brokerage', display: 'Investments' },
+	subtype: { name: 'st_401k', display: '401k' }
+};
+const GROWTH_RATES: Record<string, number> = { 'acct-vacation': 4, 'acct-401k': 7 };
+
+/** The filters Cash Flow, Budget and category pages pass to `aggregates`. */
+interface AggregateFilters {
+	startDate?: string;
+	endDate?: string;
+	categories?: string[];
+	accounts?: string[];
+	excludeAccounts?: string[];
+	tags?: string[];
+}
+
+/** How Budget groups each expense category. Income categories have none. */
+const BUDGET_VARIABILITY: Record<string, string> = {
+	'cat-subscriptions': 'fixed',
+	'cat-utilities': 'fixed',
+	'cat-rent': 'fixed',
+	'cat-loan-payment': 'fixed',
+	'cat-lessons': 'flexible',
+	'cat-coffee': 'flexible',
+	'cat-groceries': 'flexible',
+	'cat-gas': 'flexible',
+	'cat-medical': 'flexible'
+};
+/** Each month's planned amount per category in Budget. */
+const BUDGET_PLANNED: Record<string, number> = { 'cat-paychecks': 6400, 'cat-rent': 1500, 'cat-groceries': 300, 'cat-gas': 80, 'cat-medical': 50 };
+
+/** How many months from now `addThirdPaycheckMonth` budgets the extra paycheck. */
+const THIRD_PAYCHECK_MONTHS_AHEAD = 4;
+
 /** The auto loan's monthly payment, which all goes to its balance. */
 const LOAN_PAYMENT = 340;
 /** Numeric like Monarch's, since Wingspan reads an open item's id from its path. */
@@ -153,6 +267,22 @@ export class Household {
 	private hasPlus = false;
 	private hsaTags: Record<HsaExpense['tag'], TransactionTag> | null = null;
 	private hasLoanPayment = false;
+	private hasHsaCardPurchase = false;
+	private hasSavingsGoals = false;
+	/** Payments planned on Pay down, by loan account id, when changed from the loan's $340. */
+	private readonly plannedPayments = new Map<string, number>();
+	/** What's planned for each savings goal a month, by goal id, from its linked account if it has one, or its general contribution. */
+	private readonly goalPlannedAmounts = new Map([
+		['goal-1', 250],
+		['goal-2', 0],
+		['goal-3', 900],
+		['goal-4', 300]
+	]);
+	private hasRetirementGoal = false;
+	private hasThirdPaycheckMonth = false;
+	/** The synced order's splits, from `addSyncedOrder`, replaced when they're saved. */
+	private orderSplits: { id: string; categoryId: string; amount: number; notes: string }[] | null = null;
+	private savedSplitCount = 0;
 	private isLoanPaymentLinked = false;
 	private needsReviewCount = 0;
 	private hasCardInterest = false;
@@ -232,12 +362,75 @@ export class Household {
 		this.hasCardInterest = true;
 	}
 
+	/** Two savings goals on Goals: Rainy Day, with $250 a month planned, and a cruise with nothing planned yet. */
+	public addSavingsGoals(): void {
+		this.hasSavingsGoals = true;
+	}
+
+	/** Retirement goals: a 401(k) with $900 a month planned from the paycheck, and a Roth IRA with $300 from checking. */
+	public addRetirementGoals(): void {
+		this.hasRetirementGoal = true;
+	}
+
+	/** An order from Contoso Market, split by category by Monarch's retail sync, with its receipt's items in the notes. */
+	public addSyncedOrder(): void {
+		const notesOf = (lines: string[]) => [...lines, SYNCED_ORDER.link].join('\n\n');
+		this.orderSplits = SYNCED_ORDER_SPLITS.map((split, index) => ({
+			id: `tx-order-${index + 1}`,
+			categoryId: split.categoryId,
+			amount: split.amount,
+			notes: notesOf(split.itemIndexes.map(itemIndex => SYNCED_ORDER.items[itemIndex]?.line ?? ''))
+		}));
+	}
+
+	/** The synced order's splits, for checking what was saved. */
+	public get syncedOrderSplits(): readonly { categoryId: string; amount: number; notes: string }[] {
+		return this.orderSplits ?? [];
+	}
+
+	/** Budgets a third paycheck, $3,200 more pay, in one month of the year ahead. */
+	public addThirdPaycheckMonth(): void {
+		this.hasThirdPaycheckMonth = true;
+	}
+
+	/** A pharmacy purchase on the HSA's own card earlier this month. */
+	public addHsaCardPurchase(): void {
+		this.hasHsaCardPurchase = true;
+	}
+
 	/** Tags medical expenses paid from checking to pay back from the HSA, with tags named as given in Monarch's settings. */
 	public addHsaExpenses({ toReimburseName = 'HSA – Reimburse', reimbursedName = 'HSA – Reimbursed' } = {}): void {
 		this.hsaTags = {
 			toReimburse: { id: 'tag-hsa-reimburse', name: toReimburseName, color: '#1baf7a' },
 			reimbursed: { id: 'tag-hsa-reimbursed', name: reimbursedName, color: '#8e4ec6' }
 		};
+	}
+
+	private savingsGoals() {
+		const goals = this.hasRetirementGoal ? [...SAVINGS_GOALS, ...RETIREMENT_GOALS] : SAVINGS_GOALS;
+		return goals.map(({ linkedAccountId, ...goal }) => {
+			const linkedAccounts = [...this.baseAccounts, RETIREMENT_ACCOUNT].filter(account => account.id === linkedAccountId).map(account => ({ ...account, growthRate: GROWTH_RATES[account.id] }));
+			const planned = this.goalPlannedAmounts.get(goal.id) ?? 0;
+			return {
+				...goal,
+				targetDate: goal.targetDate && this.monthDay(-goal.targetDate, 28),
+				progress: goal.currentBalance / goal.targetAmount,
+				// Like Monarch's, only the general contribution, without what's planned from an account.
+				plannedMonthlyContribution: linkedAccounts.length ? 0 : planned,
+				linkedAccounts,
+				allocationAmountsByAccount: linkedAccounts.map(account => ({ goalId: goal.id, account, totalAmount: goal.currentBalance })),
+				monthlyBudgetAmounts: ({ startMonth, endMonth }: { startMonth: string; endMonth: string }) =>
+					this.monthsBetween(String(startMonth), String(endMonth)).map(month => ({
+						id: `${goal.id}-${month}`,
+						month: `${month}-01`,
+						plannedAmount: linkedAccounts.length ? 0 : planned,
+						totalPlannedAmount: planned,
+						actualAmount: 0,
+						remainingAmount: linkedAccounts.length ? 0 : planned,
+						accountBreakdown: linkedAccounts.map(account => ({ id: `${goal.id}-${account.id}-${month}`, account, plannedAmount: planned, actualAmount: 0, remainingAmount: planned }))
+					}))
+			};
+		});
 	}
 
 	private get baseAccounts() {
@@ -289,7 +482,7 @@ export class Household {
 					order: groupOrder,
 					categories: Object.values(CATEGORIES)
 						.filter(category => category.group.id === group.id)
-						.map((category, order) => ({ ...category, order }))
+						.map((category, order) => ({ ...category, order, budgetVariability: BUDGET_VARIABILITY[category.id] ?? null }))
 				})),
 			// Monarch shows its business filter only on its Plus plan.
 			subscription: () => ({ id: 'subscription-1', entitlements: this.hasPlus ? ['premium_plus'] : [], plusTrialEndsAt: null, canceledPlusTrialAt: null }),
@@ -334,20 +527,44 @@ export class Household {
 				const stored = this.storedAccounts.find(account => account.id === id);
 				return stored ? this.toMonarchAccount(stored) : (this.baseAccounts.find(account => account.id === id) ?? null);
 			},
-			getTransaction: ({ id }) => this.transactions().find(transaction => transaction.id === id) ?? null,
+			// The list has the synced order's splits but not the charge they came from.
+			getTransaction: ({ id }) => [...this.transactions(), ...this.syncedOrder().slice(0, 1)].find(transaction => transaction.id === id) ?? null,
+			updateTransactionSplit: ({ input }) => {
+				const { splitData } = input as { splitData: { id?: string; categoryId: string; amount: number; notes: string }[] };
+				// Monarch saves notes with characters like "™" turned into "TM".
+				this.orderSplits = splitData.map(split => ({
+					id: split.id ?? `tx-order-new-${++this.savedSplitCount}`,
+					categoryId: split.categoryId,
+					amount: split.amount,
+					notes: split.notes.normalize('NFKC')
+				}));
+				return { transaction: this.syncedOrder()[0] ?? null, errors: null };
+			},
+			categories: () =>
+				Object.values(CATEGORIES).map((category, order) => ({ ...category, order, isDisabled: false, group: { ...category.group, order: [EXPENSES, INCOME, TRANSFERS].indexOf(category.group) } })),
 			householdTransactionTags: () => (this.hsaTags ? [{ id: 'tag-retail', name: 'Retail Sync', color: '#f86713' }, ...Object.values(this.hsaTags)] : []),
+			// A category's page lists that category's transactions.
+			category: ({ id }) => Object.values(CATEGORIES).find(category => category.id === id) ?? null,
 			allTransactions: ({ filters }) => {
-				const { tags: tagIds, needsReview } = (filters as { tags?: string[]; needsReview?: boolean } | null) ?? {};
+				const { tags: tagIds, needsReview, categories: categoryIds } = (filters as { tags?: string[]; needsReview?: boolean; categories?: string[] } | null) ?? {};
 				if (needsReview) return { totalCount: this.needsReviewCount, results: this.transactions().slice(0, this.needsReviewCount) };
-				const results = tagIds?.length ? this.transactions().filter(transaction => transaction.tags.some(tag => tagIds.includes(tag.id))) : this.transactions();
+				const tagged = tagIds?.length ? this.transactions().filter(transaction => transaction.tags.some(tag => tagIds.includes(tag.id))) : this.transactions();
+				const results = categoryIds?.length ? tagged.filter(transaction => categoryIds.includes(transaction.category.id)) : tagged;
 				return { totalCount: results.length, results };
 			},
-			budgetData: ({ startMonth }) => ({
-				monthlyAmountsByCategory: [
-					{ category: { ...CATEGORIES.groceries, budgetVariability: 'flexible' }, monthlyAmounts: [{ month: startMonth, plannedCashFlowAmount: 300 }] },
-					{ category: { ...CATEGORIES.gas, budgetVariability: 'flexible' }, monthlyAmounts: [{ month: startMonth, plannedCashFlowAmount: 80 }] }
-				]
-			}),
+			savingsGoals: ({ ids }) => (this.hasSavingsGoals ? this.savingsGoals().filter(goal => !(ids as string[] | null)?.length || (ids as string[]).includes(goal.id)) : []),
+			setSavingsGoalBudgetAmount: ({ input }) => {
+				const { savingsGoalId, amount } = input as { savingsGoalId: string; amount: number };
+				this.goalPlannedAmounts.set(savingsGoalId, amount);
+				return { success: true, errors: null };
+			},
+			// Pay down lists the household's loans, each paid $340 a month.
+			debtAccounts: () =>
+				this.baseAccounts
+					.filter(account => account.type.name === 'loan')
+					.map(account => ({ ...account, plannedPayment: this.plannedPayments.get(account.id) ?? LOAN_PAYMENT, minimumPayment: LOAN_PAYMENT, excludeFromDebtPaydown: false })),
+			budgetStatus: () => ({ hasBudget: true, hasTransactions: true, willCreateBudgetFromEmptyDefaultCategories: false }),
+			budgetData: ({ startMonth, endMonth }) => this.budgetData(String(startMonth), String(endMonth)),
 			savingsGoalMonthlyBudgetAmounts: ({ startMonth, endMonth }) => [
 				{
 					id: 'goal-amounts-1',
@@ -355,12 +572,12 @@ export class Household {
 					monthlyAmounts: this.monthsBetween(String(startMonth), String(endMonth)).map(month => ({
 						id: `goal-1-${month}`,
 						month: `${month}-01`,
-						plannedAmount: 250,
-						remainingAmount: month === this.today.slice(0, 7) ? 150 : 250
+						plannedAmount: this.goalPlannedAmounts.get('goal-1') ?? 0,
+						remainingAmount: (this.goalPlannedAmounts.get('goal-1') ?? 0) - (month === this.today.slice(0, 7) ? 100 : 0)
 					}))
 				}
 			],
-			aggregates: ({ filters, groupBy }) => this.aggregates(filters as { startDate?: string; endDate?: string } | null, (groupBy as string[] | null) ?? []),
+			aggregates: ({ filters, groupBy }) => this.aggregates(filters as AggregateFilters | null, (groupBy as string[] | null) ?? []),
 			recurrenceGroupsForPeriod: ({ startDate, endDate }) => this.recurrenceRows(String(startDate ?? this.today), String(endDate ?? startDate ?? this.today)),
 			recurrenceGroup: ({ id }) => this.recurrenceRows(this.today, this.today).find(row => row.recurrenceGroup.id === id)?.recurrenceGroup ?? null,
 			aggregatedRecurrenceGroups: ({ startDate, endDate, filters }) => this.summary(String(startDate), String(endDate), (filters as { accounts?: string[] } | null)?.accounts),
@@ -385,8 +602,19 @@ export class Household {
 				return { account: this.toMonarchAccount(account), errors: null };
 			},
 			updateAccount: ({ input }) => {
-				const { id, notes, hideFromList, name, displayBalance } = input as { id: string; notes?: string; hideFromList?: boolean; name?: string; displayBalance?: number };
+				const { id, notes, hideFromList, name, displayBalance, plannedPayment } = input as {
+					id: string;
+					notes?: string;
+					hideFromList?: boolean;
+					name?: string;
+					displayBalance?: number;
+					plannedPayment?: number;
+				};
 				const baseAccount = this.baseAccounts.find(candidate => candidate.id === id);
+				if (baseAccount && plannedPayment !== undefined) {
+					this.plannedPayments.set(id, plannedPayment);
+					return { account: baseAccount, errors: null };
+				}
 				if (baseAccount && displayBalance !== undefined) {
 					this.enteredLoanBalances.set(id, displayBalance);
 					return { account: baseAccount, errors: null };
@@ -404,6 +632,68 @@ export class Household {
 				if (account) account.deletedAt = this.now();
 				return { deleted: !!account, errors: null };
 			}
+		};
+	}
+
+	/** What's budgeted for a category in a month, with the third paycheck's month budgeting half again as much pay. */
+	private plannedBudget(categoryId: string, month: string): number {
+		const planned = BUDGET_PLANNED[categoryId] ?? 0;
+		const isThirdPaycheckMonth = this.hasThirdPaycheckMonth && categoryId === 'cat-paychecks' && month === this.addMonths(this.today.slice(0, 7), THIRD_PAYCHECK_MONTHS_AHEAD);
+		return isThirdPaycheckMonth ? planned * 1.5 : planned;
+	}
+
+	/** Monarch's budget for each month: what's planned per category, and what was spent or earned. */
+	private budgetData(startMonth: string, endMonth: string) {
+		const months = this.monthsBetween(startMonth, endMonth);
+		const budgeted = Object.values(CATEGORIES).filter(category => category.group.type !== 'transfer');
+		const actualOf = (categoryId: string, month: string) => {
+			const sum = this.transactions()
+				.filter(transaction => transaction.category.id === categoryId && transaction.date.startsWith(month))
+				.reduce((total, transaction) => total + transaction.amount, 0);
+			return Math.abs(sum);
+		};
+		const amountsOf = (planned: number, actual: number, month: string) => ({
+			month: `${month}-01`,
+			plannedCashFlowAmount: planned,
+			plannedSetAsideAmount: 0,
+			actualAmount: actual,
+			remainingAmount: planned - actual,
+			previousMonthRolloverAmount: null,
+			rolloverType: null,
+			cumulativeActualAmount: null,
+			rolloverTargetAmount: null
+		});
+		const totalsOf = (categories: typeof budgeted, month: string) => {
+			const planned = categories.reduce((total, category) => total + this.plannedBudget(category.id, month), 0);
+			const actual = categories.reduce((total, category) => total + actualOf(category.id, month), 0);
+			return { plannedAmount: planned, actualAmount: actual, remainingAmount: planned - actual, previousMonthRolloverAmount: 0 };
+		};
+		const expenses = budgeted.filter(category => category.group.type === 'expense');
+		const byVariability = (variability: string) => expenses.filter(category => BUDGET_VARIABILITY[category.id] === variability);
+		return {
+			monthlyAmountsByCategory: budgeted.map(category => ({
+				category: { ...category, budgetVariability: BUDGET_VARIABILITY[category.id] ?? null },
+				monthlyAmounts: months.map(month => amountsOf(this.plannedBudget(category.id, month), actualOf(category.id, month), month))
+			})),
+			monthlyAmountsByCategoryGroup: [],
+			monthlyAmountsForFlexExpense: {
+				budgetVariability: 'flexible',
+				monthlyAmounts: months.map(month => {
+					const totals = totalsOf(byVariability('flexible'), month);
+					return amountsOf(totals.plannedAmount, totals.actualAmount, month);
+				})
+			},
+			totalsByMonth: months.map(month => ({
+				month: `${month}-01`,
+				totalIncome: totalsOf(
+					budgeted.filter(category => category.group.type === 'income'),
+					month
+				),
+				totalExpenses: totalsOf(expenses, month),
+				totalFixedExpenses: totalsOf(byVariability('fixed'), month),
+				totalFlexibleExpenses: totalsOf(byVariability('flexible'), month),
+				totalNonMonthlyExpenses: totalsOf(byVariability('non_monthly'), month)
+			}))
 		};
 	}
 
@@ -480,29 +770,92 @@ export class Household {
 		return { expense: totals('expense'), creditCard: totals('credit_card'), income: totals('income'), transfer: totals('transfer') };
 	}
 
-	/** Cash Flow's totals: one row for the range, or one per month, quarter or year. Grouping by category, group or merchant returns nothing. */
-	private aggregates(filters: { startDate?: string; endDate?: string } | null, groupBy: string[]) {
+	/** Cash Flow's totals: one row for the range, or one per combination of category, month, quarter and year asked for. Grouping by group or merchant returns nothing. */
+	private aggregates(filters: AggregateFilters | null, groupBy: string[]) {
 		const startDate = filters?.startDate ?? '0000-01-01';
 		const endDate = filters?.endDate ?? this.today;
-		const inRange = this.transactions().filter(transaction => transaction.date >= startDate && transaction.date <= endDate && transaction.category.group.type !== 'transfer');
+		const { categories, accounts, excludeAccounts, tags } = filters ?? {};
+		const inRange = this.transactions().filter(
+			transaction =>
+				transaction.date >= startDate &&
+				transaction.date <= endDate &&
+				transaction.category.group.type !== 'transfer' &&
+				(!categories?.length || categories.includes(transaction.category.id)) &&
+				(!accounts?.length || accounts.includes(transaction.account?.id ?? '')) &&
+				!excludeAccounts?.includes(transaction.account?.id ?? '') &&
+				(!tags?.length || transaction.tags.some(tag => tags.includes(tag.id)))
+		);
 		const summaryOf = (transactions: typeof inRange) => {
 			const sumIncome = transactions.filter(transaction => transaction.amount > 0).reduce((total, transaction) => total + transaction.amount, 0);
 			const sumExpense = transactions.filter(transaction => transaction.amount < 0).reduce((total, transaction) => total + transaction.amount, 0);
 			const savings = sumIncome + sumExpense;
-			return { sum: savings, sumIncome, sumExpense, savings, savingsRate: sumIncome ? savings / sumIncome : 0 };
+			const dates = transactions.map(transaction => transaction.date).sort();
+			const amounts = transactions.map(transaction => Math.abs(transaction.amount));
+			return {
+				sum: savings,
+				sumIncome,
+				sumExpense,
+				savings,
+				savingsRate: sumIncome ? savings / sumIncome : 0,
+				count: transactions.length,
+				avg: amounts.length ? amounts.reduce((total, amount) => total + amount, 0) / amounts.length : null,
+				max: amounts.length ? Math.max(...amounts) : null,
+				first: dates[0] ?? null,
+				last: dates.at(-1) ?? null
+			};
 		};
 
-		const period = groupBy.find(key => key === 'month' || key === 'quarter' || key === 'year');
+		type Transaction = (typeof inRange)[number];
+		const quarterStart = (date: string) => `${date.slice(0, 5)}${String(Math.floor((Number(date.slice(5, 7)) - 1) / 3) * 3 + 1).padStart(2, '0')}-01`;
+		const groupValues: Record<string, (transaction: Transaction) => unknown> = {
+			category: transaction => transaction.category,
+			month: transaction => `${transaction.date.slice(0, 7)}-01`,
+			quarter: transaction => quarterStart(transaction.date),
+			year: transaction => `${transaction.date.slice(0, 4)}-01-01`
+		};
 		if (!groupBy.length) return [{ groupBy: {}, summary: summaryOf(inRange) }];
-		if (!period) return [];
+		// Grouping by anything else, like merchant, returns nothing.
+		if (groupBy.some(key => !groupValues[key])) return [];
+		const groupOf = (transaction: Transaction) => Object.fromEntries(groupBy.map(key => [key, groupValues[key]?.(transaction)]));
+		const keyOf = (group: Record<string, unknown>) => JSON.stringify(Object.values(group).map(value => (value as { id?: string } | null)?.id ?? value));
+		return [...Map.groupBy(inRange, transaction => keyOf(groupOf(transaction))).entries()]
+			.sort(([a], [b]) => a.localeCompare(b))
+			.map(([, transactions]) => ({ groupBy: groupOf(transactions[0] as Transaction), summary: summaryOf(transactions) }));
+	}
 
-		const startOf = (date: string) => {
-			if (period === 'year') return `${date.slice(0, 4)}-01-01`;
-			if (period === 'quarter') return `${date.slice(0, 5)}${String(Math.floor((Number(date.slice(5, 7)) - 1) / 3) * 3 + 1).padStart(2, '0')}-01`;
-			return `${date.slice(0, 7)}-01`;
+	/** The synced order's charge, then its splits, each pointing back to it. */
+	private syncedOrder() {
+		if (!this.orderSplits) return [];
+		const categoryOf = (categoryId: string) => Object.values(CATEGORIES).find(category => category.id === categoryId) ?? CATEGORIES.groceries;
+		const base = {
+			date: this.dayOffset(-3),
+			pending: false,
+			plaidName: 'CONTOSO MARKET ONLINE',
+			merchant: { id: 'merchant-contoso-market', name: SYNCED_ORDER.merchant, logoUrl: null },
+			account: BASE_ACCOUNTS.find(account => account.id === 'acct-rewards'),
+			tags: [] as TransactionTag[],
+			attachments: [] as { id: string }[]
 		};
-		const byPeriod = Map.groupBy(inRange, transaction => startOf(transaction.date));
-		return [...byPeriod].sort(([a], [b]) => a.localeCompare(b)).map(([periodStart, transactions]) => ({ groupBy: { [period]: periodStart }, summary: summaryOf(transactions) }));
+		const original = {
+			...base,
+			id: SYNCED_ORDER.id,
+			amount: SYNCED_ORDER.amount,
+			category: CATEGORIES.groceries,
+			notes: [...SYNCED_ORDER.items.map(item => item.line), SYNCED_ORDER.link].join('\n\n'),
+			hasSplitTransactions: true,
+			splitTransactions: [] as unknown[]
+		};
+		const splits = this.orderSplits.map(split => ({
+			...base,
+			id: split.id,
+			amount: split.amount,
+			category: categoryOf(split.categoryId),
+			notes: split.notes,
+			isSplitTransaction: true,
+			originalTransaction: original
+		}));
+		original.splitTransactions = splits;
+		return [original, ...splits];
 	}
 
 	private transactions() {
@@ -529,7 +882,9 @@ export class Household {
 				}))
 			: [];
 		return [
+			...this.syncedOrder().slice(1),
 			...hsaExpenses,
+			...(this.hasHsaCardPurchase ? [transaction('tx-hsa-card', this.monthDay(0, 1), -64.3, 'FABRIKAM PHARMACY', 'Fabrikam Pharmacy', 'acct-hsa', CATEGORIES.medical)] : []),
 			// The rewards card paid in full around the 17th; each payment is posted to the card's own account. None is dated after today.
 			...[0, 1, 2, 3, 4, 5]
 				.filter(monthsAgo => this.monthDay(monthsAgo, 17) <= this.today)
