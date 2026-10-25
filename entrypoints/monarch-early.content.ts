@@ -3,8 +3,9 @@ import { WorkspaceNavigation } from '@/src/features/businessEntities/services/wo
 import { HiddenSidebarItems } from '@/src/features/sidebar/hiddenItems/services/hiddenSidebarItems';
 import { SidebarPage } from '@/src/monarch/pages/sidebar/sidebarPage';
 import { MonarchSession } from '@/src/monarch/session/monarchSession';
+import { StartupTheme } from '@/src/monarch/ui/startupTheme';
 
-/** Runs before Monarch's app: some pages only read their business filter as they first render, and hidden sidebar items shouldn't flash in. */
+/** Runs before Monarch's app: some pages only read their business filter as they first render, and neither hidden sidebar items nor a light loading screen should flash in. */
 export default defineContentScript({
 	matches: ['https://app.monarch.com/*'],
 	runAt: 'document_start',
@@ -12,9 +13,11 @@ export default defineContentScript({
 	noScriptStartedPostMessage: true,
 
 	main() {
+		const session = new MonarchSession(window);
+		new StartupTheme(window, session).apply();
 		new SidebarPage(document).hideItems(HiddenSidebarItems.read(window.localStorage));
 
-		const householdId = new MonarchSession(window).householdId();
+		const householdId = session.householdId();
 		const savedWorkspace = householdId ? new WorkspaceChoice(window.localStorage).read(householdId) : null;
 		if (savedWorkspace?.isEnabled && savedWorkspace.entityId) WorkspaceNavigation.applyBeforeMonarchStarts(window, savedWorkspace.entityId);
 	}
