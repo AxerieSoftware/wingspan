@@ -18,6 +18,7 @@ import { addRetailSync } from '@/src/features/retailSync/addRetailSync';
 import { addSettings } from '@/src/features/settings/addSettings';
 import { addSidebar } from '@/src/features/sidebar/addSidebar';
 import { createSummaryScreens } from '@/src/features/summaryScreens/createSummaryScreens';
+import { addTransactions } from '@/src/features/transactions/addTransactions';
 import { WingspanBuilder } from '@/src/wingspanBuilder';
 
 export default defineContentScript({
@@ -44,6 +45,7 @@ export default defineContentScript({
 		addAccounts(builder);
 		addBudget(builder);
 		addCategories(builder);
+		addTransactions(builder);
 
 		const wingspan = builder.build();
 		wingspan.start();

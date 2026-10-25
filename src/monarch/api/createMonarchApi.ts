@@ -8,6 +8,7 @@ import { MonarchLoansClient } from './monarchLoansClient';
 import { MonarchReceiptsClient } from './monarchReceiptsClient';
 import { MonarchRecurringClient } from './monarchRecurringClient';
 import { MonarchRequestHook } from './monarchRequestHook';
+import { MonarchSplitsClient } from './monarchSplitsClient';
 import { MonarchTransactionsClient } from './monarchTransactionsClient';
 
 export interface MonarchApi {
@@ -18,6 +19,7 @@ export interface MonarchApi {
 	loans: MonarchLoansClient;
 	receipts: MonarchReceiptsClient;
 	recurring: MonarchRecurringClient;
+	splits: MonarchSplitsClient;
 	transactions: MonarchTransactionsClient;
 }
 
@@ -32,6 +34,7 @@ export function createMonarchApi(window: Window, version: string, scope: Storage
 		loans: new MonarchLoansClient(client),
 		receipts: new MonarchReceiptsClient(client),
 		recurring: new MonarchRecurringClient(client),
+		splits: new MonarchSplitsClient(client),
 		transactions: new MonarchTransactionsClient(client)
 	};
 }
