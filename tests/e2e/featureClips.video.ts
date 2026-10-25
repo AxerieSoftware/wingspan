@@ -197,6 +197,80 @@ const CLIPS: Clip[] = [
 		}
 	},
 	{
+		name: 'month-end-projection',
+		path: '/cash-flow',
+		ready: page => page.locator('[data-wingspan-cash-flow-chart-overlay]').getByRole('img', { name: /^Projected by / }),
+		async play(demo, page) {
+			const chart = page.locator('.recharts-wrapper').first();
+			await demo.scrollTo(chart);
+			await demo.explain('Cash Flow', 'This month’s bars extend, dashed, to where the month is headed', chart);
+			await pause(page);
+			const box = await chart.boundingBox();
+			const monthLabel = chart.locator('.recharts-xAxis-tick-labels text').last();
+			await demo.clear();
+			await page.mouse.move((box?.x ?? 0) + Number(await monthLabel.getAttribute('x')), (box?.y ?? 0) + 120, { steps: 20 });
+			await expect(page.locator('.recharts-tooltip-wrapper').getByText('Projected expenses:')).toBeVisible();
+			await pause(page);
+		}
+	},
+	{
+		name: 'spending-averages',
+		path: '/plan',
+		ready: page => page.locator('[data-goal-row-id="cat-groceries"] input[name=budgeted]'),
+		async play(demo, page) {
+			await demo.click(page.locator('[data-goal-row-id="cat-groceries"] input[name=budgeted]'));
+			const popover = page.locator('[data-external-id="budget-amount-popover"]');
+			const averages = popover.locator('[data-wingspan-budget-averages]');
+			await expect(averages.getByText('12-month average')).toBeVisible();
+			await demo.explain('Budget', '3- and 12-month averages, this year’s, and what you’ve spent so far', averages);
+			await pause(page);
+			await demo.click(averages.getByRole('button', { name: /^12-month average/ }));
+			await demo.explain('Budget', 'Click one to use it as the budget', page.locator('[data-goal-row-id="cat-groceries"]').first());
+			await pause(page);
+		}
+	},
+	{
+		name: 'goal-planner',
+		path: '/goals/savings',
+		setUp: household => household.addSavingsGoals(),
+		ready: page => page.getByRole('group', { name: 'Goal planner' }).getByText('Room by your budget'),
+		async play(demo, page) {
+			const planner = page.getByRole('group', { name: 'Goal planner' });
+			await demo.scrollTo(planner);
+			await demo.explain('Goals', 'How much more you can put toward goals a month, two ways', planner.getByRole('button', { name: /Room by typical spending/ }));
+			await pause(page);
+			const cruise = planner.getByRole('textbox', { name: 'Contoso Cruise, extra a month' });
+			await demo.click(cruise);
+			await cruise.pressSequentially('200', { delay: 120 });
+			await cruise.blur();
+			const row = planner.getByRole('list', { name: 'Goals and debts' }).getByRole('listitem').filter({ hasText: 'Contoso Cruise' });
+			await expect(row).toContainText('(was Nothing planned)');
+			await demo.explain('Goals', 'Try an extra a month and see when the goal finishes', row);
+			await pause(page);
+			const chart = planner.getByRole('img', { name: /^Every goal and debt by month/ });
+			await demo.scrollTo(chart);
+			await demo.explain('Goals', 'Every goal and debt on one chart, then save the amounts to Monarch', chart);
+			await pause(page);
+		}
+	},
+	{
+		name: 'order-items',
+		path: '/transactions/tx-order-1',
+		setUp: household => household.addSyncedOrder(),
+		ready: page => page.getByRole('group', { name: 'Items in this order' }),
+		async play(demo, page) {
+			const card = page.getByRole('group', { name: 'Items in this order' });
+			await demo.explain('Transactions', 'Every item in a synced order, in the category it was split into', card);
+			await pause(page);
+			await demo.click(card.getByRole('combobox', { name: 'Fabrikam Espresso Maker, category' }));
+			await demo.click(page.getByRole('option', { name: 'Coffee Shops' }));
+			await demo.click(card.getByRole('button', { name: 'Remove Contoso Allergy Relief' }));
+			await expect(card).toContainText('Saves as 2 splits');
+			await demo.explain('Transactions', 'Move an item or cross out one you didn’t get, and the splits follow', card);
+			await pause(page);
+		}
+	},
+	{
 		name: 'workspaces',
 		setUp: household => household.addBusiness(),
 		ready: page => page.locator('[data-wingspan-workspace-switcher]').getByRole('button'),
@@ -241,11 +315,10 @@ for (const clip of CLIPS) {
 			const demo = new DemoOverlay(page);
 			const recorder = new ScreencastRecorder(join(testInfo.outputDir, 'frames'), CLIP_SIZE);
 
-			// The first open shows Wingspan's first-run notice; choosing the theme reloads past it.
 			await open({ path: clip.path, waitForRows: false });
-			await expect(page.getByText(/now saves to your Monarch account/)).toBeVisible();
 			await useTheme(page, theme);
-			await expect(clip.ready(page)).toBeVisible();
+			// Monarch's Budget grid takes a while to draw in the e2e setup.
+			await expect(clip.ready(page)).toBeVisible({ timeout: 30_000 });
 			await recorder.start(page);
 			await page.waitForTimeout(LEAD_IN_MS);
 			await clip.play(demo, page);

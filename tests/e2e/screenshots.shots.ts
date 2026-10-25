@@ -304,6 +304,80 @@ for (const theme of THEMES) {
 			await siteShot(page, 'sidebar-items', theme, group, { pad: 24 });
 		});
 
+		test('month-end projection', async ({ page, open }) => {
+			await openPage(open, '/cash-flow');
+			await useTheme(page, theme);
+			await expect(page.locator('[data-wingspan-cash-flow-chart-overlay]').getByRole('img', { name: /^Projected by / })).toBeVisible();
+			const chart = page.locator('.recharts-wrapper').first();
+			const box = await chart.boundingBox();
+			const monthLabel = chart.locator('.recharts-xAxis-tick-labels text').last();
+			await page.mouse.move((box?.x ?? 0) + Number(await monthLabel.getAttribute('x')), (box?.y ?? 0) + 120);
+			await expect(page.locator('.recharts-tooltip-wrapper').getByText('Projected expenses:')).toBeVisible();
+			await page.screenshot({ path: `${SITE}/month-end-projection-${theme}.png`, animations: 'disabled', clip: box ?? undefined });
+		});
+
+		test('spending averages', async ({ page, open }) => {
+			await openPage(open, '/plan');
+			await useTheme(page, theme);
+			await page.locator('[data-goal-row-id="cat-groceries"] input[name=budgeted]').click({ timeout: 30_000 });
+			const popover = page.locator('[data-external-id="budget-amount-popover"]');
+			await expect(popover.locator('[data-wingspan-budget-averages]').getByText('12-month average')).toBeVisible();
+			await siteShot(page, 'spending-averages', theme, popover);
+		});
+
+		test("a category's average per month", async ({ page, open }) => {
+			await openPage(open, `/categories/cat-groceries?date=${new Date().getFullYear()}-01-01&timeframe=year`);
+			await useTheme(page, theme);
+			const summary = page.locator('[data-external-id="summary-card-row"]').first().locator('..');
+			await expect(summary.getByText('Average per month')).toBeVisible();
+			await siteShot(page, 'category-average', theme, summary, { pad: 16 });
+		});
+
+		test('HSA spending on Budget', async ({ page, household, open }) => {
+			household.addHsaExpenses();
+			household.addHsaCardPurchase();
+			await openPage(open, '/plan');
+			await useTheme(page, theme);
+			const medical = page.locator('[data-goal-row-id="cat-medical"]').first();
+			await expect(medical.locator('[data-wingspan-budget-row-note]')).toBeVisible({ timeout: 30_000 });
+			await siteShot(page, 'hsa-budget', theme, medical, { pad: 12 });
+		});
+
+		test('goal planner', async ({ page, household, open }) => {
+			household.addSavingsGoals();
+			// The planner's rows and chart need a desktop-wide page to show whole.
+			await page.setViewportSize({ width: 1680, height: 1800 });
+			await openPage(open, '/goals/savings');
+			await useTheme(page, theme);
+			const planner = page.getByRole('group', { name: 'Goal planner' });
+			const cruise = planner.getByRole('textbox', { name: 'Contoso Cruise, extra a month' });
+			await cruise.fill('200');
+			await cruise.blur();
+			await expect(planner.getByRole('img', { name: /Contoso Cruise: saved by month/ })).toBeVisible();
+			await scrollToTop(planner);
+			await siteShot(page, 'goal-planner', theme, planner);
+		});
+
+		test('order items', async ({ page, household, open }) => {
+			household.addSyncedOrder();
+			await openPage(open, '/transactions/tx-order-1');
+			await useTheme(page, theme);
+			const card = page.getByRole('group', { name: 'Items in this order' });
+			await card.getByRole('combobox', { name: 'Fabrikam Espresso Maker, category' }).click();
+			await page.getByRole('option', { name: 'Coffee Shops' }).click();
+			await expect(card).toContainText('Saves as 3 splits');
+			await siteShot(page, 'order-items', theme, card);
+		});
+
+		test('transactions to review', async ({ page, household, open }) => {
+			household.markForReview(3);
+			await openPage(open, '/cash-flow');
+			await useTheme(page, theme);
+			const link = page.locator('[data-external-id="side-bar"] a[href="/transactions"]');
+			await expect(link.locator('[data-wingspan-sidebar-badge]')).toContainText('3');
+			await siteShot(page, 'transactions-to-review', theme, link, { pad: 12 });
+		});
+
 		test('where Wingspan saves', async ({ page, open }) => {
 			await openPage(open, '/settings/display');
 			await useTheme(page, theme);

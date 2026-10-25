@@ -1,0 +1,34 @@
+---
+title: Month-end projection
+description: Where this month's income and expenses are headed, drawn onto Cash Flow's monthly bar chart.
+introduced: 0.7.0
+saves: none
+---
+
+import Screenshot from "../../../components/Screenshot.astro";
+
+Halfway through a month, Cash Flow's bars only show what has posted. A quarterly insurance bill or an annual subscription due next week isn't there yet, so the month can look better than it will end.
+
+Month-end projection extends this month's bars to where the month is headed, using the same bills, income and everyday spending as [Projected balances](/features/projected-balances/).
+
+<Screenshot name="month-end-projection" clip="month-end-projection" alt="Cash Flow's monthly bars with October's extended, dashed, past what has posted so far, and its tooltip adding projected income and expenses for the month." />
+
+## Where it shows
+
+On **Cash Flow**, with **Monthly** picked:
+
+- This month's income and expense bars get a dashed extension out to their projected month-end totals.
+- Hover this month's bars, and Monarch's summary adds **Projected income** and **Projected expenses**: what's posted so far plus what's still expected by the last day of the month.
+
+## How it's counted
+
+- **Income** adds the paychecks and other income still due this month.
+- **Expenses** add the bills still due this month, on checking or a card, plus everyday spending at your usual pace for each day left after today.
+- Card payments and money moved between your accounts aren't counted, since they aren't income or spending.
+- It follows the same accounts and workspace as Projected balances.
+
+## Good to know
+
+- A projection taller than the chart's scale stops at the chart's edge. The totals when you hover are still exact.
+- Quarterly and Yearly views don't show it.
+- Bills and income on accounts Projected balances doesn't follow, like a brokerage, aren't in the projection.
