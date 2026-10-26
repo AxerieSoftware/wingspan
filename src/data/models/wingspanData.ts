@@ -2,6 +2,7 @@ import * as v from 'valibot';
 import { isSameValue } from '../../common/sameValue';
 import { emptyHsaReimbursementTags, type HsaReimbursementTags, HsaReimbursementTagsSchema, hasChosenHsaReimbursementTags } from '../../features/accounts/hsaReimbursements/models/hsaReimbursementTags';
 import { emptySavedCashSettings, hasChosenCashSettings, type SavedCashSettings, SavedCashSettingsSchema } from '../../features/cashFlow/cashSettings/models/savedCashSettings';
+import { emptyGoalRollovers, type GoalRollovers, GoalRolloversSchema } from '../../features/goals/goalPlanner/models/goalRollovers';
 import { emptyLoanPaymentLinks, type LoanPaymentLinks, LoanPaymentLinksSchema } from '../../features/interestCost/models/loanPaymentLinks';
 import { emptyRecurringDueDatesData, type RecurringDueDatesData, RecurringDueDatesDataSchema } from '../../features/recurring/dueDates/models/dueDatesData';
 import { emptyRecurringData, type RecurringData, RecurringDataSchema } from '../../features/recurring/recurringItems/models/recurringData';
@@ -25,16 +26,18 @@ export interface WingspanData {
 	/** The tags that mark HSA expenses, when the household chose its own. */
 	hsaReimbursementTags: HsaReimbursementTags;
 	loanPaymentLinks: LoanPaymentLinks;
+	goalRollovers: GoalRollovers;
 }
 
 /** Saved data before defaults are filled in. */
-type SavedWingspanData = Omit<WingspanData, 'cashSettings' | 'businessCashSettings' | 'walmartSync' | 'costcoSync' | 'hsaReimbursementTags' | 'loanPaymentLinks'> & {
+type SavedWingspanData = Omit<WingspanData, 'cashSettings' | 'businessCashSettings' | 'walmartSync' | 'costcoSync' | 'hsaReimbursementTags' | 'loanPaymentLinks' | 'goalRollovers'> & {
 	cashSettings?: SavedCashSettings;
 	businessCashSettings?: Record<string, SavedCashSettings>;
 	walmartSync?: Partial<RetailSyncData>;
 	costcoSync?: Partial<RetailSyncData>;
 	hsaReimbursementTags?: Partial<HsaReimbursementTags>;
 	loanPaymentLinks?: LoanPaymentLinks;
+	goalRollovers?: GoalRollovers;
 };
 
 /** Parses saved data, filling in defaults for fields added later. Unknown fields are kept. */
@@ -52,7 +55,9 @@ export const WingspanDataSchema: v.GenericSchema<SavedWingspanData, WingspanData
 	/** Absent until HSA tags are first chosen. */
 	hsaReimbursementTags: v.optional(HsaReimbursementTagsSchema, emptyHsaReimbursementTags),
 	/** Absent until a recurring expense is first linked to a loan. */
-	loanPaymentLinks: v.optional(LoanPaymentLinksSchema, emptyLoanPaymentLinks)
+	loanPaymentLinks: v.optional(LoanPaymentLinksSchema, emptyLoanPaymentLinks),
+	/** Absent until a goal's When done is first chosen. */
+	goalRollovers: v.optional(GoalRolloversSchema, emptyGoalRollovers)
 });
 
 export const emptyWingspanData = (): WingspanData => ({
@@ -63,14 +68,16 @@ export const emptyWingspanData = (): WingspanData => ({
 	walmartSync: emptyRetailSyncData(),
 	costcoSync: emptyRetailSyncData(),
 	hsaReimbursementTags: emptyHsaReimbursementTags(),
-	loanPaymentLinks: emptyLoanPaymentLinks()
+	loanPaymentLinks: emptyLoanPaymentLinks(),
+	goalRollovers: emptyGoalRollovers()
 });
 
-/** Whether the household saved anything worth keeping: recurring items, due dates, loan links, cash settings or HSA tags. Retail sync history alone doesn't count. */
+/** Whether the household saved anything worth keeping: recurring items, due dates, loan links, goal rollovers, cash settings or HSA tags. Retail sync history alone doesn't count. */
 export const hasWingspanData = (data: WingspanData): boolean =>
 	data.recurring.recurringItems.length > 0 ||
 	Object.keys(data.recurringDueDates.dueDatesByRecurrenceId).length > 0 ||
 	Object.keys(data.loanPaymentLinks.loanAccountIdByRecurrenceId).length > 0 ||
+	Object.keys(data.goalRollovers.rollsToByGoalId).length > 0 ||
 	hasChosenCashSettings(data.cashSettings) ||
 	Object.values(data.businessCashSettings).some(hasChosenCashSettings) ||
 	hasChosenHsaReimbursementTags(data.hsaReimbursementTags);
@@ -78,7 +85,7 @@ export const hasWingspanData = (data: WingspanData): boolean =>
 type PickValue = <TValue>(theirs: TValue | undefined, ours: TValue | undefined, base: TValue | undefined) => TValue | undefined;
 
 /**
- * Merges both copies. With `base` (the last version both agreed on), each item, due day, loan link and entity's cash settings
+ * Merges both copies. With `base` (the last version both agreed on), each item, due day, loan link, goal rollover and entity's cash settings
  * come from whichever side changed them, preferring ours when both did, so the other side's edits and removals aren't
  * undone. Without a base, e.g. when this browser is new to the account, it's the union of both, with ours winning by id.
  */
@@ -93,6 +100,8 @@ function combine(theirs: WingspanData, ours: WingspanData, base: WingspanData | 
 	const dueDatesByRecurrenceId = Object.fromEntries(mergeEntries(dueDays(theirs), dueDays(ours), base && dueDays(base), pick));
 	const loanLinks = (data: WingspanData | undefined) => new Map(Object.entries(data?.loanPaymentLinks.loanAccountIdByRecurrenceId ?? {}));
 	const loanAccountIdByRecurrenceId = Object.fromEntries(mergeEntries(loanLinks(theirs), loanLinks(ours), base && loanLinks(base), pick));
+	const rollovers = (data: WingspanData | undefined) => new Map(Object.entries(data?.goalRollovers.rollsToByGoalId ?? {}));
+	const rollsToByGoalId = Object.fromEntries(mergeEntries(rollovers(theirs), rollovers(ours), base && rollovers(base), pick));
 	// Settings that were never set aren't kept; the side that set them wins.
 	const chosen = (settings: SavedCashSettings) => (hasChosenCashSettings(settings) ? settings : undefined);
 	const cashSettings = pick(chosen(theirs.cashSettings), chosen(ours.cashSettings), base && chosen(base.cashSettings));
@@ -110,6 +119,7 @@ function combine(theirs: WingspanData, ours: WingspanData, base: WingspanData | 
 		businessCashSettings,
 		hsaReimbursementTags: hsaReimbursementTags ?? emptyHsaReimbursementTags(),
 		loanPaymentLinks: { ...mergeOtherFields(theirs.loanPaymentLinks, ours.loanPaymentLinks, base?.loanPaymentLinks, pick), loanAccountIdByRecurrenceId },
+		goalRollovers: { ...mergeOtherFields(theirs.goalRollovers, ours.goalRollovers, base?.goalRollovers, pick), rollsToByGoalId },
 		walmartSync: mergeRetailSyncData(theirs.walmartSync, ours.walmartSync),
 		costcoSync: mergeRetailSyncData(theirs.costcoSync, ours.costcoSync)
 	};

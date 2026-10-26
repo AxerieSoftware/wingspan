@@ -17,6 +17,8 @@ export type TextInputProps = Omit<ComponentProps<typeof BaseInput>, 'className' 
 /** `null` is an empty input. `step` defaults to any amount. */
 export interface MoneyInputProps {
 	value: number | null;
+	/** For a change to an amount, which can go either way. */
+	allowsNegative?: boolean;
 	size?: InputSize;
 	step?: number;
 	placeholder?: string;
@@ -33,8 +35,8 @@ export function TextInput({ onChange, ...inputAttributes }: TextInputProps) {
 	return <BaseInput data-mds="input" className={textInputStyles()} style={style} onValueChange={inputValue => onChange(String(inputValue))} {...inputAttributes} />;
 }
 
-/** Monarch's dollar amount input. It formats the amount as currency and doesn't allow negatives. */
-export function MoneyInput({ value, size, step, placeholder, label, formatter, onChange }: MoneyInputProps) {
+/** Monarch's dollar amount input. It formats the amount as currency and doesn't allow negatives unless asked. */
+export function MoneyInput({ value, allowsNegative = false, size, step, placeholder, label, formatter, onChange }: MoneyInputProps) {
 	const inputGroupSlots = inputGroupStyles({ size });
 	const inputRef = useRef<HTMLInputElement>(null);
 
@@ -50,7 +52,7 @@ export function MoneyInput({ value, size, step, placeholder, label, formatter, o
 			className="contents"
 			value={value}
 			onValueChange={numberValue => onChange(numberValue)}
-			min={0}
+			min={allowsNegative ? undefined : 0}
 			step={step ?? 'any'}
 			locale={formatter.locale}
 			format={{ style: 'currency', currency: formatter.currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }}
