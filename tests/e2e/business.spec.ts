@@ -14,6 +14,7 @@ const monarchFilter = (page: Page) => page.locator('button:has([class*="Business
 async function switchTo(page: Page, name: string) {
 	await switcher(page).click();
 	await Promise.all([page.waitForEvent('load'), page.getByRole('menuitem', { name }).click()]);
+	await expect(switcher(page)).toContainText(name, { timeout: 30_000 });
 }
 
 /** Toggles one option in Monarch's own business filter on Cash Flow. */
@@ -64,6 +65,8 @@ test.describe("with Monarch's Plus plan", () => {
 	test("Monarch's pages open filtered to the workspace, from a link or a fresh page load", async ({ page, open }) => {
 		await open();
 		await switchTo(page, 'Contoso Pottery');
+		// Monarch's sidebar still shifts while the reloaded page starts, so a click right away can land on the wrong link.
+		await expect(section(page, 'Expenses')).toBeVisible({ timeout: 30_000 });
 
 		await page.locator('a[data-external-id="nav-bar-link"][href="/transactions"]').click();
 		await expect(page).toHaveURL(new RegExp(`/transactions\\?businessEntitySet=${BUSINESS_ID}`));

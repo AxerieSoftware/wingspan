@@ -34,7 +34,7 @@ function fakeCostco(pathname = '/myaccount/') {
 	};
 	const tabs = [
 		{ textContent: 'Online', click: () => undefined },
-		{ textContent: 'Warehouse', click: appRequest }
+		{ textContent: 'warehouse', click: appRequest }
 	];
 	const fakeWindow = {
 		XMLHttpRequest: FakeXhr,

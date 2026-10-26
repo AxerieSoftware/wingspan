@@ -149,8 +149,8 @@ test('keyboard focus stays in the cash and cards dialog', async ({ page, open })
 	await expect(dialog).toBeVisible();
 	for (let press = 0; press < 40; press++) {
 		await page.keyboard.press('Tab');
-		// Base UI's focus guards sit just outside the popup and send focus back in.
-		expect(await dialog.evaluate(dialogElement => dialogElement.contains(document.activeElement) || document.activeElement?.hasAttribute('data-base-ui-focus-guard'))).toBe(true);
+		// Base UI's focus guards sit just outside the popup and send focus back in, a moment later in WebKit.
+		await expect.poll(() => dialog.evaluate(dialogElement => dialogElement.contains(document.activeElement) || document.activeElement?.hasAttribute('data-base-ui-focus-guard'))).toBe(true);
 	}
 });
 
