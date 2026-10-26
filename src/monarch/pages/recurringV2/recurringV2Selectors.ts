@@ -1,3 +1,5 @@
+import { MONTH_NAMES } from '../monarchText';
+
 /** A section card's test id is this prefix and the section's name. */
 export const SECTION_CARD_TEST_ID_PREFIX = 'recurring-section-card-';
 /** A section's scroll area test id is this prefix and the section's name. */
@@ -37,9 +39,6 @@ export const RECURRING_V2_SELECTORS = {
 
 /** A cell holding only an amount, e.g. "$1,450.00" or "+$3,200.00". */
 export const AMOUNT_CELL_PATTERN = /^[+-]?\$([\d,]+(?:\.\d+)?)$/;
-
-/** Month names as Monarch abbreviates them, January first. */
-export const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /** A month and day in a row's status text, e.g. "Paid Sep 14" or "Sep 30". */
 export const STATUS_DATE_PATTERN = new RegExp(`\\b(${MONTH_NAMES.join('|')}) (\\d{1,2})\\b`);

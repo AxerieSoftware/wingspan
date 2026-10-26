@@ -1,3 +1,4 @@
+import { DAYS_PER_YEAR, MONTHS_PER_YEAR } from '../../../../common/money';
 import type { BalancesByAccountId } from '../../../../data/models/balancesByAccountId';
 import type { Account } from '../../../../monarch/api/models/account';
 import type { RecurringFlow } from '../../../../monarch/api/models/recurringFlow';
@@ -22,6 +23,9 @@ export interface ScheduledFlow {
 export interface SpendingPace {
 	monthlyByAccountId: ReadonlyMap<string, number>;
 }
+
+/** A month's spending spread evenly over the days of an average month, as the projection spends it each day from tomorrow. */
+export const dailyFromMonthly = (monthly: number | undefined): number => ((monthly ?? 0) * MONTHS_PER_YEAR) / DAYS_PER_YEAR;
 
 /** A card in the projection: what it owes today and each payment planned on it. */
 export interface CardForecast {

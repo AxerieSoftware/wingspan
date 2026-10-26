@@ -1,8 +1,7 @@
+import { parseMoney } from './monarchText';
 import { MountedSlot, type SlotContent } from './mountedSlot';
 
 const STATISTIC_CARD_SELECTOR = '[data-external-id="deprecated-statistic-card"]';
-/** Matches Monarch's money format, as "-$1,250.00" or "$4,800". */
-const MONEY_PATTERN = /^(-)?\$([\d,]+(?:\.\d+)?)$/;
 /** Wingspan's cards in a row of totals, in the order they go after Monarch's. */
 const SUMMARY_CARDS = ['loansPaidDown', 'interestCost'] as const;
 
@@ -48,10 +47,7 @@ export class SummaryRow {
 	/** The amount on Monarch's card with that label, as shown. Null when there's no such card or it isn't an amount. */
 	public amountOf(label: string): number | null {
 		const monarchCardEl = this.monarchCards().find(cardEl => cardEl.lastElementChild?.textContent?.trim() === label);
-		const match = MONEY_PATTERN.exec(monarchCardEl?.firstElementChild?.textContent?.trim() ?? '');
-		if (!match?.[2]) return null;
-		const amount = Number(match[2].replaceAll(',', ''));
-		return match[1] ? -amount : amount;
+		return parseMoney(monarchCardEl?.firstElementChild?.textContent ?? '');
 	}
 
 	/** Puts the card after Monarch's and any of Wingspan's that come before it, or removes it while the row isn't there. */
