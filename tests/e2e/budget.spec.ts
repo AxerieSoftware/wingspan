@@ -37,12 +37,13 @@ test('closing the History popover takes the averages with it', async ({ page, op
 });
 
 test("Budget notes how much of each row's spending was paid from the HSA: on its card, or tagged to reimburse from it", async ({ page, household, open }) => {
+	// Budget draws four times here, once per month shown, and each draw is slow in the e2e setup.
+	test.slow();
 	household.addHsaExpenses();
 	household.addHsaCardPurchase();
 	await open({ path: '/plan', waitForRows: false });
 	const medicalNote = page.locator('[data-goal-row-id="cat-medical"] [data-wingspan-budget-row-note]');
 
-	// Monarch's Budget grid takes a while to draw in the e2e setup.
 	await expect(medicalNote).toHaveText('$64 paid from HSA', { timeout: 30_000 });
 	// Medical's group, Flexible, notes the same amount.
 	await expect(page.locator('[data-wingspan-budget-row-note]')).toHaveText(['$64 paid from HSA', '$64 paid from HSA']);
