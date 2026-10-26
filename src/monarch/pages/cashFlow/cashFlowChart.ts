@@ -95,6 +95,11 @@ export class CashFlowChart {
 	}
 
 	/** The latest column with that axis label, like "Oct". Null while the chart hasn't drawn or has none. */
+	/** The month the chart ends with, as its label reads, like "Oct", or null while there's no chart. */
+	public get lastMonthLabel(): string | null {
+		return [...(this.surface()?.querySelectorAll<SVGTextElement>(MONTH_LABEL_SELECTOR) ?? [])].at(-1)?.textContent?.trim() ?? null;
+	}
+
 	public column(monthLabel: string): ChartColumn | null {
 		const surfaceEl = this.surface();
 		if (!surfaceEl) return null;

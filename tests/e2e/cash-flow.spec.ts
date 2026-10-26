@@ -204,3 +204,10 @@ test("the projection isn't drawn on Quarterly or Yearly", async ({ page, open })
 	await expect(page.locator('.recharts-surface').first()).toBeVisible();
 	await expect(page.locator('[data-wingspan-cash-flow-chart-overlay]')).toHaveCount(0);
 });
+
+test('with an earlier month picked, the projection still extends this month at the end of the chart', async ({ page, open }) => {
+	const lastMonth = Temporal.Now.plainDateISO().toPlainYearMonth().subtract({ months: 1 });
+	await open({ path: `/cash-flow?date=${lastMonth.toString()}-01&timeframe=month`, waitForRows: false });
+
+	await expect(page.locator('[data-wingspan-cash-flow-chart-overlay]').getByRole('img', { name: /^Projected by / })).toBeVisible();
+});

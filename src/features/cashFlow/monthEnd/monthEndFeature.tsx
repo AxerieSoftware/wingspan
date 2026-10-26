@@ -1,6 +1,7 @@
 import { computed, effect } from '@preact/signals-core';
 import type { ReactNode } from 'react';
 import type { Calendar } from '../../../common/calendar';
+import { MONTHS_PER_YEAR } from '../../../common/money';
 import type { CashFlowPage } from '../../../monarch/pages/cashFlow/cashFlowPage';
 import { Island } from '../../../monarch/ui/components/island';
 import type { Formatter } from '../../../monarch/ui/formatter';
@@ -47,8 +48,11 @@ export class MonthEndFeature implements WingspanFeature {
 	}
 
 	public sync(): void {
-		// The chart ends at the month picked, so only with this month picked is its last column this month.
-		const isThisMonthShown = this.page.timeframe === 'month' && (this.page.periodStart ?? this.calendar.today()).startsWith(this.calendar.currentMonth());
+		// This month's bars are the chart's last, whichever of its months is picked. Picking the same month a year ago
+		// ends the chart on a column with this month's name, so a pick that far back doesn't count.
+		const thisMonth = this.calendar.currentMonth();
+		const isPickedThisYear = this.calendar.monthOf(this.page.periodStart ?? this.calendar.today()) > this.calendar.addMonths(thisMonth, -MONTHS_PER_YEAR);
+		const isThisMonthShown = this.page.timeframe === 'month' && isPickedThisYear && this.page.chart.lastMonthLabel === this.formatter.shortMonth(thisMonth);
 		const expected = this.page.isActive && isThisMonthShown ? this.expected.value : null;
 		const column = expected ? this.page.chart.column(this.formatter.shortMonth(this.calendar.currentMonth())) : null;
 		if (!expected || !column) {
