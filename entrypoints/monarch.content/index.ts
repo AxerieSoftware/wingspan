@@ -4,6 +4,7 @@ import { addAccounts } from '@/src/features/accounts/addAccounts';
 import { addBusinessEntities } from '@/src/features/businessEntities/addBusinessEntities';
 import { addCashSettings } from '@/src/features/cashFlow/cashSettings/addCashSettings';
 import { addFreeCash } from '@/src/features/cashFlow/freeCash/addFreeCash';
+import { addMonthEnd } from '@/src/features/cashFlow/monthEnd/addMonthEnd';
 import { addProjectedBalances } from '@/src/features/cashFlow/projectedBalances/addProjectedBalances';
 import { addInterestCost } from '@/src/features/interestCost/addInterestCost';
 import { createManualLoans } from '@/src/features/interestCost/createManualLoans';
@@ -29,6 +30,7 @@ export default defineContentScript({
 		addRetailSync(builder);
 		const cashSettings = addCashSettings(builder, businessFilter);
 		const projectedBalances = addProjectedBalances(builder, recurring, cashSettings, businessFilter);
+		addMonthEnd(builder, projectedBalances);
 		const summaryScreens = createSummaryScreens(builder, businessFilter);
 		const manualLoans = createManualLoans(builder);
 		addLoansPaidDown(builder, summaryScreens, manualLoans);

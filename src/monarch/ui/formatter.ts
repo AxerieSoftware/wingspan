@@ -113,9 +113,14 @@ export class Formatter {
 		return this.longMonthYearFormat.format(this.parseDate(isoDate));
 	}
 
+	/** A `YYYY-MM` month as "Mar", as Monarch's Cash Flow chart labels its months. */
+	public shortMonth(month: string): string {
+		return this.shortMonthFormat.format(this.parseDate(`${month}-01`));
+	}
+
 	/** A `YYYY-MM` month as "Mar '26", for chart axes. */
 	public chartMonth(month: string): string {
-		return `${this.shortMonthFormat.format(this.parseDate(`${month}-01`))} '${month.slice(2, 4)}`;
+		return `${this.shortMonth(month)} '${month.slice(2, 4)}`;
 	}
 
 	/** The full weekday name, as "Tuesday". */

@@ -4,6 +4,7 @@ import type { MonarchNavigator } from '../monarchNavigator';
 import { MountedSlot, type SlotContent } from '../mountedSlot';
 import { type SummaryCard, type SummaryCardLook, SummaryRow, type SummaryRowPage } from '../summaryRow';
 import { WingspanAttribute } from '../wingspanAttributes';
+import { CashFlowChart } from './cashFlowChart';
 
 const CASH_FLOW_PATH = '/cash-flow';
 const GOALS_PATH = '/goals';
@@ -37,6 +38,8 @@ export type CashFlowTimeframe = (typeof TIMEFRAMES)[number];
  * summary card goes last in the summary row, after Savings rate.
  */
 export class CashFlowPage implements SummaryRowPage {
+	/** Monarch's bar chart in the chart's cell. */
+	public readonly chart: CashFlowChart;
 	private readonly summaryRow: SummaryRow;
 	private section: MountedSlot | null = null;
 
@@ -45,6 +48,7 @@ export class CashFlowPage implements SummaryRowPage {
 		private readonly navigator: MonarchNavigator
 	) {
 		this.summaryRow = new SummaryRow(window.document, () => gridItemRow(window.document, SUMMARY_AREA), WingspanAttribute.cashFlowSummaryCard);
+		this.chart = new CashFlowChart(window.document, () => gridItem(window.document, CHART_AREA));
 	}
 
 	public get isActive(): boolean {
