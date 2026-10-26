@@ -1,11 +1,13 @@
 import '@/src/common/polyfills';
 import type { ContentScriptContext } from 'wxt/utils/content-script-context';
 import { addAccounts } from '@/src/features/accounts/addAccounts';
+import { addBudget } from '@/src/features/budget/addBudget';
 import { addBusinessEntities } from '@/src/features/businessEntities/addBusinessEntities';
 import { addCashSettings } from '@/src/features/cashFlow/cashSettings/addCashSettings';
 import { addFreeCash } from '@/src/features/cashFlow/freeCash/addFreeCash';
 import { addMonthEnd } from '@/src/features/cashFlow/monthEnd/addMonthEnd';
 import { addProjectedBalances } from '@/src/features/cashFlow/projectedBalances/addProjectedBalances';
+import { addCategories } from '@/src/features/categories/addCategories';
 import { addInterestCost } from '@/src/features/interestCost/addInterestCost';
 import { createManualLoans } from '@/src/features/interestCost/createManualLoans';
 import { addLoansPaidDown } from '@/src/features/loansPaidDown/addLoansPaidDown';
@@ -38,6 +40,8 @@ export default defineContentScript({
 		addRecurringPages(builder, recurring, cashSettings, projectedBalances, businessFilter);
 		addFreeCash(builder, recurring, cashSettings, projectedBalances);
 		addAccounts(builder);
+		addBudget(builder);
+		addCategories(builder);
 
 		const wingspan = builder.build();
 		wingspan.start();
