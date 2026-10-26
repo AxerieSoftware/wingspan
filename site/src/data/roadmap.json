@@ -82,6 +82,20 @@
 					]
 				},
 				{
+					"name": "Month-end projection",
+					"where": "Adds to Cash Flow",
+					"description": "This month's income and expense bars extended to where the month is headed, bills still due included",
+					"page": "/features/month-end-projection/",
+					"cards": []
+				},
+				{
+					"name": "Spending averages",
+					"where": "Adds to Budget and each category's page",
+					"description": "A category's 3-month, 12-month and year-to-date averages on Budget, and its average per month on its own page",
+					"page": "/features/spending-averages/",
+					"cards": []
+				},
+				{
 					"name": "Expected income",
 					"where": "Adds to Recurring",
 					"description": "Income that changes week to week, like client payouts, counted at what you usually take in",
@@ -110,10 +124,30 @@
 					"cards": []
 				},
 				{
+					"name": "Goal planner",
+					"where": "Adds to Goals",
+					"description": "How much more you can put toward goals each month, when each goal or debt finishes with an extra, and where its money goes once it's done",
+					"page": "/features/goal-planner/",
+					"cards": [
+						{
+							"card": "debt-paydown",
+							"match": "Partial",
+							"note": "Monarch's Pay down plans debts together. Goal planner plans savings goals and debts side by side, against the room in your budget."
+						}
+					]
+				},
+				{
 					"name": "HSA reimbursements",
 					"where": "Adds to your HSA's account page",
 					"description": "Medical expenses you paid yourself and can still pay back from your HSA, with any missing receipts flagged",
 					"page": "/features/hsa-reimbursements/",
+					"cards": []
+				},
+				{
+					"name": "HSA spending on Budget",
+					"where": "Adds to Budget",
+					"description": "How much of each budget row was paid from your HSA, so medical bills don't read as overspending",
+					"page": "/features/hsa-reimbursements/#on-budget",
 					"cards": []
 				},
 				{
@@ -124,10 +158,24 @@
 					"cards": []
 				},
 				{
+					"name": "Order items",
+					"where": "Adds to Transactions",
+					"description": "Move a synced order's items between categories, or cross out one you didn't get, and its splits and their amounts follow",
+					"page": "/features/order-items/",
+					"cards": []
+				},
+				{
 					"name": "Sync status",
 					"where": "Adds to Transactions",
 					"description": "When your accounts last synced, which are behind or need attention, and a button to refresh them all",
 					"page": "/features/sync-status/",
+					"cards": []
+				},
+				{
+					"name": "Transactions to review",
+					"where": "Adds to the sidebar",
+					"description": "How many transactions still need reviewing, on Transactions in the sidebar",
+					"page": "/features/transactions-to-review/",
 					"cards": []
 				},
 				{
@@ -375,10 +423,10 @@
 	],
 	"wontBuild": [
 		{
-			"text": "Budgets, rollovers and goals, including Goals 3.0"
+			"text": "Budgets, rollovers and goals themselves, including Goals 3.0"
 		},
 		{
-			"text": "Debt payoff planning",
+			"text": "Debt payoff strategies, like snowball and avalanche",
 			"card": "debt-paydown"
 		},
 		{

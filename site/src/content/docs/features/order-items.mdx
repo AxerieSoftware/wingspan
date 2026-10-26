@@ -1,0 +1,33 @@
+---
+title: Order items
+description: Move a synced order's items between categories, and the order's splits and their amounts follow.
+introduced: 0.7.0
+saves: none
+---
+
+import Screenshot from "../../../components/Screenshot.astro";
+
+When Monarch syncs an order from a store like Target or Amazon, it splits the charge by category and lists each split's items in its notes. Its guess is sometimes wrong, like a coffee maker filed under Household Supplies. Fixing that in Monarch means changing amounts and moving note lines by hand. Order items does it for you.
+
+<Screenshot name="order-items" clip="order-items" alt="Items in this order in a split's details: four items with prices, each with a category picker and a remove button, and Save splits." />
+
+## On a transaction
+
+Open any split of a synced order on **Transactions**. Under Monarch's note that the transaction is a split, **Items in this order** lists every item with its price and the category it's in now.
+
+1. Pick a new category for any item. For an item you didn't get, like one cancelled or swapped after you ordered, click its **×** to cross it out. **Add back** puts it back.
+2. **Save splits**.
+
+The order then has one split per category, each listing its items in its notes, with its share of the charge. A split whose category is still used keeps its tags, review status, owner and business. A new split copies them from the first one.
+
+## How amounts are shared
+
+A store often charges an order in parts, like one charge per shipment, so a charge can be less than its items add up to. Like Monarch, Order items shares each charge out by price, counting an item's quantity. If a $139.14 charge covers $214.45 of items, a $9.49 item's split gets $6.16. The splits always add up to the charge exactly.
+
+Sometimes the order Monarch receives still lists an item you never got. Monarch then gives it a share of the charge, and every other split comes out too small. Cross that item out, and the charge is shared across the items you got. It stays crossed out the next time you open the order.
+
+## Good to know
+
+- It works on orders whose notes list items the way Monarch's retail sync writes them, like "2 x Paper Towels - $11.99", and that have at least two items.
+- Saving needs at least two categories. To put everything in one category, unsplit the transaction in Monarch.
+- Monarch's page shows the new splits after it reloads, which happens right after saving.

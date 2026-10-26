@@ -1,0 +1,39 @@
+---
+title: Spending averages
+description: A category's average per month over 3 or 12 months, this year so far, or any year you pick.
+introduced: 0.7.0
+saves: none
+---
+
+import Screenshot from "../../../components/Screenshot.astro";
+
+Setting a budget is easier when you know what a category usually costs. Monarch shows a six-month average while you budget, which misses quarterly bills and once-a-year costs. Spending averages adds longer and shorter ones where you'd look for them.
+
+<Screenshot name="spending-averages" clip="spending-averages" alt="Monarch's budget History for Groceries with Spent last month and Monthly average, and Wingspan's 3-month, 12-month and year-to-date averages and Spent this year under them." />
+
+## On Budget
+
+Click a category's planned amount on **Budget**. Monarch's **History** opens with **Spent last month** and a six-month **Monthly average**. Under those, Wingspan adds two more rows:
+
+- **3-month average**: the last three full months.
+- **12-month average**: the last twelve full months.
+- **Year-to-date average**: this year's full months so far. It's left out in January, before a month has ended.
+- **Spent this year**: everything so far this year, this month included. For an income category, **Earned this year**.
+
+Click an average to use it as the category's budget, as you can with Monarch's own. Press **Enter** to save it.
+
+## On a category's page
+
+Click a category's name on **Budget**, or a category in **Cash Flow**'s breakdown, to open its page. Its **Summary**, beside the transactions, adds **Average per month** under Monarch's **Average transaction**:
+
+<Screenshot name="category-average" alt="A category's Summary with Wingspan's Average per month between Monarch's Average transaction and Total spending." />
+
+- For a quarter or year you pick on the chart, its spending divided by its months. Picking 2025 in **Yearly** gives 2025's monthly average.
+- For this year, its spending so far divided by the months so far, this one included.
+- For all time, its spending divided by the months since its first transaction.
+
+## Good to know
+
+- A month with nothing spent in the category counts as $0, so an annual bill spreads across the year.
+- The averages count what Monarch's budget counts in the category, refunds included.
+- A month, week or day picked on a category's chart has no average per month.

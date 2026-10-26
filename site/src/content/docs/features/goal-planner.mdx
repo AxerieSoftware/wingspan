@@ -1,0 +1,71 @@
+---
+title: Goal planner
+description: Try how much to put toward each goal a month, see when each one finishes, and save the amounts you like to your goals.
+introduced: 0.7.0
+saves: account
+---
+
+import Screenshot from "../../../components/Screenshot.astro";
+
+Monarch shows each goal's progress and flags the ones at risk, one goal at a time. Goal planner puts every goal and debt on one page under your goals on **Goals → Save up**, so you can try how much more you could put toward each, see what moving $100 from one to another changes, and save the amounts you settle on to your goals.
+
+<Screenshot name="goal-planner" clip="goal-planner" alt="The Goal planner under Save up goals: room by typical spending and by budget, an income list, two goals and a debt, one with an extra a month, When done and when each finishes, and a chart of every goal and debt." />
+
+## Room for goals
+
+At the top is how much more a month you can put toward goals, two ways:
+
+- **Room by typical spending**: your surplus in a normal month at your usual spending, from [Projected balances](/features/projected-balances/), minus what's already planned for goals.
+- **Room by your budget**: budgeted income minus budgeted expenses and savings goals in a normal month of the next year.
+
+Both use a normal month, since goals are funded month by month and an extra paycheck only comes some months. Under each room, the months with an extra paycheck show on their own, like "Plus about $4,600 more in each of 2 months with an extra paycheck". Put that money toward a goal as a lump sum when it comes.
+
+The two often differ. If your budget plans less spending than you usually do, the budget's room is bigger than the one you'll actually have. Hover either number to see what went into it.
+
+What each room counts already:
+
+- A debt's recurring payments linked to it with **Pays toward** in Recurring, or else its minimum, count as bills both ways.
+- Anything you plan to pay a debt beyond those comes out of Room by typical spending. Make the extra its own recurring payment and link it to the loan, and it's counted once.
+- Room by your budget leaves extra debt payments to your budget. Budget them as an expense, like an "Extra debt payments" category.
+- A goal linked to a retirement plan paid from your paycheck, like a 401(k), comes out of neither room. That money never reaches checking.
+
+Under the room, each recurring income, like a paycheck, is listed with what it brings in a month. Put a **change a month** on one to try a raise or fewer hours, or on **Other income** for something new, like a side job. A change goes into both rooms, and every finish date and the room left update with it.
+
+## Trying amounts
+
+Each savings goal with a target and each debt set up on **Pay down** gets a row with what goes toward it a month now. Put an **extra a month** on one to see:
+
+- **When it finishes**, next to when it finishes now.
+- **For a savings goal**, whether that's before or after its target date. When it would miss, the row shows what it needs a month to make it. Click that to use it.
+- **For a debt**, the interest you'd pay until it's paid off, and how much that saves against paying only the minimum. A debt paying more than its minimum shows how much more under what goes toward it now.
+
+Each row has a small chart of where it's headed. Below the list, one chart shows every goal and debt with your extras, in its row's color: savings climbing to their targets and debts falling to $0. Click a goal or debt to bring it to the front, with where it's headed now and its target. Hover the chart to see each one's amount in a month.
+
+Savings goals named alike, like "Retirement – 401(k)" and "Retirement – Roth IRA", also get a dashed line adding them up. You see one retirement total, and each account keeps its own row.
+
+A negative extra moves money away, so take $100 from one goal and add it to another to compare. At the top, the extras are added up, and each room shows what's left after them, or how far over they go. The **×** next to an extra clears just that one, and **Reset** clears every extra and income change.
+
+## Saving to your goals
+
+When you like the amounts, **Save to goals** puts each goal's and debt's new monthly amount in Monarch. The saved amounts then show as what goes toward each now, and saving again sets the same amounts.
+
+
+- **A savings goal** gets it from this month on. For a goal linked to one account, it goes to that account's contribution, and otherwise to the general contribution, the same ones you'd edit in the goal's settings.
+- **A debt** gets it in its planned payment on **Pay down**. That's your plan, so also change what you actually pay, like the autopay with your lender.
+
+**When done** choices are saved by Wingspan as soon as you pick them, so they're still there next time. They count in what goes toward each goal now.
+
+## When a goal is done
+
+**When done** says where a goal's money goes once it's reached or paid off: to another goal or debt, or **Nowhere**. From the next month, everything that was going toward it, including money already rolled in from other goals, goes to the one you picked. If that one is done too, the money keeps going down its own **When done**.
+
+Point each debt at the next one to see a snowball, or point a paid-off card at a savings goal.
+
+## Good to know
+
+- Nothing changes in Monarch until you save.
+- Amounts start next month. Savings grow by what you put in, plus growth at the rate of the accounts linked to the goal, as set in Monarch. A goal with no linked account doesn't grow.
+- Each debt is charged a month's interest at its rate before the payment. A payment that doesn't cover the interest never pays it off.
+- Monarch's **Pay down** page charts every debt together and can roll payments over by its own strategy, so Goal planner adds nothing there. Goal planner lets you aim money at one debt, and mix debts with savings goals.
+- Money left over in the month a goal finishes isn't moved.
+- Room by typical spending needs Projected balances set up for your household, and isn't shown in a business workspace. Room by your budget needs a budget for the months ahead.
