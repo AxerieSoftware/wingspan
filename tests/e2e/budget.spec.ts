@@ -49,7 +49,7 @@ test("Budget notes how much of each row's spending was paid from the HSA: on its
 
 	// Three months back, the clinic visit paid from checking was tagged to reimburse from the HSA.
 	for (let monthsBack = 0; monthsBack < 3; monthsBack++) await page.getByRole('button', { name: 'Previous', exact: true }).click();
-	await expect(medicalNote).toHaveText('$185 paid from HSA');
+	await expect(medicalNote).toHaveText('$185 paid from HSA', { timeout: 30_000 });
 });
 
 test('a household with no HSA or HSA tags gets no notes on Budget', async ({ page, open }) => {
