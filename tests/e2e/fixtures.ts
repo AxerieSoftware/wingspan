@@ -216,12 +216,6 @@ export async function addRecurring(page: Page, type: 'Bill' | 'Income' | 'Card p
 	return dialog;
 }
 
-/** Closes the notice a first open shows about the hidden account, which sits over the bottom of a tall dialog for 15 seconds. */
-export async function dismissFirstRunNotice(page: Page) {
-	await page.locator('[data-mds="toast-close"]').click();
-	await expect(page.getByText('Wingspan now saves to your Monarch account')).toHaveCount(0);
-}
-
 export async function chooseMerchant(page: Page, dialog: Locator, name: string) {
 	await dialog.locator('button[aria-label^="Merchant: "]').click();
 	await page.getByPlaceholder('Search merchants').fill(name);

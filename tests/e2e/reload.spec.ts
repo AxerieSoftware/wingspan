@@ -8,11 +8,10 @@ async function nudge(page: Page) {
 	await page.getByRole('heading', { level: 1 }).click();
 }
 
-test('a content script disconnected by an extension update greys out what it added and asks for a reload, replacing other notices', async ({ page, context, open }) => {
+test('a content script disconnected by an extension update greys out what it added and asks for a reload', async ({ page, context, open }) => {
 	const errors: string[] = [];
 	page.on('pageerror', error => errors.push(error.message));
 	await open();
-	await expect(page.getByText('Wingspan now saves to your Monarch account')).toBeVisible();
 	await reloadExtension(context);
 	await nudge(page);
 
@@ -21,7 +20,6 @@ test('a content script disconnected by an extension update greys out what it add
 	await expect.poll(() => row.evaluate(rowElement => Number(getComputedStyle(rowElement).opacity))).toBeLessThan(1);
 	await expect.poll(() => row.evaluate(rowElement => getComputedStyle(rowElement).pointerEvents)).toBe('none');
 	await expect(page.getByText(STALE_MESSAGE)).toBeVisible();
-	await expect(page.getByText('Wingspan now saves to your Monarch account')).toHaveCount(0);
 	// Monarch's toast: dark on a light page, a description under the title, a filled action in the title's color and a close button.
 	const toast = page.locator('[data-mds="toast"]').filter({ hasText: STALE_MESSAGE });
 	await expect(toast.locator('[data-mds="toast-description"]')).toHaveText('Reload the page to continue.');

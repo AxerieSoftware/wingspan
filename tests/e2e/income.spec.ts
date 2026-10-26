@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { APP, addRecurring, chooseMerchant, dismissFirstRunNotice, expect, section, test } from './fixtures';
+import { APP, addRecurring, chooseMerchant, expect, section, test } from './fixtures';
 
 const netChange = (page: Page) => page.getByRole('group', { name: 'Projected balances' }).getByTestId('projected-balances-net-change');
 const netChangeAmount = async (page: Page) => {
@@ -19,7 +19,6 @@ async function addPayouts(page: Page, expectedAmount: string) {
 
 test("income is added from Add recurring into Monarch's Income section, received when its deposit arrives", async ({ page, open }) => {
 	await open();
-	await dismissFirstRunNotice(page);
 	const dialog = await addPayouts(page, '430');
 	await expect(dialog.getByText('Select the deposits that belong to this income.')).toBeVisible();
 	await expect(dialog.getByText('Paid into')).toBeVisible();

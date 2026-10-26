@@ -1,5 +1,5 @@
 import { effect } from '@preact/signals-core';
-import type { StorageNotice, StorageNoticeKind, StorageStatus, WingspanDataService } from '../../../data/services/wingspanDataService';
+import type { StorageStatus, WingspanDataService } from '../../../data/services/wingspanDataService';
 import type { SettingsPage } from '../../../monarch/pages/settings/settingsPage';
 import { WingspanAttribute } from '../../../monarch/pages/wingspanAttributes';
 import { Island } from '../../../monarch/ui/components/island';
@@ -7,11 +7,7 @@ import { ToastHost, type ToastService, UNTIL_DISMISSED } from '../../../monarch/
 import type { WingspanFeature } from '../../wingspanFeature';
 import { WINGSPAN_SETTINGS_SLUG } from './wingspanSettingsFeature';
 
-const NOTICES: Record<StorageNoticeKind, { title: string; description: string }> = {
-	accountCreated: { title: 'Wingspan now saves to your Monarch account', description: 'It uses a hidden account named wingspan.' }
-};
-
-/** Storage toasts: one-time notices, and save failures that stay up until saving works again or the toast is dismissed. */
+/** Storage toasts: save failures that stay up until saving works again or the toast is dismissed. */
 export class StorageNoticesFeature implements WingspanFeature {
 	private readonly subscriptions = new DisposableStack();
 	private failure: { toastId: string; message: string } | null = null;
@@ -23,7 +19,7 @@ export class StorageNoticesFeature implements WingspanFeature {
 		private readonly settingsPage: SettingsPage
 	) {}
 
-	/** Puts the toast host on the page and shows notices and failures as the data service reports them. */
+	/** Puts the toast host on the page and shows failures as the data service reports them. */
 	public start(): void {
 		const toastsHostEl = this.window.document.createElement('div');
 		toastsHostEl.setAttribute(WingspanAttribute.toasts, '');
@@ -35,14 +31,6 @@ export class StorageNoticesFeature implements WingspanFeature {
 			toastsHostEl.remove();
 		});
 
-		let seenNotice = this.dataService.notice.peek();
-		this.subscriptions.defer(
-			effect(() => {
-				const notice = this.dataService.notice.value;
-				if (notice && notice !== seenNotice) this.showNotice(notice);
-				seenNotice = notice;
-			})
-		);
 		this.subscriptions.defer(
 			effect(() => {
 				const status = this.dataService.status.value;
@@ -57,10 +45,6 @@ export class StorageNoticesFeature implements WingspanFeature {
 
 	public [Symbol.dispose](): void {
 		this.subscriptions.dispose();
-	}
-
-	private showNotice(notice: StorageNotice): void {
-		this.toastService.show({ ...NOTICES[notice.kind], icon: 'help', action: { label: 'Settings', onClick: () => this.settingsPage.open(WINGSPAN_SETTINGS_SLUG) } });
 	}
 
 	/** The data service's message says what failed and what happened to the household's data. */
