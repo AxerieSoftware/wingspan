@@ -49,7 +49,11 @@ test("Budget notes how much of each row's spending was paid from the HSA: on its
 	await expect(page.locator('[data-wingspan-budget-row-note]')).toHaveText(['$64 paid from HSA', '$64 paid from HSA']);
 
 	// Three months back, the clinic visit paid from checking was tagged to reimburse from the HSA.
-	for (let monthsBack = 0; monthsBack < 3; monthsBack++) await page.getByRole('button', { name: 'Previous', exact: true }).click();
+	// Monarch ignores Previous while a month is still loading, so each click waits for the month before it.
+	for (let monthsBack = 1; monthsBack <= 3; monthsBack++) {
+		await page.getByRole('button', { name: 'Previous', exact: true }).click();
+		await expect(page.locator('[data-external-id="header"]')).toContainText(monthLabelOf(monthsBack), { timeout: 30_000 });
+	}
 	await expect(medicalNote).toHaveText('$185 paid from HSA', { timeout: 30_000 });
 });
 
@@ -58,3 +62,11 @@ test('a household with no HSA or HSA tags gets no notes on Budget', async ({ pag
 	await expect(page.locator('[data-goal-row-id="cat-groceries"]').first()).toBeVisible({ timeout: 30_000 });
 	await expect(page.locator('[data-wingspan-budget-row-note]')).toHaveCount(0);
 });
+
+/** The month a number of months before this one, as Budget's header shows it, like "July 2026". */
+function monthLabelOf(monthsBack: number): string {
+	const month = new Date();
+	month.setDate(1);
+	month.setMonth(month.getMonth() - monthsBack);
+	return month.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+}
