@@ -13,6 +13,7 @@ export const WingspanAttribute = {
 	due: 'data-wingspan-due',
 	workspaceSwitcher: 'data-wingspan-workspace-switcher',
 	hiddenSidebarItems: 'data-wingspan-hidden-sidebar-items',
+	startupTheme: 'data-wingspan-startup-theme',
 	headerNote: 'data-wingspan-header-note',
 	entityCount: 'data-wingspan-entity-count',
 	entityInactiveLabel: 'data-wingspan-entity-inactive-label',
