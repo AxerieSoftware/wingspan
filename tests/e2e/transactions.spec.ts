@@ -5,6 +5,8 @@ const ORDER_SPLIT_PATH = '/transactions/tx-order-1';
 const LINK = 'https://www.example.com/orders/5521';
 
 const itemsCard = (page: Page) => page.getByRole('group', { name: 'Items in this order' });
+/** Saving reloads Monarch's page, which takes a while to open the drawer again in the e2e setup. */
+const AFTER_RELOAD = { timeout: 30_000 };
 
 test("a split from a synced order lists the order's items, each in its split's category", async ({ page, household, open }) => {
 	household.addSyncedOrder();
@@ -35,7 +37,7 @@ test('moving an item to another category saves one split per category, with the 
 			['cat-medical', -6.16]
 		]);
 	expect(household.syncedOrderSplits[1]?.notes).toBe(`1 x Fabrikam Espresso Maker - $167.99\n\n1 x Fabrikam Coffee PodsTM - $12.99\n\n${LINK}`);
-	await expect(itemsCard(page).getByRole('combobox', { name: 'Fabrikam Espresso Maker, category' })).toHaveText('☕ Coffee Shops');
+	await expect(itemsCard(page).getByRole('combobox', { name: 'Fabrikam Espresso Maker, category' })).toHaveText('☕ Coffee Shops', AFTER_RELOAD);
 	// Monarch saved "™" as "TM", and the pods still read as in their split rather than taken out.
 	await expect(itemsCard(page).getByRole('combobox', { name: 'Fabrikam Coffee Pods™, category' })).toHaveText('☕ Coffee Shops');
 });
@@ -66,7 +68,7 @@ test("an item you didn't get, like one cancelled after ordering, is crossed out 
 			['cat-medical', -28.42]
 		]);
 	expect(household.syncedOrderSplits[0]?.notes).toBe(`2 x Contoso Paper Towels - 12 Rolls - $11.99\n\n${LINK}`);
-	await expect(itemsCard(page).getByRole('button', { name: 'Add back Fabrikam Espresso Maker' })).toBeVisible();
+	await expect(itemsCard(page).getByRole('button', { name: 'Add back Fabrikam Espresso Maker' })).toBeVisible(AFTER_RELOAD);
 });
 
 test('an item removed by mistake can be added back to the split it was in', async ({ page, household, open }) => {
