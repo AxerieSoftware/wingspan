@@ -1,11 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Calendar } from '../../../../common/calendar';
 import type { RecurringItem } from '../../../recurring/recurringItems/models/recurringItem';
 import { RecurrenceCalculator } from '../../../recurring/recurringItems/services/recurrenceCalculator';
 import type { ProjectionInput, ScheduledFlow } from '../models/projection';
 import { account, CARD, CHECKING, cardItem, input, monthly, monthlyPaychecks, plannerFor, recurringFlow, spent, TODAY } from './projectedBalancesPlanner.fixtures';
 
-describe('invariants over generated households', { timeout: 60_000 }, () => {
+vi.setConfig({ testTimeout: 60_000 });
+
+describe('invariants over generated households', () => {
 	/** Mulberry32, so a failing household can be reproduced from its seed. */
 	const randomFrom = (seed: number) => {
 		let state = seed;
