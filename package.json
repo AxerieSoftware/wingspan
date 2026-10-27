@@ -36,7 +36,7 @@
 		"postinstall": "wxt prepare"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.5.15",
+		"@biomejs/biome": "2.6.2",
 		"@playwright/test": "^1.64.1",
 		"@sveltejs/acorn-typescript": "^1.0.13",
 		"@types/node": "^26.6.5",
@@ -45,17 +45,17 @@
 		"@wxt-dev/module-react": "^1.2.2",
 		"acorn": "^8.19.0",
 		"graphql": "^17.0.2",
-		"knip": "6.41.0",
-		"npm-run-all2": "^9.0.3",
+		"knip": "6.43.0",
+		"npm-run-all2": "^9.0.4",
 		"typescript": "^7.0.2",
-		"vite": "8.3.4",
+		"vite": "8.3.5",
 		"vitest": "^5.0.5",
 		"wxt": "^0.21.4"
 	},
 	"dependencies": {
 		"@base-ui/react": "^1.9.0",
 		"@preact/signals-core": "^1.14.4",
-		"@tanstack/query-core": "^5.104.3",
+		"@tanstack/query-core": "^5.104.5",
 		"react": "^19.3.1",
 		"react-dom": "^19.3.1",
 		"react-error-boundary": "^6.1.6",
