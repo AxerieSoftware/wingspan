@@ -305,8 +305,8 @@ export class Household {
 		const monthly = (day: number) => `DTSTART:${since.replace('-', '')}${String(day).padStart(2, '0')}T000000Z\nRRULE:FREQ=MONTHLY;INTERVAL=1;BYMONTHDAY=${day}`;
 		const recurringItems = [
 			{ id: 'rewards', kind: 'card', name: 'Rewards Card', recurrence: monthly(17), amount: 0, active: true, since, accountId: 'acct-rewards' },
-			{ id: 'store', kind: 'card', name: 'Store Card', recurrence: monthly(26), amount: 88.4, active: true, since, matchRule: { matchText: '4410', anyAmount: true } },
-			{ id: 'travel', kind: 'card', name: 'Travel Card', recurrence: monthly(26), amount: 64.15, active: true, since, matchRule: { matchText: '8823', anyAmount: true } },
+			{ id: 'store', kind: 'card', name: 'Store Card', recurrence: monthly(this.cardDueDay), amount: 88.4, active: true, since, matchRule: { matchText: '4410', anyAmount: true } },
+			{ id: 'travel', kind: 'card', name: 'Travel Card', recurrence: monthly(this.cardDueDay), amount: 64.15, active: true, since, matchRule: { matchText: '8823', anyAmount: true } },
 			{ id: 'piano', kind: 'bill', name: 'Piano Lessons', recurrence: monthly(1), amount: 140, active: true, since, matchRule: { matchText: 'Maple Music' } }
 		];
 		const loanPaymentLinks = { loanAccountIdByRecurrenceId: this.isLoanPaymentLinked ? { [AUTO_LOAN_GROUP_ID]: 'acct-loan' } : {} };
@@ -890,9 +890,19 @@ export class Household {
 				.filter(monthsAgo => this.monthDay(monthsAgo, 17) <= this.today)
 				.map(monthsAgo => transaction(`tx-rewards-${monthsAgo}`, this.monthDay(monthsAgo, 17), 600 + monthsAgo * 70, 'PAYMENT THANK YOU', 'Rewards Bank', 'acct-rewards', CATEGORIES.cardPayment)),
 			// Two cards Monarch doesn't have; their payments come out of checking with a consistent card number.
-			...[1, 2, 3].map(monthsAgo => transaction(`tx-store-${monthsAgo}`, this.monthDay(monthsAgo, 26), -88.4, 'STORECARD PAYMENT ***4410', 'Store Card', 'acct-checking', CATEGORIES.cardPayment)),
 			...[1, 2, 3].map(monthsAgo =>
-				transaction(`tx-travel-${monthsAgo}`, this.monthDay(monthsAgo, 26), -(64.15 + monthsAgo * 10), 'TRAVELCARD PAYMENT ***8823', 'Travel Card', 'acct-checking', CATEGORIES.cardPayment)
+				transaction(`tx-store-${monthsAgo}`, this.monthDay(monthsAgo, this.cardDueDay), -88.4, 'STORECARD PAYMENT ***4410', 'Store Card', 'acct-checking', CATEGORIES.cardPayment)
+			),
+			...[1, 2, 3].map(monthsAgo =>
+				transaction(
+					`tx-travel-${monthsAgo}`,
+					this.monthDay(monthsAgo, this.cardDueDay),
+					-(64.15 + monthsAgo * 10),
+					'TRAVELCARD PAYMENT ***8823',
+					'Travel Card',
+					'acct-checking',
+					CATEGORIES.cardPayment
+				)
 			),
 			// Lessons paid by check, cashed on no fixed schedule.
 			transaction('tx-check-1', this.monthDay(1, 20), -140, 'CHECK # 0000002031', 'Maple Music', 'acct-checking', CATEGORIES.lessons),
@@ -943,6 +953,11 @@ export class Household {
 		return this.dayOffset(-2);
 	}
 
+	/** Due today, so the two cards are unpaid but never overdue whatever day the suite runs. */
+	private get cardDueDay(): number {
+		return this.dayOfMonth(this.today);
+	}
+
 	private dayOfMonth(date: string): number {
 		return Number(date.slice(8, 10));
 	}
@@ -974,7 +989,8 @@ export class Household {
 	}
 
 	private monthDay(monthsAgo: number, day: number): string {
-		return `${this.addMonths(this.today.slice(0, 7), -monthsAgo)}-${String(day).padStart(2, '0')}`;
+		const month = this.addMonths(this.today.slice(0, 7), -monthsAgo);
+		return `${month}-${String(Math.min(day, this.daysIn(month))).padStart(2, '0')}`;
 	}
 
 	private dayOffset(days: number): string {
