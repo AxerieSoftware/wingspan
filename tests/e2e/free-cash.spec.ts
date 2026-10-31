@@ -46,7 +46,7 @@ test("the summary shows today's free cash and links to the projection on Cash Fl
 
 test('each unpaid card shows how much checking can pay on its due date', async ({ page, open }) => {
 	await open();
-	await expect(itemRow(page.locator('[data-wingspan-statements]'), 'Store Card')).toContainText(/can pay (it )?in full/i);
+	await expect(itemRow(page.locator('[data-wingspan-statements]'), 'Store Card')).toContainText(/Can pay in full|Checking can pay it in full today/);
 });
 
 test('a minimum balance higher than checking has leaves card minimum payments uncovered, with a warning', async ({ page, open }) => {
