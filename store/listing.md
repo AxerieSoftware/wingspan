@@ -55,7 +55,7 @@ Up to 132 characters, the same as `description` in `wxt.config.ts`.
 > YOUR DATA
 > Wingspan has no server, analytics or tracking. It talks to Monarch with the session you're already signed into, and to a retailer's site only when you sync receipts from it. It saves its own items in a hidden manual account named "wingspan" in your Monarch account, and changes nothing else unless you ask, like saving a loan's new balance, new goal amounts or an order's splits. It never unlocks Monarch's paid features.
 >
-> Made by Axerie Software. Not affiliated with or endorsed by Monarch Money.
+> Made by Axerie. Not affiliated with or endorsed by Monarch Money.
 
 ## Details
 

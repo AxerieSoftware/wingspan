@@ -4,7 +4,7 @@ description: What Wingspan collects (nothing) and where your data stays.
 lastUpdated: 2026-10-11
 ---
 
-Wingspan is a browser extension for Monarch Money's web app, made by Axerie Software.
+Wingspan is a browser extension for Monarch Money's web app, made by Axerie.
 
 ## What Wingspan collects
 
