@@ -72,6 +72,6 @@ Bugs and ideas go in [Issues](https://github.com/AxerieSoftware/wingspan/issues/
 
 ## License
 
-[MIT](LICENSE) © Axerie Software
+[MIT](LICENSE) © Axerie LLC
 
 [^monarch]: Wingspan isn't affiliated with or endorsed by Monarch Money. Monarch's web API isn't public and can change without notice, so parts of Wingspan may stop working until they're updated.
