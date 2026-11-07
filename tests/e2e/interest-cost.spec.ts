@@ -120,7 +120,7 @@ test("a manual loan's row on Accounts says a linked payment posted since its bal
 	household.linkLoanPayment();
 	await open({ path: '/accounts', waitForRows: false });
 
-	const loanRow = page.locator('a[href$="/accounts/details/acct-loan"]');
+	const loanRow = page.locator('[data-mds="link-overlay"]:has(> a[href$="/accounts/details/acct-loan"])');
 	await expect(loanRow.locator('[data-wingspan-account-note]')).toHaveText('Payment posted, update balance');
 });
 
