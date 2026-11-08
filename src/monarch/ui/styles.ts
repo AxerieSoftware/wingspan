@@ -1,4 +1,4 @@
-import { type CnOptions, cnMerge, createTV } from 'tailwind-variants';
+import { type CnOptions, cnMerge, createTV } from 'tailwind-variants/config';
 
 const TW_MERGE_CONFIG = {
 	extend: {
