@@ -1,7 +1,7 @@
 import { APP, addRecurring, chooseMerchant, expect, itemRow, section, seedSampleItems, test } from './fixtures';
 
 const STATUS_SELECT = '[data-external-id="add-recurring-group-status-select"]';
-const MONARCH_MERCHANT = '[data-external-id="add-recurring-group-merchant-field"]';
+const MONARCH_MERCHANT = '[data-external-id="recurring-group-merchant-field"]';
 
 test("Monarch's Add recurring dialog keeps its own fields until one of Wingspan's types is chosen", async ({ page, open }) => {
 	await open();

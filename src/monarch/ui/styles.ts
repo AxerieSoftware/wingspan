@@ -59,7 +59,7 @@ const MENU_ITEM_BASE =
 const SURFACE_ANIMATION =
 	'origin-(--transform-origin) scale-100 opacity-100 transition-[scale,opacity] duration-150 data-starting-style:scale-95 data-starting-style:opacity-0 ' +
 	'data-ending-style:scale-95 data-ending-style:opacity-0 data-instant:transition-none';
-const FROSTED_SURFACE = 'bg-background-frosted shadow-lg [backdrop-filter:var(--background-blur-frosted)]';
+const FROSTED_SURFACE = 'bg-background-frosted shadow-lg';
 
 /** The border and colors Monarch's inputs share, for a typed `input` or a `button` that opens a picker. */
 export const inputBaseStyles = tv({
@@ -336,7 +336,7 @@ export const toastStyles = tv({
 		viewport: 'fixed right-default bottom-[calc(var(--spacing-default)+var(--toast-bottom-offset,0px))] z-toast w-105 max-w-[calc(100vw-2*var(--spacing-default))] outline-none',
 		root: [
 			'flex w-105 max-w-full rounded-lg bg-background-frosted text-content-primary shadow-lg',
-			'[backdrop-filter:var(--background-blur-frosted)] data-ending-style:opacity-0 data-starting-style:opacity-0',
+			'data-ending-style:opacity-0 data-starting-style:opacity-0',
 			'[body:has([data-mds=dialog-backdrop],[data-mds=alert-dialog-backdrop],[data-mds=drawer-backdrop])_&]:[backdrop-filter:none]'
 		],
 		content: 'flex flex-1 items-start gap-sm overflow-hidden rounded-lg p-sm',

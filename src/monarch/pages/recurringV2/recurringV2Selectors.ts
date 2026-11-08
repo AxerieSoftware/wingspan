@@ -34,7 +34,7 @@ export const RECURRING_V2_SELECTORS = {
 	dialogWash: '[data-mds="dialog-wash"]',
 	dialogCloseTrigger: '[data-mds="dialog-close-trigger"]',
 	addDialogFooter: '[data-external-id="add-recurring-group-footer"]',
-	addDialogMerchantField: '[data-external-id="add-recurring-group-merchant-field"]'
+	addDialogMerchantField: '[data-external-id="recurring-group-merchant-field"]'
 } as const;
 
 /** A cell holding only an amount, e.g. "$1,450.00" or "+$3,200.00". */

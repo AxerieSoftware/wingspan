@@ -15,8 +15,8 @@ const UNFILTERED_LABEL = 'Business';
 const OPEN_TIMEOUT_MS = 2000;
 /** One card per group of accounts, like Loans or Credit Cards, titled with the group's name. */
 const GROUP_TITLE_SELECTOR = '[data-external-id="account-group-card"] span[class*="CardTitle"]';
-/** Each account's row links to its page; its name sits over a second line of details, like the account's type. */
-const accountRowSelector = (accountId: string) => `[data-external-id="account-group-card"] a[href$="/accounts/details/${CSS.escape(accountId)}"]`;
+/** Each account's row holds an overlay link to its page; its name sits over a second line of details, like the account's type. */
+const accountRowSelector = (accountId: string) => `[data-external-id="account-group-card"] [data-mds="link-overlay"]:has(> a[href$="/accounts/details/${CSS.escape(accountId)}"])`;
 const ROW_DETAILS_LINE_SELECTOR = '.min-w-24 > :nth-child(2)';
 
 export type HouseholdPick = 'waiting' | 'done';
