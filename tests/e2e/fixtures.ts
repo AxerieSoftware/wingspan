@@ -381,8 +381,10 @@ function monarchScripts(indexHtml: string): string[] {
 	// The runtime builds each chunk's file name as "static/js/" + (name or id) + "." + hash + ".chunk.js".
 	const runtime = /"static\/js\/"\+\(\{([^}]*)\}\[\w+\]\|\|\w+\)\+"\."\+\{([^}]*)\}\[\w+\]\+"\.chunk\.js"/.exec(indexHtml);
 	if (!runtime) return entryScripts;
-	const chunkNames = new Map(Array.from((runtime[1] ?? '').matchAll(/(\d+):"([^"]+)"/g), ([, id, name]) => [id, name]));
-	const chunkScripts = Array.from((runtime[2] ?? '').matchAll(/(\d+):"([^"]+)"/g), ([, id, hash]) => `https://static.monarch.com/static/js/${chunkNames.get(id ?? '') ?? id}.${hash}.chunk.js`);
+	// The minifier writes round ids in exponent form (8000 as 8e3), which the runtime reads back as the number.
+	const chunkEntries = (map: string) => Array.from(map.matchAll(/(\d+(?:e\d+)?):"([^"]+)"/g), ([, id, value]) => [String(Number(id)), value] as const);
+	const chunkNames = new Map(chunkEntries(runtime[1] ?? ''));
+	const chunkScripts = chunkEntries(runtime[2] ?? '').map(([id, hash]) => `https://static.monarch.com/static/js/${chunkNames.get(id) ?? id}.${hash}.chunk.js`);
 	return [...entryScripts, ...chunkScripts];
 }
 
