@@ -2,10 +2,11 @@ import type { StyleOverrides } from '../../ui/styleOverrides';
 import { copyMonarchElement } from '../monarchCopy';
 import { WingspanAttribute } from '../wingspanAttributes';
 import type { RecurringV2LayoutCopier } from './recurringV2LayoutCopier';
-import { SECTION_CARD_TEST_ID_PREFIX, SECTION_SCROLL_TEST_ID_PREFIX, RECURRING_V2_SELECTORS as SELECTORS } from './recurringV2Selectors';
+import { AMOUNT_CELL_PATTERN, SECTION_CARD_TEST_ID_PREFIX, SECTION_SCROLL_TEST_ID_PREFIX, RECURRING_V2_SELECTORS as SELECTORS } from './recurringV2Selectors';
 
 const OVERDUE_SECTION = 'Overdue';
-const DEFAULT_COLUMN_LABELS = ['Status', 'History', 'Amount'];
+const AMOUNT_LABEL = 'Amount';
+const DEFAULT_COLUMN_LABELS = ['Status', 'History', AMOUNT_LABEL];
 
 /** A section card's parts: its name from the test id, the rows, the column header and the scroll area around the rows. */
 export interface RecurringV2SectionCard {
@@ -46,11 +47,19 @@ export class RecurringV2SectionCards {
 		return null;
 	}
 
-	/** The first card's column headings between the name and the menu, or Monarch's usual ones when it has no header. */
+	/**
+	 * The first card's column headings between the name and the menu, or Monarch's usual ones when it has no header.
+	 * Monarch leaves the amount column's heading blank, so a blank heading over a column of amounts is "Amount".
+	 */
 	public columnLabels(monarchCards: RecurringV2SectionCard[]): string[] {
 		const headerGridEl = monarchCards[0]?.headerGridEl;
 		if (!headerGridEl) return DEFAULT_COLUMN_LABELS;
-		return [...headerGridEl.children].slice(1, -1).map(columnEl => columnEl.textContent?.trim() ?? '');
+		const sampleCellEls = [...(this.sampleMonarchRowEl(monarchCards)?.children ?? [])];
+		return [...headerGridEl.children].slice(1, -1).map((columnEl, index) => {
+			const heading = columnEl.textContent?.trim() ?? '';
+			if (heading) return heading;
+			return AMOUNT_CELL_PATTERN.test(sampleCellEls[index + 1]?.textContent?.trim() ?? '') ? AMOUNT_LABEL : '';
+		});
 	}
 
 	/** The rows element of the named section, Monarch's or one Wingspan adds; null when there's no card to copy. */

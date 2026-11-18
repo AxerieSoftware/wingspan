@@ -12,7 +12,7 @@ test("Wingspan doesn't change the calendar view", async ({ page, open }) => {
 	await open();
 	await page.getByRole('tab', { name: 'Calendar' }).click();
 	await expect(page.locator('[data-wingspan-row], [data-wingspan-statements], [data-wingspan-section]')).toHaveCount(0);
-	await page.getByRole('tab', { name: 'Monthly' }).click();
+	await page.getByRole('tab', { name: 'By month' }).click();
 	await expect(itemRow(page, 'Piano Lessons')).toBeVisible();
 });
 

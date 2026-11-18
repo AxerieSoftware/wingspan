@@ -67,11 +67,15 @@ export class BudgetPage {
 		return this.navigator.isUnder(BUDGET_PATH);
 	}
 
-	/** The month shown, as "YYYY-MM", from the header's "October 2026". Null in Year view or while loading. */
+	/**
+	 * The month shown, as "YYYY-MM", from the header's "October 2026". Null in Year view or while loading.
+	 * The heading's text sits beside the Previous and Next buttons, so only each element's own text is read.
+	 */
 	public get month(): string | null {
 		const headingEls = this.window.document.querySelector(HEADER_SELECTOR)?.querySelectorAll('*') ?? [];
 		for (const headingEl of headingEls) {
-			const month = headingEl.childElementCount ? null : parseMonthYear(headingEl.textContent ?? '');
+			const ownText = [...headingEl.childNodes].flatMap(node => (node.nodeType === node.TEXT_NODE ? [node.textContent ?? ''] : [])).join('');
+			const month = parseMonthYear(ownText);
 			if (month) return month;
 		}
 		return null;
