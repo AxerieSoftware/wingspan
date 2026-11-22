@@ -1,4 +1,4 @@
-import { APP, addRecurring, chooseMerchant, expect, itemRow, section, seedSampleItems, test } from './fixtures';
+import { APP, addRecurring, chooseMerchant, expect, itemRow, section, seedSampleItems, test, wingspanTypeSelect } from './fixtures';
 
 const STATUS_SELECT = '[data-external-id="add-recurring-group-status-select"]';
 const MONARCH_MERCHANT = '[data-external-id="recurring-group-merchant-field"]';
@@ -8,16 +8,16 @@ test("Monarch's Add recurring dialog keeps its own fields until one of Wingspan'
 	await page.getByRole('button', { name: 'Add recurring' }).click();
 	await page.getByRole('menuitem', { name: 'Add manually' }).click();
 	const dialog = page.getByRole('dialog', { name: 'Add recurring' });
-	await expect(dialog.getByRole('combobox', { name: 'Type' })).toHaveText('Recurring merchant');
+	await expect(wingspanTypeSelect(dialog)).toHaveText('Recurring merchant');
 	await expect(dialog.locator(MONARCH_MERCHANT)).toBeVisible();
 
-	await dialog.getByRole('combobox', { name: 'Type' }).click();
+	await wingspanTypeSelect(dialog).click();
 	await page.getByRole('option', { name: 'Bill' }).click();
 	await expect(dialog.locator(MONARCH_MERCHANT)).toBeHidden();
 	await expect(dialog.locator(STATUS_SELECT)).toBeHidden();
 	await expect(dialog.locator('[data-wingspan-add-fields]').getByRole('combobox', { name: 'Merchant' })).toBeVisible();
 
-	await dialog.getByRole('combobox', { name: 'Type' }).click();
+	await wingspanTypeSelect(dialog).click();
 	await page.getByRole('option', { name: 'Recurring merchant' }).click();
 	await expect(dialog.locator(MONARCH_MERCHANT)).toBeVisible();
 	await expect(dialog.locator(STATUS_SELECT)).toBeVisible();
@@ -35,7 +35,7 @@ test("Wingspan's fields use Monarch's layout: the picker's filters on one line, 
 	const [cancelBox, footerBox] = [await footer.locator('[data-mds="dialog-close"]').boundingBox(), await footer.boundingBox()];
 	expect((footerBox?.x ?? 0) + (footerBox?.width ?? 0) - ((cancelBox?.x ?? 0) + (cancelBox?.width ?? 0))).toBeGreaterThan(100);
 
-	await dialog.getByRole('combobox', { name: 'Type' }).click();
+	await wingspanTypeSelect(dialog).click();
 	await page.getByRole('option', { name: 'Bill' }).click();
 	const filtersBox = await dialog.getByText('Filters', { exact: true }).locator('xpath=../..').boundingBox();
 	expect(filtersBox?.height).toBeLessThan(60);
