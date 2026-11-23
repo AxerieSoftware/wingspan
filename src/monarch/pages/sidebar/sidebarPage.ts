@@ -8,6 +8,7 @@ const NAV_LINK_SELECTOR = 'a[data-external-id="nav-bar-link"]';
 const ITEM_SELECTOR = ':is([data-external-id="nav-bar-link"], [data-external-id="sidebar-persistent-assistant"])';
 /** Buttons have no href, so they're identified by their icon, which stays put when Monarch rewords a label. */
 const ICON_ID_PREFIX = 'icon:';
+const HIDDEN_ITEMS_LAYER = 'wingspan-hidden-sidebar-items';
 /** Monarch marks the link to the page you're on. */
 const ACTIVE_CLASS = 'active';
 /** The padding Monarch's nav section has, without its fill and scroll, so the links stay below the row. */
@@ -66,19 +67,20 @@ export class SidebarPage {
 		});
 	}
 
-	/** A stylesheet, not inline styles, so it works before Monarch's app has rendered the sidebar and survives its re-renders. */
+	/**
+	 * A stylesheet, not inline styles, so it works before Monarch's app has rendered the sidebar and survives its re-renders.
+	 * Monarch's `display: flex !important` utilities sit in a cascade layer, and a layered important rule beats an unlayered
+	 * one, so the rule gets its own layer, declared first by putting the style element before Monarch's stylesheets.
+	 */
 	public hideItems(itemIds: readonly string[]): void {
 		let styleEl = this.document.querySelector(`style[${WingspanAttribute.hiddenSidebarItems}]`);
-		if (!itemIds.length) {
-			styleEl?.remove();
-			return;
-		}
 		if (!styleEl) {
+			if (!itemIds.length) return;
 			styleEl = this.document.createElement('style');
 			styleEl.setAttribute(WingspanAttribute.hiddenSidebarItems, '');
-			this.document.documentElement.append(styleEl);
+			this.document.documentElement.prepend(styleEl);
 		}
-		styleEl.textContent = `${itemIds.map(itemSelector).join(',\n')} { display: none !important; }`;
+		styleEl.textContent = itemIds.length ? `@layer ${HIDDEN_ITEMS_LAYER} { ${itemIds.map(itemSelector).join(',\n')} { display: none !important; } }` : '';
 	}
 
 	/**
