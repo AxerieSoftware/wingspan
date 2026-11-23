@@ -66,9 +66,9 @@ test("the sync status stays in a header without Monarch's button row", async ({ 
 	await expect(syncButton(page)).toBeVisible();
 
 	// Some layouts render the header with only its title, and the note then goes at the header's end.
-	await page.locator('[data-external-id="header"] > :last-child').evaluate(buttonRowEl => buttonRowEl.remove());
+	await page.locator('[data-external-id="classic-header"] > :last-child').evaluate(buttonRowEl => buttonRowEl.remove());
 
-	await expect(page.locator('[data-external-id="header"] > [data-wingspan-header-note]')).toBeVisible();
+	await expect(page.locator('[data-external-id="classic-header"] > [data-wingspan-header-note]')).toBeVisible();
 	await page.waitForTimeout(500);
 	expect(wingspanErrors).toEqual([]);
 });

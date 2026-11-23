@@ -2,7 +2,8 @@ import type { MonarchNavigator } from '../monarchNavigator';
 import { MountedSlot, type SlotContent } from '../mountedSlot';
 import { WingspanAttribute } from '../wingspanAttributes';
 
-const HEADER_SELECTOR = '[data-external-id="header"]';
+/** Monarch's header at the top of most of its pages. */
+export const PAGE_HEADER_SELECTOR = '[data-external-id="classic-header"]';
 
 /** Wingspan's notes in the header, in the order they're shown. */
 const NOTE_ORDER = ['unfiltered', 'syncStatus'] as const;
@@ -33,7 +34,7 @@ export class PageHeader {
 
 	/** Shows the note in the header, in `NOTE_ORDER` with Wingspan's other notes, or removes it while the page has no header. */
 	public showNote(key: PageHeaderNoteKey, content: SlotContent): void {
-		const headerEl = this.document.querySelector<HTMLElement>(HEADER_SELECTOR);
+		const headerEl = this.document.querySelector<HTMLElement>(PAGE_HEADER_SELECTOR);
 		if (!headerEl) {
 			this.removeNote(key);
 			return;

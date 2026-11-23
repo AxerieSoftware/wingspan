@@ -206,12 +206,15 @@ export const section = (page: Page, name: string) => page.getByTestId(`recurring
 /** One of Monarch's own rows on Recurring, whose accessible name starts with the item's name. */
 export const monarchRow = (scope: Page | Locator, name: string) => scope.getByRole('button', { name: new RegExp(`^${name} `) });
 
+/** Wingspan's Type select in the Add recurring dialog; Monarch's footer has a Type select of its own. */
+export const wingspanTypeSelect = (dialog: Locator) => dialog.locator('[data-wingspan-add-choice]').getByRole('combobox', { name: 'Type' });
+
 /** Opens Monarch's "Add recurring" dialog from "Add manually" with one of Wingspan's types chosen. */
 export async function addRecurring(page: Page, type: 'Bill' | 'Income' | 'Card payment') {
 	await page.getByRole('button', { name: 'Add recurring' }).click();
 	await page.getByRole('menuitem', { name: 'Add manually' }).click();
 	const dialog = page.getByRole('dialog', { name: 'Add recurring' });
-	await dialog.getByRole('combobox', { name: 'Type' }).click();
+	await wingspanTypeSelect(dialog).click();
 	await page.getByRole('option', { name: type }).click();
 	return dialog;
 }
