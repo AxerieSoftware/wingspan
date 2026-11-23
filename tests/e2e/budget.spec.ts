@@ -52,7 +52,7 @@ test("Budget notes how much of each row's spending was paid from the HSA: on its
 	// Monarch ignores Previous while a month is still loading, so each click waits for the month before it.
 	for (let monthsBack = 1; monthsBack <= 3; monthsBack++) {
 		await page.getByRole('button', { name: 'Previous', exact: true }).click();
-		await expect(page.locator('[data-external-id="header"]')).toContainText(monthLabelOf(monthsBack), { timeout: 30_000 });
+		await expect(page.locator('[data-external-id="classic-header"]')).toContainText(monthLabelOf(monthsBack), { timeout: 30_000 });
 	}
 	await expect(medicalNote).toHaveText('$185 paid from HSA', { timeout: 30_000 });
 });

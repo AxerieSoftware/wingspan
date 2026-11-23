@@ -1,3 +1,4 @@
+import { PAGE_HEADER_SELECTOR } from '../header/pageHeader';
 import type { MonarchNavigator } from '../monarchNavigator';
 import { parseMonthYear } from '../monarchText';
 import { MountedSlot, type SlotContent } from '../mountedSlot';
@@ -11,7 +12,6 @@ const ROW_ID_ATTRIBUTE = 'data-goal-row-id';
 const CATEGORY_LINK_PREFIX = '/categories/';
 const LOADED_VALUE_CLASS = 'fs-mask';
 const EARNED_LABEL_PREFIX = 'Earned';
-const HEADER_SELECTOR = '[data-external-id="header"]';
 const ROW_TITLE_SELECTOR = '[data-external-id="plan-row-title"]';
 /** The names column holds one block per group: its header row, then a drawer with its category rows. */
 const DRAWER_SELECTOR = '[data-external-id="deprecated-drawer"]';
@@ -72,7 +72,7 @@ export class BudgetPage {
 	 * The heading's text sits beside the Previous and Next buttons, so only each element's own text is read.
 	 */
 	public get month(): string | null {
-		const headingEls = this.window.document.querySelector(HEADER_SELECTOR)?.querySelectorAll('*') ?? [];
+		const headingEls = this.window.document.querySelector(PAGE_HEADER_SELECTOR)?.querySelectorAll('*') ?? [];
 		for (const headingEl of headingEls) {
 			const ownText = [...headingEl.childNodes].flatMap(node => (node.nodeType === node.TEXT_NODE ? [node.textContent ?? ''] : [])).join('');
 			const month = parseMonthYear(ownText);
