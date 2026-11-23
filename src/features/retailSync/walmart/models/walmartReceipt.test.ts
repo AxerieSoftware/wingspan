@@ -20,6 +20,7 @@ const order = (overrides: Record<string, unknown> = {}, priceDetails: Record<str
 			subTotal: line('Subtotal', 14.48),
 			taxTotal: line('Taxes', 1.02),
 			grandTotal: line('Total', 15.5),
+			grandTotalWithTips: line('Total', 15.5),
 			fees: [],
 			discounts: [],
 			driverTip: null,
@@ -42,8 +43,23 @@ describe('a Walmart order as a receipt', () => {
 		]);
 	});
 
+	it('totals a delivery order with its driver tip, which Walmart leaves out of grandTotal', () => {
+		const receipt = receiptFromOrder(order({}, { driverTip: line('Driver tip', 5), grandTotal: line('Total', 15.5), grandTotalWithTips: line('Total', 20.5) }), false);
+
+		expect(receipt).toMatchObject({ total: 20.5, adjustments: [{ label: 'Driver tip', amount: 5 }] });
+		const listed = (receipt?.subtotal ?? 0) + (receipt?.tax ?? 0) + (receipt?.adjustments ?? []).reduce((sum, each) => sum + each.amount, 0);
+		expect(listed).toBeCloseTo(20.5, 2);
+	});
+
+	it("totals from grandTotal when Walmart doesn't send grandTotalWithTips", () => {
+		expect(receiptFromOrder(order({}, { grandTotalWithTips: null }), false)?.total).toBe(15.5);
+	});
+
 	it("adds fees and the driver tip, subtracts discounts, and adds an adjustment for anything Walmart doesn't itemize", () => {
-		const receipt = receiptFromOrder(order({}, { fees: [line('Bag fee', 0.2)], discounts: [line('Promo', 3)], driverTip: line('Driver tip', 5), grandTotal: line('Total', 20) }), false);
+		const receipt = receiptFromOrder(
+			order({}, { fees: [line('Bag fee', 0.2)], discounts: [line('Promo', 3)], driverTip: line('Driver tip', 5), grandTotal: line('Total', 15), grandTotalWithTips: line('Total', 20) }),
+			false
+		);
 
 		expect(receipt?.adjustments).toEqual([
 			{ label: 'Bag fee', amount: 0.2 },
@@ -57,13 +73,13 @@ describe('a Walmart order as a receipt', () => {
 	});
 
 	it('handles discounts Walmart sends as negative amounts', () => {
-		const receipt = receiptFromOrder(order({}, { discounts: [line('Promo', -3)], grandTotal: line('Total', 12.5) }), false);
+		const receipt = receiptFromOrder(order({}, { discounts: [line('Promo', -3)], grandTotal: line('Total', 12.5), grandTotalWithTips: line('Total', 12.5) }), false);
 
 		expect(receipt?.adjustments).toEqual([{ label: 'Promo', amount: -3 }]);
 	});
 
 	it("isn't a receipt without a total", () => {
-		expect(receiptFromOrder(order({}, { grandTotal: { label: 'Total', value: null } }), false)).toBeNull();
+		expect(receiptFromOrder(order({}, { grandTotal: { label: 'Total', value: null }, grandTotalWithTips: null }), false)).toBeNull();
 	});
 
 	it("doesn't keep any of the user's personal details", () => {

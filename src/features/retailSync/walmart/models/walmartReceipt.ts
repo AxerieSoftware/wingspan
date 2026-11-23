@@ -30,6 +30,8 @@ export const WalmartOrderSchema = v.looseObject({
 		subTotal: v.nullish(PriceLineSchema),
 		taxTotal: v.nullish(PriceLineSchema),
 		grandTotal: PriceLineSchema,
+		/** What the card is charged. `grandTotal` leaves out the driver tip. */
+		grandTotalWithTips: v.nullish(PriceLineSchema),
 		fees: PriceLinesSchema,
 		discounts: PriceLinesSchema,
 		driverTip: v.nullish(PriceLineSchema),
@@ -43,7 +45,7 @@ export type WalmartOrder = v.InferOutput<typeof WalmartOrderSchema>;
 /** The receipt for an order, or null when Walmart doesn't return a total. */
 export function receiptFromOrder(order: WalmartOrder, isInStore: boolean): StoreReceipt | null {
 	const { priceDetails } = order;
-	const total = priceDetails.grandTotal.value;
+	const total = priceDetails.grandTotalWithTips?.value ?? priceDetails.grandTotal.value;
 	if (typeof total !== 'number') return null;
 
 	const items = (order.groups_2101 ?? [])
