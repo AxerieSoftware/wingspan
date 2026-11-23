@@ -2,14 +2,22 @@ import type { BrowserContext, Page } from '@playwright/test';
 import { expect, settled, test } from './fixtures';
 
 /** Walmart orders as the background script sends them: only the fields a receipt needs, every value invented. */
-const walmartOrder = (id: string, name: string, total: number) => ({
+const walmartOrder = (id: string, name: string, total: number, driverTip = 0) => ({
 	isInStore: false,
 	order: {
 		id,
 		displayId: `${id.slice(0, 7)}-${id.slice(7)}`,
 		orderDate: '2026-09-20T18:11:00-05:00',
 		groups_2101: [{ items: [{ quantity: 1, productInfo: { name }, priceInfo: { linePrice: { value: total - 1 } } }] }],
-		priceDetails: { subTotal: { value: total - 1 }, taxTotal: { value: 1 }, grandTotal: { value: total }, fees: [], discounts: [] },
+		priceDetails: {
+			subTotal: { value: total - 1 },
+			taxTotal: { value: 1 },
+			grandTotal: { value: total },
+			grandTotalWithTips: { value: total + driverTip },
+			fees: [],
+			discounts: [],
+			driverTip: driverTip ? { label: 'Driver tip', value: driverTip } : null
+		},
 		paymentMethods: [{ description: 'Card ending in 0000' }]
 	}
 });
@@ -313,4 +321,21 @@ test("a purchase Monarch already has a receipt for (same store, amount and day) 
 	// Both are remembered, so neither is read again.
 	await expect.poll(() => household.wingspanAccounts[0]?.notes).toContain('21134300800232509051234');
 	expect(household.wingspanAccounts[0]?.notes).toContain('21134300800232509059999');
+});
+
+test('a Walmart delivery counts its driver tip, so a receipt Monarch already has for the amount charged matches it', async ({ page, context, open, apiLog, household }) => {
+	household.existingReceipts.push({ merchantName: 'Walmart', grandTotal: 25.5, date: '2026-09-20' });
+	await open({ path: '/transactions/receipts', waitForRows: false });
+	// The click first reads Monarch's existing receipts, then requests access to walmart.com.
+	const accessPage = context.waitForEvent('page');
+	await chooseStore(page, 'Walmart');
+	await (await accessPage).close();
+
+	await sendFromBackground(context, [
+		{ type: 'retailSync:orders', retailer: 'walmart', orders: [walmartOrder('200015000000009', 'Groceries', 20.5, 5)] },
+		{ type: 'retailSync:done', retailer: 'walmart', found: 1 }
+	]);
+
+	await expect(page.getByRole('dialog', { name: 'Walmart synced' })).toContainText("1 purchase was already in Monarch, with the same amount that day, so it wasn't sent again.");
+	expect(apiLog.uploads).toHaveLength(0);
 });
