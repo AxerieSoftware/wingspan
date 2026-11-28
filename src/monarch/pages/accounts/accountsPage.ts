@@ -14,7 +14,7 @@ const UNFILTERED_LABEL = 'Business';
 /** If the menu hasn't opened by then, Monarch changed it; give up and leave the page as Monarch shows it. */
 const OPEN_TIMEOUT_MS = 2000;
 /** One card per group of accounts, like Loans or Credit Cards, titled with the group's name. */
-const GROUP_TITLE_SELECTOR = '[data-external-id="account-group-card"] span[class*="CardTitle"]';
+const GROUP_TITLE_SELECTOR = '[data-external-id="account-group-card"] [class*="group/account-group"] span[data-mds="text"]:first-child';
 /** Each account's row holds an overlay link to its page; its name sits over a second line of details, like the account's type. */
 const accountRowSelector = (accountId: string) => `[data-external-id="account-group-card"] [data-mds="link-overlay"]:has(> a[href$="/accounts/details/${CSS.escape(accountId)}"])`;
 const ROW_DETAILS_LINE_SELECTOR = '.min-w-24 > :nth-child(2)';
